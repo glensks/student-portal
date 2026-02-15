@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Records Dashboard – University of Manila</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+    --forest-900: #1b4332;
+    --forest-800: #2d6a4f;
+    --forest-700: #40916c;
+    --forest-600: #52b788;
+    --forest-500: #74c69d;
+    --forest-400: #95d5b2;
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --cream: #f8f5f0;
+    --cream-dark: #ede9e2;
+    --text-dark: #1a1a2e;
+    --text-mid: #3d4451;
+    --text-light: #6b7280;
+    --white: #ffffff;
+    --red: #c0392b;
+    --red-light: #e74c3c;
+    --sidebar-w: 240px;
+    --header-h: 72px;
+    --footer-h: 48px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--text-dark);
+    min-height: 100vh;
+}
+
+/* ===== HEADER ===== */
+.site-header {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: var(--header-h); background: var(--forest-900);
+    z-index: 200; display: flex; align-items: center;
+    padding: 0 24px 0 0;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.35);
+    border-bottom: 3px solid var(--gold);
+}
+.header-logo-block {
+    width: var(--sidebar-w); display: flex; align-items: center;
+    gap: 12px; padding: 0 20px; height: 100%; flex-shrink: 0;
+    border-right: 1px solid rgba(255,255,255,0.12);
+}
+.header-seal {
+    width: 46px; height: 46px; border-radius: 50%;
+    background: var(--gold); display: flex; align-items: center;
+    justify-content: center; flex-shrink: 0; font-size: 22px;
+    box-shadow: 0 0 0 2px var(--gold-light), 0 0 0 4px rgba(201,168,76,0.3);
+}
+.header-logo-text .univ-name {
+    font-family: 'Playfair Display', serif; font-size: 13px;
+    font-weight: 700; color: var(--white); letter-spacing: 0.02em;
+}
+.header-logo-text .univ-sub {
+    font-size: 10px; color: var(--forest-400); letter-spacing: 0.06em;
+    text-transform: uppercase; font-weight: 500;
+}
+.header-center { flex: 1; display: flex; align-items: center; padding-left: 24px; gap: 8px; }
+.header-badge {
+    background: var(--forest-800); color: var(--forest-400);
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; padding: 4px 12px; border-radius: 20px;
+    border: 1px solid var(--forest-700);
+}
+.header-title {
+    font-family: 'Playfair Display', serif; font-size: 18px;
+    font-weight: 600; color: var(--white); letter-spacing: 0.01em;
+}
+.header-right { display: flex; align-items: center; gap: 16px; }
+.header-clock .time { font-size: 16px; font-weight: 600; color: var(--gold-light); font-variant-numeric: tabular-nums; letter-spacing: 0.05em; text-align: right; }
+.header-clock .date { font-size: 11px; color: var(--forest-400); letter-spacing: 0.04em; text-align: right; }
+.header-divider { width: 1px; height: 30px; background: rgba(255,255,255,0.15); }
+.header-user { display: flex; align-items: center; gap: 10px; }
+.header-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--forest-700); border: 2px solid var(--gold); display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--white); }
+.header-user-info .name { font-size: 13px; font-weight: 600; color: var(--white); }
+.header-user-info .role-label { font-size: 10px; color: var(--forest-400); text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+    width: var(--sidebar-w); background: var(--forest-900);
+    position: fixed; top: var(--header-h); bottom: var(--footer-h); left: 0;
+    display: flex; flex-direction: column; overflow-y: auto;
+    border-right: 1px solid rgba(255,255,255,0.07); z-index: 100;
+}
+.sidebar-section { padding: 16px 14px 8px; }
+.sidebar-section-label { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--forest-600); padding: 0 8px; margin-bottom: 6px; }
+.sidebar-btn {
+    background: none; border: none; color: rgba(255,255,255,0.75);
+    text-align: left; padding: 10px 12px; width: 100%; cursor: pointer;
+    font-size: 13.5px; font-family: 'DM Sans', sans-serif; font-weight: 500;
+    border-radius: 8px; display: flex; align-items: center; gap: 10px;
+    transition: all 0.2s; letter-spacing: 0.01em; margin-bottom: 2px;
+}
+.sidebar-btn:hover { background: rgba(255,255,255,0.08); color: var(--white); }
+.sidebar-btn.active { background: var(--forest-800); color: var(--white); box-shadow: inset 3px 0 0 var(--gold); }
+.sidebar-btn .icon { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
+.sidebar-logout { margin-top: auto; padding: 14px; border-top: 1px solid rgba(255,255,255,0.08); }
+.sidebar-logout button {
+    background: rgba(192,57,43,0.15); border: 1px solid rgba(192,57,43,0.35);
+    color: #e88; padding: 10px; width: 100%; cursor: pointer; font-size: 13.5px;
+    font-family: 'DM Sans', sans-serif; font-weight: 600; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s;
+}
+.sidebar-logout button:hover { background: rgba(192,57,43,0.3); color: #faa; }
+
+/* ===== MAIN ===== */
+.main {
+    margin-left: var(--sidebar-w); margin-top: var(--header-h);
+    margin-bottom: var(--footer-h); padding: 28px;
+}
+
+/* Welcome hero */
+.welcome-hero {
+    background: linear-gradient(135deg, var(--forest-900) 0%, var(--forest-800) 60%, var(--forest-700) 100%);
+    border-radius: 14px; padding: 24px 32px; margin-bottom: 24px;
+    color: white; position: relative; overflow: hidden;
+    box-shadow: 0 4px 16px rgba(27,67,50,0.25);
+    display: flex; align-items: center; justify-content: space-between;
+}
+.welcome-hero::before { content: '🗂️'; position: absolute; right: 24px; top: 50%; transform: translateY(-50%); font-size: 80px; opacity: 0.12; }
+.welcome-hero h2 { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.welcome-hero p { font-size: 13px; color: var(--forest-400); }
+.welcome-hero .gold-accent { color: var(--gold-light); font-weight: 600; }
+.hero-user-info { text-align: right; }
+.hero-user-info .user-id { font-size: 12px; color: var(--forest-400); }
+.hero-user-info .user-role { font-size: 14px; font-weight: 600; color: var(--gold-light); margin-bottom: 2px; }
+
+/* ===== TABS ===== */
+.tabs-bar {
+    display: flex; gap: 4px;
+    border-bottom: 2px solid var(--cream-dark);
+    margin-bottom: 22px;
+}
+.tab-btn {
+    padding: 11px 22px; cursor: pointer; background: none;
+    border: none; border-bottom: 3px solid transparent;
+    font-size: 14px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+    color: var(--text-light); transition: all 0.2s; border-radius: 8px 8px 0 0;
+    display: flex; align-items: center; gap: 7px; letter-spacing: 0.01em;
+    margin-bottom: -2px;
+}
+.tab-btn:hover { color: var(--forest-700); background: #f0f7f4; }
+.tab-btn.active { color: var(--forest-800); border-bottom-color: var(--forest-700); background: var(--white); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ===== FILTER SECTION ===== */
+.filter-bar {
+    margin-bottom: 18px; padding: 14px 18px;
+    background: var(--white); border-radius: 10px;
+    border: 1px solid var(--cream-dark);
+    display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.filter-group { display: flex; flex-direction: column; gap: 4px; }
+.filter-group label { font-size: 11px; font-weight: 600; color: var(--text-mid); text-transform: uppercase; letter-spacing: 0.06em; }
+.filter-group select, .filter-group input {
+    padding: 8px 12px; border: 1.5px solid var(--cream-dark); border-radius: 7px;
+    font-family: 'DM Sans', sans-serif; font-size: 13.5px; outline: none;
+    background: var(--cream); transition: border-color 0.2s; color: var(--text-dark);
+}
+.filter-group select:focus, .filter-group input:focus { border-color: var(--forest-600); background: var(--white); }
+.clear-btn {
+    padding: 8px 16px; background: var(--cream-dark); color: var(--text-mid);
+    border: none; border-radius: 7px; cursor: pointer; font-size: 13px;
+    font-family: 'DM Sans', sans-serif; font-weight: 600; transition: background 0.2s;
+    align-self: flex-end;
+}
+.clear-btn:hover { background: #d8d2ca; }
+.create-btn {
+    padding: 10px 18px; background: var(--forest-700); color: white;
+    border: none; border-radius: 8px; cursor: pointer; font-size: 13.5px;
+    font-family: 'DM Sans', sans-serif; font-weight: 600; transition: background 0.2s;
+    display: flex; align-items: center; gap: 7px;
+}
+.create-btn:hover { background: var(--forest-800); }
+
+/* ===== STATS STRIP ===== */
+.stats-strip {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px; margin-bottom: 20px;
+}
+.stat-card {
+    background: var(--white); border-radius: 10px; padding: 16px 18px;
+    border-left: 4px solid var(--forest-600);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06); position: relative; overflow: hidden;
+}
+.stat-card::before { content: ''; position: absolute; top: -15px; right: -15px; width: 60px; height: 60px; border-radius: 50%; background: var(--forest-400); opacity: 0.08; }
+.stat-card:nth-child(2) { border-left-color: #a78bfa; }
+.stat-card:nth-child(3) { border-left-color: #38bdf8; }
+.stat-card:nth-child(4) { border-left-color: var(--gold); }
+.stat-card h4 { font-size: 11px; font-weight: 600; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px; }
+.stat-card .val { font-size: 26px; font-weight: 700; color: var(--forest-800); font-family: 'Playfair Display', serif; font-variant-numeric: tabular-nums; }
+.stat-card:nth-child(2) .val { color: #7c3aed; }
+.stat-card:nth-child(3) .val { color: #0284c7; }
+.stat-card:nth-child(4) .val { color: var(--gold); }
+
+/* ===== TABLE ===== */
+.table-wrapper { background: var(--white); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.07); border: 1px solid var(--cream-dark); overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 800px; }
+th { background: var(--forest-900); color: rgba(255,255,255,0.9); padding: 12px 14px; text-align: left; font-size: 11.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
+td { padding: 11px 14px; font-size: 13.5px; border-bottom: 1px solid var(--cream-dark); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #f0f7f4; }
+
+/* ===== BADGES ===== */
+.badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 700; letter-spacing: 0.04em; white-space: nowrap; }
+.badge-pending { background: #fef3c7; color: #92400e; }
+.badge-approved { background: #d1fae5; color: #065f46; }
+.badge-rejected { background: #fee2e2; color: #991b1b; }
+.badge-released { background: #d1fae5; color: #065f46; }
+.badge-onhold { background: #fef3c7; color: #92400e; }
+.badge-active { background: #d1fae5; color: #065f46; }
+.badge-inactive { background: #f3f4f6; color: #6b7280; }
+.priority-badge { display: inline-block; padding: 3px 9px; border-radius: 12px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; }
+.priority-low { background: #dbeafe; color: #1e40af; }
+.priority-normal { background: #d1fae5; color: #065f46; }
+.priority-high { background: #fef3c7; color: #92400e; }
+.priority-urgent { background: #fee2e2; color: #991b1b; }
+.grade-badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-weight: 700; min-width: 44px; text-align: center; font-size: 13px; }
+.grade-excellent { background: #d1fae5; color: #065f46; }
+.grade-good { background: #dbeafe; color: #1e40af; }
+.grade-fair { background: #fef3c7; color: #92400e; }
+.grade-poor { background: #fee2e2; color: #991b1b; }
+.grade-incomplete { background: #f3f4f6; color: #6b7280; }
+
+/* ===== ACTION BUTTONS ===== */
+.action-btn { padding: 5px 11px; margin: 2px; border: none; border-radius: 6px; cursor: pointer; font-size: 12.5px; font-family: 'DM Sans', sans-serif; font-weight: 600; transition: all 0.15s; white-space: nowrap; display: inline-block; }
+.action-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+.btn-view { background: var(--forest-800); color: white; }
+.btn-process { background: var(--forest-700); color: white; }
+.btn-process:disabled { background: #aaa; cursor: not-allowed; transform: none; }
+.btn-release { background: var(--forest-600); color: white; }
+.btn-hold { background: var(--gold); color: #3a2800; }
+.btn-edit { background: #0284c7; color: white; }
+.btn-delete { background: var(--red-light); color: white; }
+.btn-toggle { background: var(--cream-dark); color: var(--text-mid); }
+
+/* ===== ANNOUNCEMENT CARDS ===== */
+.ann-grid { display: flex; flex-direction: column; gap: 14px; }
+.ann-card {
+    background: var(--white); border-radius: 12px; padding: 20px 22px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07); border: 1px solid var(--cream-dark);
+    border-left: 4px solid var(--forest-600); transition: box-shadow 0.2s;
+}
+.ann-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.1); }
+.ann-card.priority-urgent-card { border-left-color: var(--red); }
+.ann-card.priority-high-card { border-left-color: var(--gold); }
+.ann-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 12px; }
+.ann-card-header h3 { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; color: var(--forest-900); flex: 1; }
+.ann-badges { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; flex-shrink: 0; }
+.ann-meta { font-size: 12px; color: var(--text-light); margin-bottom: 10px; display: flex; gap: 14px; flex-wrap: wrap; }
+.ann-meta span { display: flex; align-items: center; gap: 4px; }
+.ann-content { font-size: 13.5px; color: var(--text-mid); line-height: 1.65; margin-bottom: 12px; }
+.ann-content img { max-width: 100%; border-radius: 8px; margin-top: 10px; display: block; }
+.ann-actions { display: flex; gap: 8px; padding-top: 12px; border-top: 1px solid var(--cream-dark); }
+
+/* ===== MODAL ===== */
+.modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(27,67,50,0.45); backdrop-filter: blur(2px); z-index: 900;
+}
+.modal-box {
+    display: none; position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--white); padding: 28px 32px; border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    width: 90%; max-width: 800px; z-index: 1000;
+    max-height: 88vh; overflow-y: auto;
+    border-top: 4px solid var(--forest-700);
+}
+.modal-box h3 { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--forest-900); margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--cream-dark); display: flex; justify-content: space-between; align-items: center; }
+.modal-close { font-size: 22px; cursor: pointer; color: var(--text-light); background: none; border: none; line-height: 1; padding: 0; }
+.modal-close:hover { color: var(--red); }
+.detail-row { padding: 9px 0; border-bottom: 1px solid var(--cream-dark); display: flex; gap: 12px; font-size: 13.5px; }
+.detail-row:last-child { border-bottom: none; }
+.detail-label { font-weight: 600; color: var(--text-light); width: 150px; flex-shrink: 0; }
+.detail-value { color: var(--text-dark); }
+
+/* Student info card (inside modal) */
+.student-info-card { background: var(--cream); padding: 18px 20px; border-radius: 10px; margin-bottom: 18px; border: 1px solid var(--cream-dark); }
+.student-info-card h3 { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--forest-800); margin-bottom: 12px; }
+.info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.info-item .info-label { font-size: 11px; font-weight: 600; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+.info-item .info-value { font-size: 14px; color: var(--text-dark); font-weight: 500; }
+
+/* Forms inside modal */
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: var(--text-mid); font-size: 13px; }
+.form-group input, .form-group select, .form-group textarea {
+    width: 100%; padding: 10px 13px; border: 1.5px solid var(--cream-dark); border-radius: 8px;
+    font-family: 'DM Sans', sans-serif; font-size: 13.5px; outline: none;
+    transition: border-color 0.2s; background: var(--cream);
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--forest-600); background: var(--white); }
+.form-group textarea { resize: vertical; min-height: 100px; }
+.file-info { font-size: 12px; color: var(--text-light); margin-top: 4px; }
+.submit-btn { padding: 11px 24px; background: var(--forest-700); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-family: 'DM Sans', sans-serif; font-weight: 600; width: 100%; margin-top: 6px; transition: background 0.2s; }
+.submit-btn:hover { background: var(--forest-800); }
+.submit-btn:disabled { background: #aaa; cursor: not-allowed; }
+.request-context { background: var(--cream); padding: 14px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 13.5px; line-height: 1.8; border: 1px solid var(--cream-dark); }
+
+/* Empty state */
+.empty-state { text-align: center; padding: 48px 24px; color: var(--text-light); }
+.empty-state .empty-icon { font-size: 42px; margin-bottom: 12px; display: block; }
+.empty-state strong { font-size: 15px; color: var(--text-mid); }
+.empty-state p { margin-top: 6px; font-size: 13px; }
+
+/* Announcement section header */
+.section-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.section-actions h3 { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--forest-900); }
+
+/* ===== FOOTER ===== */
+.site-footer {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: var(--footer-h); background: var(--forest-900);
+    border-top: 2px solid var(--forest-800);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px 0 calc(var(--sidebar-w) + 24px); z-index: 200;
+}
+.footer-copy { font-size: 11.5px; color: var(--forest-500); letter-spacing: 0.03em; }
+.footer-copy strong { color: var(--gold-light); font-weight: 600; }
+.footer-links { display: flex; gap: 16px; align-items: center; }
+.footer-links span { font-size: 11px; color: var(--forest-600); letter-spacing: 0.04em; padding: 4px 10px; border-radius: 4px; border: 1px solid var(--forest-800); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--forest-400); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="site-header">
+    <div class="header-logo-block">
+        <div class="header-seal">🏛️</div>
+        <div class="header-logo-text">
+            <div class="univ-name">University of Manila</div>
+            <div class="univ-sub">Est. 1913 · Manila, Philippines</div>
+        </div>
+    </div>
+    <div class="header-center">
+        <span class="header-badge">Records Portal</span>
+        <span class="header-title">Student Information System</span>
+    </div>
+    <div class="header-right">
+        <div class="header-clock">
+            <div class="time" id="clockTime">--:--:--</div>
+            <div class="date" id="clockDate">Loading...</div>
+        </div>
+        <div class="header-divider"></div>
+        <div class="header-user">
+            <div class="header-avatar">👤</div>
+            <div class="header-user-info">
+                <div class="name">Records Staff</div>
+                <div class="role-label">Records</div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- ===== SIDEBAR ===== -->
+<div class="sidebar">
+    <div class="sidebar-section">
+        <div class="sidebar-section-label">Overview</div>
+        <button class="sidebar-btn active" onclick="switchTab('documents', this)">
+            <span class="icon">📊</span> Dashboard
+        </button>
+    </div>
+    <div class="sidebar-section">
+        <div class="sidebar-section-label">Records</div>
+        <button class="sidebar-btn" onclick="switchTab('documents', this)">
+            <span class="icon">📄</span> Document Requests
+        </button>
+        <button class="sidebar-btn" onclick="switchTab('grades', this)">
+            <span class="icon">📊</span> Student Grades
+        </button>
+        <button class="sidebar-btn" onclick="switchTab('announcements', this)">
+            <span class="icon">📢</span> Announcements
+        </button>
+    </div>
+    <div class="sidebar-logout">
+        <button onclick="logout()">🚪 Logout</button>
+    </div>
+</div>
+
+<!-- ===== MAIN ===== -->
+<div class="main">
+
+    <!-- Hero -->
+    <div class="welcome-hero">
+        <div>
+            <h2>Records Dashboard — <span class="gold-accent">University of Manila</span></h2>
+            <p>Manage document requests, student grades, and announcements · A.Y. 2025–2026</p>
+        </div>
+        <div class="hero-user-info">
+            <div class="user-role">Records Office</div>
+            <div class="user-id" id="userInfo">Authenticating...</div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs-bar">
+        <button class="tab-btn active" id="tabBtnDocuments" onclick="switchTab('documents', this)">📄 Document Requests</button>
+        <button class="tab-btn" id="tabBtnGrades" onclick="switchTab('grades', this)">📊 Student Grades</button>
+        <button class="tab-btn" id="tabBtnAnnouncements" onclick="switchTab('announcements', this)">📢 Announcements</button>
+    </div>
+
+    <!-- ===== DOCUMENT REQUESTS TAB ===== -->
+    <div id="documentsTab" class="tab-content active">
+        <div class="filter-bar">
+            <div class="filter-group">
+                <label>Filter by Status</label>
+                <select id="statusFilter">
+                    <option value="">All Requests</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Request ID</th>
+                        <th>Student No.</th>
+                        <th>Student Name</th>
+                        <th>Document Type</th>
+                        <th>Purpose</th>
+                        <th>Copies</th>
+                        <th>Status</th>
+                        <th>Requested At</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="requestsBody">
+                    <tr><td colspan="9"><div class="empty-state"><span class="empty-icon">⏳</span><strong>Loading requests...</strong></div></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ===== GRADES TAB ===== -->
+    <div id="gradesTab" class="tab-content">
+        <div class="filter-bar">
+            <div class="filter-group">
+                <label>Student Number / Name</label>
+                <input type="text" id="gradeStudentFilter" placeholder="Search student...">
+            </div>
+            <div class="filter-group">
+                <label>Course</label>
+                <select id="gradeCourseFilter">
+                    <option value="">All Courses</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Year Level</label>
+                <select id="gradeYearFilter">
+                    <option value="">All Years</option>
+                    <option value="1">1st Year</option>
+                    <option value="2">2nd Year</option>
+                    <option value="3">3rd Year</option>
+                    <option value="4">4th Year</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Release Status</label>
+                <select id="releaseStatusFilter">
+                    <option value="">All</option>
+                    <option value="released">Released</option>
+                    <option value="on-hold">On Hold</option>
+                </select>
+            </div>
+            <button class="clear-btn" onclick="clearGradeFilters()">✕ Clear</button>
+        </div>
+
+        <div class="stats-strip" id="gradeStats" style="display:none;">
+            <div class="stat-card"><h4>Total Students</h4><div class="val" id="totalStudents">0</div></div>
+            <div class="stat-card"><h4>Total Grades</h4><div class="val" id="totalGrades">0</div></div>
+            <div class="stat-card"><h4>Average GPA</h4><div class="val" id="averageGPA">0.0</div></div>
+            <div class="stat-card"><h4>Released Grades</h4><div class="val" id="releasedGrades">0</div></div>
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student No.</th>
+                        <th>Student Name</th>
+                        <th>Course</th>
+                        <th>Year</th>
+                        <th>Subject</th>
+                        <th>Teacher</th>
+                        <th>Prelim</th>
+                        <th>Midterm</th>
+                        <th>Finals</th>
+                        <th>Average</th>
+                        <th>Release Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="gradesBody">
+                    <tr><td colspan="12"><div class="empty-state"><span class="empty-icon">⏳</span><strong>Loading grades...</strong></div></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ===== ANNOUNCEMENTS TAB ===== -->
+    <div id="announcementsTab" class="tab-content">
+        <div class="section-actions">
+            <h3>📢 Manage Announcements</h3>
+            <button class="create-btn" onclick="openCreateAnnouncementModal()">+ New Announcement</button>
+        </div>
+
+        <div class="filter-bar">
+            <div class="filter-group">
+                <label>Priority</label>
+                <select id="announcementPriorityFilter">
+                    <option value="">All</option>
+                    <option value="low">Low</option>
+                    <option value="normal">Normal</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Target Audience</label>
+                <select id="announcementTargetFilter">
+                    <option value="">All</option>
+                    <option value="all">All Users</option>
+                    <option value="students">Students Only</option>
+                    <option value="teachers">Teachers Only</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Active Status</label>
+                <select id="announcementActiveFilter">
+                    <option value="">All</option>
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                </select>
+            </div>
+            <button class="clear-btn" onclick="clearAnnouncementFilters()">✕ Clear</button>
+        </div>
+
+        <div id="announcementsContainer">
+            <div class="empty-state"><span class="empty-icon">⏳</span><strong>Loading announcements...</strong></div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ===== FOOTER ===== -->
+<footer class="site-footer">
+    <div class="footer-copy">&copy; 2025 <strong>University of Manila</strong> &nbsp;·&nbsp; All rights reserved &nbsp;·&nbsp; Student Information System</div>
+    <div class="footer-links"><span>v2.0.0</span><span>SIS Records Module</span></div>
+</footer>
+
+<!-- ===== MODALS ===== -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeAllModals()"></div>
+
+<!-- View Request Modal -->
+<div class="modal-box" id="viewModal">
+    <h3>Request Details <button class="modal-close" onclick="closeModal('viewModal')">✕</button></h3>
+    <div id="viewDetails"></div>
+</div>
+
+<!-- Process Request Modal -->
+<div class="modal-box" id="processModal">
+    <h3>Process Document Request <button class="modal-close" onclick="closeModal('processModal')">✕</button></h3>
+    <div id="requestDetails" class="request-context"></div>
+    <form id="processForm" enctype="multipart/form-data">
+        <input type="hidden" id="requestId" name="request_id">
+        <div class="form-group">
+            <label>Action <span style="color:var(--red-light)">*</span></label>
+            <select id="status" name="status" required>
+                <option value="">-- Select Action --</option>
+                <option value="approved">Approve</option>
+                <option value="rejected">Reject</option>
+            </select>
+        </div>
+        <div class="form-group" id="documentGroup" style="display:none;">
+            <label>Upload Document (Image/PDF) <span style="color:var(--red-light)">*</span></label>
+            <input type="file" id="document" name="document" accept=".jpg,.jpeg,.png,.pdf">
+            <div class="file-info">Allowed: JPG, JPEG, PNG, PDF (Max 5MB)</div>
+        </div>
+        <div class="form-group">
+            <label>Notes (Optional)</label>
+            <textarea id="notes" name="notes" placeholder="Add any notes or comments..."></textarea>
+        </div>
+        <button type="submit" class="submit-btn" id="submitBtn">Submit</button>
+    </form>
+</div>
+
+<!-- Student Grades Modal -->
+<div class="modal-box" id="studentGradesModal">
+    <h3>Student Grade Record <button class="modal-close" onclick="closeModal('studentGradesModal')">✕</button></h3>
+    <div id="studentGradesContent"></div>
+</div>
+
+<!-- Announcement Create/Edit Modal -->
+<div class="modal-box" id="announcementModal">
+    <h3 id="announcementModalTitle">Create Announcement <button class="modal-close" onclick="closeModal('announcementModal')">✕</button></h3>
+    <form id="announcementForm" enctype="multipart/form-data">
+        <input type="hidden" id="announcementId" name="announcement_id">
+        <div class="form-group">
+            <label>Title <span style="color:var(--red-light)">*</span></label>
+            <input type="text" id="announcementTitle" name="title" required placeholder="Announcement title">
+        </div>
+        <div class="form-group">
+            <label>Content <span style="color:var(--red-light)">*</span></label>
+            <textarea id="announcementContent" name="content" required placeholder="Write announcement content..."></textarea>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div class="form-group">
+                <label>Priority <span style="color:var(--red-light)">*</span></label>
+                <select id="announcementPriority" name="priority" required>
+                    <option value="normal">Normal</option>
+                    <option value="low">Low</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Target Audience <span style="color:var(--red-light)">*</span></label>
+                <select id="announcementTarget" name="target_audience" required>
+                    <option value="all">All Users</option>
+                    <option value="students">Students Only</option>
+                    <option value="teachers">Teachers Only</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Image (Optional)</label>
+            <input type="file" id="announcementImage" name="image" accept=".jpg,.jpeg,.png,.gif,.webp">
+            <div class="file-info">Allowed: JPG, JPEG, PNG, GIF, WebP (Max 10MB)</div>
+        </div>
+        <button type="submit" class="submit-btn" id="announcementSubmitBtn">Create Announcement</button>
+    </form>
+</div>
+
+<script>
+const token = localStorage.getItem("token");
+let allGrades = [];
+let allAnnouncements = [];
+
+/* ===== Clock ===== */
+function updateClock() {
+    const now = new Date();
+    document.getElementById("clockTime").textContent = now.toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    document.getElementById("clockDate").textContent = now.toLocaleDateString('en-PH', {weekday:'short', year:'numeric', month:'short', day:'numeric'});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+function logout() { localStorage.clear(); window.location.href = "/login.html"; }
+
+/* ===== Auth Check ===== */
+fetch("/records/me", { headers: { "Authorization": "Bearer " + token } })
+    .then(res => {
+        if(res.status === 401 || res.status === 403) { localStorage.clear(); window.location.href = "/login.html"; return; }
+        return res.json();
+    })
+    .then(data => {
+        if(data) {
+            document.getElementById("userInfo").textContent = data.message + " | ID: " + data.user_id;
+            loadDocumentRequests();
+        }
+    })
+    .catch(() => { document.getElementById("userInfo").textContent = "Server error"; });
+
+/* ===== Tabs ===== */
+function switchTab(tabName, btn) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.sidebar-btn').forEach(t => t.classList.remove('active'));
+
+    document.getElementById(tabName + 'Tab').classList.add('active');
+    document.getElementById('tabBtn' + tabName.charAt(0).toUpperCase() + tabName.slice(1)).classList.add('active');
+    if(btn) btn.classList.add('active');
+
+    if(tabName === 'documents') loadDocumentRequests();
+    else if(tabName === 'grades') loadAllGrades();
+    else if(tabName === 'announcements') loadAnnouncements();
+}
+
+/* ===== Modal Helpers ===== */
+function openModal(id) {
+    closeAllModals();
+    document.getElementById("modalOverlay").style.display = "block";
+    document.getElementById(id).style.display = "block";
+}
+function closeModal(id) {
+    document.getElementById("modalOverlay").style.display = "none";
+    document.getElementById(id).style.display = "none";
+}
+function closeAllModals() {
+    document.getElementById("modalOverlay").style.display = "none";
+    document.querySelectorAll('.modal-box').forEach(m => m.style.display = 'none');
+}
+
+/* ===================== DOCUMENT REQUESTS ===================== */
+function loadDocumentRequests(statusFilter = '') {
+    const url = statusFilter ? `/records/document-requests?status=${statusFilter}` : '/records/document-requests';
+    fetch(url, { headers: { "Authorization": "Bearer " + token } })
+        .then(res => res.json())
+        .then(data => {
+            const tbody = document.getElementById("requestsBody");
+            if(data.requests && data.requests.length > 0) {
+                tbody.innerHTML = data.requests.map(req => {
+                    const statusClass = req.status.toLowerCase();
+                    const canProcess = req.status === 'pending';
+                    return `<tr>
+                        <td style="font-family:monospace;font-weight:600;color:var(--forest-800);">#${req.request_id}</td>
+                        <td style="font-family:monospace;font-size:13px;">${req.student_number}</td>
+                        <td><strong>${req.student_name}</strong></td>
+                        <td>${req.document_type}</td>
+                        <td style="max-width:160px;font-size:13px;color:var(--text-mid);">${req.purpose}</td>
+                        <td style="text-align:center;">${req.copies}</td>
+                        <td><span class="badge badge-${statusClass}">${req.status.toUpperCase()}</span></td>
+                        <td style="font-size:12.5px;color:var(--text-light);">${new Date(req.requested_at).toLocaleString()}</td>
+                        <td>
+                            <button class="action-btn btn-view" onclick="viewRequest(${req.request_id})">View</button>
+                            <button class="action-btn btn-process" onclick="openProcessModal(${req.request_id})" ${!canProcess ? 'disabled' : ''}>Process</button>
+                        </td>
+                    </tr>`;
+                }).join('');
+            } else {
+                tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><span class="empty-icon">📭</span><strong>No requests found</strong></div></td></tr>`;
+            }
+        })
+        .catch(() => {
+            document.getElementById("requestsBody").innerHTML = `<tr><td colspan="9"><div class="empty-state" style="color:var(--red);"><span class="empty-icon">❌</span><strong>Failed to load requests</strong></div></td></tr>`;
+        });
+}
+
+document.getElementById("statusFilter").addEventListener("change", function() { loadDocumentRequests(this.value); });
+
+function viewRequest(requestId) {
+    fetch(`/records/document-requests/${requestId}`, { headers: { "Authorization": "Bearer " + token } })
+        .then(res => res.json())
+        .then(data => {
+            let html = `
+                <div class="detail-row"><span class="detail-label">Request ID</span><span class="detail-value">#${data.request_id || 'N/A'}</span></div>
+                <div class="detail-row"><span class="detail-label">Student</span><span class="detail-value"><strong>${data.student_name || 'Unknown'}</strong> (${data.student_number || 'N/A'})</span></div>
+                <div class="detail-row"><span class="detail-label">Course</span><span class="detail-value">${data.course || 'N/A'}</span></div>
+                <div class="detail-row"><span class="detail-label">Year</span><span class="detail-value">${data.year || 'N/A'}</span></div>
+                <div class="detail-row"><span class="detail-label">Document Type</span><span class="detail-value">${data.document_type || 'N/A'}</span></div>
+                <div class="detail-row"><span class="detail-label">Purpose</span><span class="detail-value">${data.purpose || 'N/A'}</span></div>
+                <div class="detail-row"><span class="detail-label">Copies</span><span class="detail-value">${data.copies || 0}</span></div>
+                <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value"><span class="badge badge-${data.status}">${data.status ? data.status.toUpperCase() : 'N/A'}</span></span></div>
+                <div class="detail-row"><span class="detail-label">Requested At</span><span class="detail-value">${data.requested_at ? new Date(data.requested_at).toLocaleString() : 'N/A'}</span></div>
+            `;
+            if(data.processed_at) html += `<div class="detail-row"><span class="detail-label">Processed At</span><span class="detail-value">${new Date(data.processed_at).toLocaleString()}</span></div>`;
+            if(data.notes) html += `<div class="detail-row"><span class="detail-label">Notes</span><span class="detail-value">${data.notes}</span></div>`;
+            if(data.document_path) html += `<div class="detail-row"><span class="detail-label">Document</span><span class="detail-value"><a href="/${data.document_path}" target="_blank" style="color:var(--forest-700);font-weight:600;">📎 View Document</a></span></div>`;
+            document.getElementById("viewDetails").innerHTML = html;
+            openModal('viewModal');
+        })
+        .catch(() => alert("Failed to load request details"));
+}
+
+function openProcessModal(requestId) {
+    fetch(`/records/document-requests/${requestId}`, { headers: { "Authorization": "Bearer " + token } })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById("requestId").value = data.request_id;
+            document.getElementById("requestDetails").innerHTML = `
+                <strong>Student:</strong> ${data.student_name} (${data.student_number})<br>
+                <strong>Course:</strong> ${data.course || 'N/A'} &nbsp;·&nbsp; <strong>Year:</strong> ${data.year || 'N/A'}<br>
+                <strong>Document Type:</strong> ${data.document_type}<br>
+                <strong>Purpose:</strong> ${data.purpose} &nbsp;·&nbsp; <strong>Copies:</strong> ${data.copies}
+            `;
+            document.getElementById("processForm").reset();
+            document.getElementById("requestId").value = requestId;
+            document.getElementById("documentGroup").style.display = 'none';
+            openModal('processModal');
+        })
+        .catch(() => alert("Failed to load request details"));
+}
+
+document.getElementById("status").addEventListener("change", function() {
+    const dg = document.getElementById("documentGroup");
+    const di = document.getElementById("document");
+    if(this.value === "approved") { dg.style.display = "block"; di.required = true; }
+    else { dg.style.display = "none"; di.required = false; }
+});
+
+document.getElementById("processForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    const requestId = document.getElementById("requestId").value;
+    const formData = new FormData();
+    formData.append("status", document.getElementById("status").value);
+    formData.append("notes", document.getElementById("notes").value);
+    const documentFile = document.getElementById("document").files[0];
+    if(documentFile) formData.append("document", documentFile);
+    const submitBtn = document.getElementById("submitBtn");
+    submitBtn.disabled = true; submitBtn.textContent = "Processing...";
+    fetch(`/records/document-requests/${requestId}`, {
+        method: "POST", headers: { "Authorization": "Bearer " + token }, body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.error) { alert("Error: " + data.error); }
+        else { alert(data.message || "Request processed!"); closeModal('processModal'); loadDocumentRequests(document.getElementById("statusFilter").value); }
+    })
+    .catch(() => alert("Failed to process request"))
+    .finally(() => { submitBtn.disabled = false; submitBtn.textContent = "Submit"; });
+});
+
+/* ===================== GRADES ===================== */
+function loadAllGrades() {
+    fetch('/records/grades', { headers: { "Authorization": "Bearer " + token } })
+        .then(res => res.json())
+        .then(data => {
+            allGrades = data.grades || [];
+            populateCoursesFilter(allGrades);
+            displayGrades(allGrades);
+            updateGradeStats(allGrades);
+        })
+        .catch(() => {
+            document.getElementById("gradesBody").innerHTML = `<tr><td colspan="12"><div class="empty-state" style="color:var(--red);"><span class="empty-icon">❌</span><strong>Failed to load grades</strong></div></td></tr>`;
+        });
+}
+
+function populateCoursesFilter(grades) {
+    const courses = [...new Set(grades.map(g => g.course))];
+    const select = document.getElementById("gradeCourseFilter");
+    select.innerHTML = '<option value="">All Courses</option>';
+    courses.forEach(course => {
+        if(course && course !== 'N/A') {
+            const opt = document.createElement("option");
+            opt.value = course; opt.textContent = course;
+            select.appendChild(opt);
+        }
+    });
+}
+
+function displayGrades(grades) {
+    const tbody = document.getElementById("gradesBody");
+    if(!grades || grades.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="12"><div class="empty-state"><span class="empty-icon">📭</span><strong>No grades found</strong></div></td></tr>`;
+        return;
+    }
+    tbody.innerHTML = grades.map(grade => {
+        const prelim = grade.prelim !== null ? grade.prelim.toFixed(2) : '–';
+        const midterm = grade.midterm !== null ? grade.midterm.toFixed(2) : '–';
+        const finals = grade.finals !== null ? grade.finals.toFixed(2) : '–';
+        const average = grade.average !== null ? grade.average.toFixed(2) : '–';
+        const gradeClass = getGradeClass(grade.average);
+        const releaseClass = grade.is_released ? 'badge-released' : 'badge-onhold';
+        const releaseText = grade.is_released ? 'RELEASED' : 'ON HOLD';
+        const actionBtn = grade.is_released
+            ? `<button class="action-btn btn-hold" onclick="toggleGradeRelease(${grade.grade_id},'hold')">Put on Hold</button>`
+            : `<button class="action-btn btn-release" onclick="toggleGradeRelease(${grade.grade_id},'release')">Release</button>`;
+        return `<tr>
+            <td style="font-family:monospace;font-size:13px;">${grade.student_number}</td>
+            <td><strong>${grade.student_name}</strong></td>
+            <td style="font-size:13px;">${grade.course} <span style="color:var(--text-light);">(${grade.course_code})</span></td>
+            <td style="text-align:center;">Yr ${grade.year_level}</td>
+            <td style="font-size:13px;">${grade.subject} <span style="color:var(--text-light);">(${grade.subject_code})</span></td>
+            <td style="font-size:13px;">${grade.teacher_name}</td>
+            <td style="text-align:center;font-variant-numeric:tabular-nums;">${prelim}</td>
+            <td style="text-align:center;font-variant-numeric:tabular-nums;">${midterm}</td>
+            <td style="text-align:center;font-variant-numeric:tabular-nums;">${finals}</td>
+            <td style="text-align:center;"><span class="grade-badge ${gradeClass}">${average}</span></td>
+            <td><span class="badge ${releaseClass}">${releaseText}</span></td>
+            <td>
+                <button class="action-btn btn-view" onclick="viewStudentGrades(${grade.student_id})">View All</button>
+                ${actionBtn}
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function getGradeClass(average) {
+    if(average === null) return 'grade-incomplete';
+    if(average >= 90) return 'grade-excellent';
+    if(average >= 80) return 'grade-good';
+    if(average >= 75) return 'grade-fair';
+    return 'grade-poor';
+}
+
+function updateGradeStats(grades) {
+    const statsDiv = document.getElementById("gradeStats");
+    if(grades.length === 0) { statsDiv.style.display = 'none'; return; }
+    statsDiv.style.display = 'grid';
+    const uniqueStudents = new Set(grades.map(g => g.student_id)).size;
+    const gradesWithAvg = grades.filter(g => g.average !== null);
+    const avgGPA = gradesWithAvg.length > 0
+        ? (gradesWithAvg.reduce((s, g) => s + g.average, 0) / gradesWithAvg.length).toFixed(2) : '0.0';
+    const releasedCount = grades.filter(g => g.is_released).length;
+    document.getElementById("totalStudents").textContent = uniqueStudents;
+    document.getElementById("totalGrades").textContent = grades.length;
+    document.getElementById("averageGPA").textContent = avgGPA;
+    document.getElementById("releasedGrades").textContent = releasedCount;
+}
+
+function filterGrades() {
+    const studentFilter = document.getElementById("gradeStudentFilter").value.toLowerCase();
+    const courseFilter = document.getElementById("gradeCourseFilter").value;
+    const yearFilter = document.getElementById("gradeYearFilter").value;
+    const releaseFilter = document.getElementById("releaseStatusFilter").value;
+    let filtered = allGrades.filter(grade => {
+        const matchStudent = !studentFilter || grade.student_number.toLowerCase().includes(studentFilter) || grade.student_name.toLowerCase().includes(studentFilter);
+        const matchCourse = !courseFilter || grade.course === courseFilter;
+        const matchYear = !yearFilter || grade.year_level.toString() === yearFilter;
+        let matchRelease = true;
+        if(releaseFilter === 'released') matchRelease = grade.is_released === true;
+        else if(releaseFilter === 'on-hold') matchRelease = grade.is_released === false;
+        return matchStudent && matchCourse && matchYear && matchRelease;
+    });
+    displayGrades(filtered);
+    updateGradeStats(filtered);
+}
+
+function clearGradeFilters() {
+    document.getElementById("gradeStudentFilter").value = '';
+    document.getElementById("gradeCourseFilter").value = '';
+    document.getElementById("gradeYearFilter").value = '';
+    document.getElementById("releaseStatusFilter").value = '';
+    displayGrades(allGrades);
+    updateGradeStats(allGrades);
+}
+
+document.getElementById("gradeStudentFilter").addEventListener("input", filterGrades);
+document.getElementById("gradeCourseFilter").addEventListener("change", filterGrades);
+document.getElementById("gradeYearFilter").addEventListener("change", filterGrades);
+document.getElementById("releaseStatusFilter").addEventListener("change", filterGrades);
+
+function toggleGradeRelease(gradeId, action) {
+    if(!confirm(`${action === 'release' ? 'Release' : 'Put on hold'} this grade?`)) return;
+    fetch(`/records/grades/${gradeId}/release`, {
+        method: 'POST', headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json" },
+        body: JSON.stringify({ action: action })
+    })
+    .then(res => res.json())
+    .then(data => { if(data.error) alert("Error: " + data.error); else { alert(data.message); loadAllGrades(); } })
+    .catch(() => alert("Failed to update grade status"));
+}
+
+function viewStudentGrades(studentId) {
+    fetch(`/records/grades/student/${studentId}`, { headers: { "Authorization": "Bearer " + token } })
+        .then(res => res.json())
+        .then(data => {
+            const student = data.student;
+            const grades = data.grades || [];
+            let content = `
+                <div class="student-info-card">
+                    <h3>🎓 ${student.name}</h3>
+                    <div class="info-grid">
+                        <div class="info-item"><div class="info-label">Student Number</div><div class="info-value" style="font-family:monospace;">${student.student_number}</div></div>
+                        <div class="info-item"><div class="info-label">Email</div><div class="info-value">${student.email}</div></div>
+                        <div class="info-item"><div class="info-label">Course</div><div class="info-value">${student.course} (${student.course_code})</div></div>
+                        <div class="info-item"><div class="info-label">Year Level</div><div class="info-value">Year ${student.year_level}</div></div>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                <table style="min-width:600px;">
+                    <thead><tr>
+                        <th>Subject</th><th>Teacher</th>
+                        <th>Prelim</th><th>Midterm</th><th>Finals</th>
+                        <th>Average</th><th>Status</th><th>Remarks</th>
+                    </tr></thead>
+                    <tbody>
+            `;
+            if(grades.length > 0) {
+                grades.forEach(grade => {
+                    const prelim = grade.prelim !== null ? grade.prelim.toFixed(2) : '–';
+                    const midterm = grade.midterm !== null ? grade.midterm.toFixed(2) : '–';
+                    const finals = grade.finals !== null ? grade.finals.toFixed(2) : '–';
+                    const average = grade.average !== null ? grade.average.toFixed(2) : '–';
+                    const gradeClass = getGradeClass(grade.average);
+                    const releaseClass = grade.is_released ? 'badge-released' : 'badge-onhold';
+                    content += `<tr>
+                        <td>${grade.subject} <span style="color:var(--text-light);font-size:12px;">(${grade.subject_code})</span></td>
+                        <td>${grade.teacher_name}</td>
+                        <td style="text-align:center;">${prelim}</td>
+                        <td style="text-align:center;">${midterm}</td>
+                        <td style="text-align:center;">${finals}</td>
+                        <td style="text-align:center;"><span class="grade-badge ${gradeClass}">${average}</span></td>
+                        <td><span class="badge ${releaseClass}">${grade.is_released ? 'RELEASED' : 'ON HOLD'}</span></td>
+                        <td style="font-size:13px;">${grade.remarks || '–'}</td>
+                    </tr>`;
+                });
+            } else {
+                content += `<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-light);">No grades recorded.</td></tr>`;
+            }
+            content += `</tbody></table></div>`;
+            document.getElementById("studentGradesContent").innerHTML = content;
+            openModal('studentGradesModal');
+        })
+        .catch(() => alert("Failed to load student grades"));
+}
+
+/* ===================== ANNOUNCEMENTS ===================== */
+function loadAnnouncements() {
+    const priorityFilter = document.getElementById("announcementPriorityFilter").value;
+    const targetFilter = document.getElementById("announcementTargetFilter").value;
+    const activeFilter = document.getElementById("announcementActiveFilter").value;
+    let url = '/records/announcements?';
+    const params = [];
+    if(priorityFilter) params.push(`priority=${priorityFilter}`);
+    if(targetFilter) params.push(`target_audience=${targetFilter}`);
+    if(activeFilter) params.push(`is_active=${activeFilter}`);
+    url += params.join('&');
+    fetch(url, { headers: { "Authorization": "Bearer " + token } })
+        .then(res => res.json())
+        .then(data => {
+            allAnnouncements = data.announcements || [];
+            displayAnnouncements(allAnnouncements);
+        })
+        .catch(() => {
+            document.getElementById("announcementsContainer").innerHTML = `<div class="empty-state" style="color:var(--red);"><span class="empty-icon">❌</span><strong>Failed to load announcements</strong></div>`;
+        });
+}
+
+function displayAnnouncements(announcements) {
+    const container = document.getElementById("announcementsContainer");
+    if(announcements.length === 0) {
+        container.innerHTML = `<div class="empty-state"><span class="empty-icon">📭</span><strong>No announcements found</strong></div>`;
+        return;
+    }
+    const targetLabel = { all: 'All Users', students: 'Students Only', teachers: 'Teachers Only' };
+    container.innerHTML = `<div class="ann-grid">${announcements.map(ann => {
+        const priorityClass = ann.priority.toLowerCase();
+        const imageHTML = ann.image_url ? `<img src="${ann.image_url}" alt="${ann.title}">` : '';
+        const borderClass = priorityClass === 'urgent' ? 'priority-urgent-card' : priorityClass === 'high' ? 'priority-high-card' : '';
+        return `<div class="ann-card ${borderClass}">
+            <div class="ann-card-header">
+                <h3>${ann.title}</h3>
+                <div class="ann-badges">
+                    <span class="priority-badge priority-${priorityClass}">${ann.priority.toUpperCase()}</span>
+                    <span class="badge ${ann.is_active ? 'badge-active' : 'badge-inactive'}">${ann.is_active ? 'Active' : 'Inactive'}</span>
+                </div>
+            </div>
+            <div class="ann-meta">
+                <span>🎯 ${targetLabel[ann.target_audience] || ann.target_audience}</span>
+                <span>🕐 ${new Date(ann.created_at).toLocaleString()}</span>
+            </div>
+            <div class="ann-content">${ann.content}${imageHTML}</div>
+            <div class="ann-actions">
+                <button class="action-btn btn-toggle" onclick="toggleAnnouncement(${ann.id},${ann.is_active})">${ann.is_active ? '⛔ Deactivate' : '✅ Activate'}</button>
+                <button class="action-btn btn-edit" onclick="editAnnouncement(${ann.id})">✏️ Edit</button>
+                <button class="action-btn btn-delete" onclick="deleteAnnouncement(${ann.id})">🗑️ Delete</button>
+            </div>
+        </div>`;
+    }).join('')}</div>`;
+}
+
+function openCreateAnnouncementModal() {
+    document.getElementById("announcementModalTitle").innerHTML = 'Create Announcement <button class="modal-close" onclick="closeModal(\'announcementModal\')">✕</button>';
+    document.getElementById("announcementForm").reset();
+    document.getElementById("announcementId").value = '';
+    document.getElementById("announcementSubmitBtn").textContent = "Create Announcement";
+    openModal('announcementModal');
+}
+
+function editAnnouncement(announcementId) {
+    const ann = allAnnouncements.find(a => a.id === announcementId);
+    if(!ann) return;
+    document.getElementById("announcementModalTitle").innerHTML = 'Edit Announcement <button class="modal-close" onclick="closeModal(\'announcementModal\')">✕</button>';
+    document.getElementById("announcementId").value = ann.id;
+    document.getElementById("announcementTitle").value = ann.title;
+    document.getElementById("announcementContent").value = ann.content;
+    document.getElementById("announcementPriority").value = ann.priority;
+    document.getElementById("announcementTarget").value = ann.target_audience;
+    document.getElementById("announcementSubmitBtn").textContent = "Update Announcement";
+    openModal('announcementModal');
+}
+
+document.getElementById("announcementForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    const announcementId = document.getElementById("announcementId").value;
+    const formData = new FormData();
+    formData.append("title", document.getElementById("announcementTitle").value);
+    formData.append("content", document.getElementById("announcementContent").value);
+    formData.append("priority", document.getElementById("announcementPriority").value);
+    formData.append("target_audience", document.getElementById("announcementTarget").value);
+    const imageFile = document.getElementById("announcementImage").files[0];
+    if(imageFile) formData.append("image", imageFile);
+    const submitBtn = document.getElementById("announcementSubmitBtn");
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true; submitBtn.textContent = "Saving...";
+    const url = announcementId ? `/records/announcements/${announcementId}` : '/records/announcements';
+    const method = announcementId ? 'PUT' : 'POST';
+    fetch(url, { method: method, headers: { "Authorization": "Bearer " + token }, body: formData })
+        .then(res => res.json())
+        .then(data => {
+            if(data.error) alert("Error: " + data.error);
+            else { alert(data.message || "Saved!"); closeModal('announcementModal'); loadAnnouncements(); }
+        })
+        .catch(() => alert("Failed to save announcement"))
+        .finally(() => { submitBtn.disabled = false; submitBtn.textContent = originalText; });
+});
+
+function toggleAnnouncement(announcementId, currentStatus) {
+    if(!confirm(`${currentStatus ? 'Deactivate' : 'Activate'} this announcement?`)) return;
+    fetch(`/records/announcements/${announcementId}/toggle`, { method: 'POST', headers: { "Authorization": "Bearer " + token } })
+        .then(res => res.json())
+        .then(data => { if(data.error) alert("Error: " + data.error); else { alert(data.message); loadAnnouncements(); } })
+        .catch(() => alert("Failed to toggle announcement"));
+}
+
+function deleteAnnouncement(announcementId) {
+    if(!confirm("Delete this announcement? This cannot be undone.")) return;
+    fetch(`/records/announcements/${announcementId}`, { method: 'DELETE', headers: { "Authorization": "Bearer " + token } })
+        .then(res => res.json())
+        .then(data => { if(data.error) alert("Error: " + data.error); else { alert(data.message); loadAnnouncements(); } })
+        .catch(() => alert("Failed to delete announcement"));
+}
+
+function clearAnnouncementFilters() {
+    document.getElementById("announcementPriorityFilter").value = '';
+    document.getElementById("announcementTargetFilter").value = '';
+    document.getElementById("announcementActiveFilter").value = '';
+    loadAnnouncements();
+}
+
+document.getElementById("announcementPriorityFilter").addEventListener("change", loadAnnouncements);
+document.getElementById("announcementTargetFilter").addEventListener("change", loadAnnouncements);
+document.getElementById("announcementActiveFilter").addEventListener("change", loadAnnouncements);
+</script>
+</body>
+</html>

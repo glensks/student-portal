@@ -1,0 +1,19 @@
+ACADEMIC PERFORMANCE REPORT
+================================================================================
+
+Student Name: Glen Aldrin Tagubase
+Student ID: 2200907
+Course: BACHELOR OF SCIENCE IN COMPUTER SCIENCE (BSCS)
+Year Level: Year 4
+Email: glen.tagubase03@gmail.com
+
+================================================================================
+
+GRADES:
+
+Subject Code	Subject Name	Prelim	Midterm	Finals	Average	Status	Released Date
+------------------------------------------------------------------------------------------------------------------------
+IAS 101	IAS 101	80.00	80.00	80.00	80.00	Good	Feb 9, 2026
+
+================================================================================
+Generated on: 2/11/2026, 3:10:00 PM

@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cashier Dashboard – University of Manila</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+    --forest-900: #1b4332;
+    --forest-800: #2d6a4f;
+    --forest-700: #40916c;
+    --forest-600: #52b788;
+    --forest-500: #74c69d;
+    --forest-400: #95d5b2;
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --cream: #f8f5f0;
+    --cream-dark: #ede9e2;
+    --text-dark: #1a1a2e;
+    --text-mid: #3d4451;
+    --text-light: #6b7280;
+    --white: #ffffff;
+    --red: #c0392b;
+    --red-light: #e74c3c;
+    --sidebar-w: 240px;
+    --header-h: 72px;
+    --footer-h: 48px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--text-dark);
+    min-height: 100vh;
+}
+
+/* ===== HEADER ===== */
+.site-header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: var(--header-h);
+    background: var(--forest-900);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    padding: 0 24px 0 0;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.35);
+    border-bottom: 3px solid var(--gold);
+}
+.header-logo-block {
+    width: var(--sidebar-w);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 20px;
+    border-right: 1px solid rgba(255,255,255,0.12);
+    height: 100%;
+    flex-shrink: 0;
+}
+.header-seal {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 2px var(--gold-light), 0 0 0 4px rgba(201,168,76,0.3);
+    font-size: 22px;
+}
+.header-logo-text .univ-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--white);
+    letter-spacing: 0.02em;
+}
+.header-logo-text .univ-sub {
+    font-size: 10px;
+    color: var(--forest-400);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+.header-center {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    padding-left: 24px;
+    gap: 8px;
+}
+.header-badge {
+    background: var(--forest-800);
+    color: var(--forest-400);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--forest-700);
+}
+.header-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--white);
+    letter-spacing: 0.01em;
+}
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.header-clock .time {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--gold-light);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.05em;
+    text-align: right;
+}
+.header-clock .date {
+    font-size: 11px;
+    color: var(--forest-400);
+    letter-spacing: 0.04em;
+    text-align: right;
+}
+.header-divider { width: 1px; height: 30px; background: rgba(255,255,255,0.15); }
+.header-user { display: flex; align-items: center; gap: 10px; }
+.header-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--forest-700); border: 2px solid var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: var(--white);
+}
+.header-user-info .name { font-size: 13px; font-weight: 600; color: var(--white); }
+.header-user-info .role-label { font-size: 10px; color: var(--forest-400); text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+    width: var(--sidebar-w);
+    background: var(--forest-900);
+    position: fixed;
+    top: var(--header-h);
+    bottom: var(--footer-h);
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    border-right: 1px solid rgba(255,255,255,0.07);
+    z-index: 100;
+}
+.sidebar-section { padding: 16px 14px 8px; }
+.sidebar-section-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--forest-600);
+    padding: 0 8px; margin-bottom: 6px;
+}
+.sidebar-btn {
+    background: none; border: none;
+    color: rgba(255,255,255,0.75); text-align: left;
+    padding: 10px 12px; width: 100%; cursor: pointer;
+    font-size: 13.5px; font-family: 'DM Sans', sans-serif;
+    font-weight: 500; border-radius: 8px;
+    display: flex; align-items: center; gap: 10px;
+    transition: all 0.2s; letter-spacing: 0.01em; margin-bottom: 2px;
+}
+.sidebar-btn:hover { background: rgba(255,255,255,0.08); color: var(--white); }
+.sidebar-btn.active { background: var(--forest-800); color: var(--white); box-shadow: inset 3px 0 0 var(--gold); }
+.sidebar-btn .icon { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
+.sidebar-logout {
+    margin-top: auto; padding: 14px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+.sidebar-logout button {
+    background: rgba(192,57,43,0.15); border: 1px solid rgba(192,57,43,0.35);
+    color: #e88; text-align: center; padding: 10px; width: 100%;
+    cursor: pointer; font-size: 13.5px; font-family: 'DM Sans', sans-serif;
+    font-weight: 600; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all 0.2s;
+}
+.sidebar-logout button:hover { background: rgba(192,57,43,0.3); color: #faa; }
+
+/* ===== MAIN ===== */
+.main {
+    margin-left: var(--sidebar-w);
+    margin-top: var(--header-h);
+    margin-bottom: var(--footer-h);
+    padding: 28px;
+}
+
+/* Welcome hero */
+.welcome-hero {
+    background: linear-gradient(135deg, var(--forest-900) 0%, var(--forest-800) 60%, var(--forest-700) 100%);
+    border-radius: 14px; padding: 28px 32px; margin-bottom: 28px;
+    color: white; position: relative; overflow: hidden;
+    box-shadow: 0 4px 16px rgba(27,67,50,0.25);
+}
+.welcome-hero::before {
+    content: '💼'; position: absolute; right: 24px; top: 50%;
+    transform: translateY(-50%); font-size: 80px; opacity: 0.12;
+}
+.welcome-hero h2 { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+.welcome-hero p { font-size: 13.5px; color: var(--forest-400); }
+.welcome-hero .gold-accent { color: var(--gold-light); font-weight: 600; }
+
+/* ===== SEARCH PANEL ===== */
+.search-panel {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 22px 26px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    border: 1px solid var(--cream-dark);
+    display: flex;
+    align-items: flex-end;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+.search-panel .field-group { display: flex; flex-direction: column; gap: 5px; }
+.search-panel label {
+    font-size: 12px; font-weight: 600; color: var(--text-mid);
+    text-transform: uppercase; letter-spacing: 0.06em;
+}
+.search-panel input {
+    padding: 10px 14px;
+    border: 1.5px solid var(--cream-dark);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px; outline: none;
+    transition: border-color 0.2s;
+    background: var(--cream);
+    width: 240px;
+}
+.search-panel input:focus { border-color: var(--forest-600); background: var(--white); }
+.search-btn {
+    padding: 10px 22px;
+    background: var(--forest-700); color: white;
+    border: none; border-radius: 8px; cursor: pointer;
+    font-size: 14px; font-family: 'DM Sans', sans-serif;
+    font-weight: 600; transition: background 0.2s;
+    display: flex; align-items: center; gap: 8px;
+}
+.search-btn:hover { background: var(--forest-800); }
+
+/* ===== RESULTS AREA ===== */
+.results-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+}
+.results-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px; font-weight: 700; color: var(--forest-900);
+}
+.results-count {
+    font-size: 12.5px; color: var(--text-light);
+    background: var(--cream-dark); padding: 4px 12px; border-radius: 20px;
+}
+
+/* ===== TABLE ===== */
+.table-wrapper {
+    background: var(--white);
+    border-radius: 12px; overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    border: 1px solid var(--cream-dark);
+    overflow-x: auto;
+}
+table { width: 100%; border-collapse: collapse; min-width: 820px; }
+th {
+    background: var(--forest-900); color: rgba(255,255,255,0.9);
+    padding: 13px 14px; text-align: left;
+    font-size: 11.5px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    white-space: nowrap;
+}
+td {
+    padding: 12px 14px; font-size: 13.5px;
+    border-bottom: 1px solid var(--cream-dark);
+    vertical-align: middle;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #f0f7f4; }
+
+/* ===== BADGES ===== */
+.badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 11px; border-radius: 20px;
+    font-size: 11.5px; font-weight: 700; letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+.badge-full { background: #d1fae5; color: #065f46; }
+.badge-down { background: #fef3c7; color: #92400e; }
+.badge-pending { background: #fee2e2; color: #991b1b; }
+.badge-partial { background: #e0e7ff; color: #3730a3; }
+.badge-paid { background: #d1fae5; color: #065f46; }
+
+/* Subjects list */
+.subjects-list { font-size: 12.5px; color: var(--text-mid); line-height: 1.8; }
+.subjects-list span {
+    display: inline-flex; align-items: center; gap: 4px;
+}
+.subjects-list span::before { content: '•'; color: var(--forest-600); }
+
+/* Amount display */
+.amount { font-variant-numeric: tabular-nums; font-weight: 600; }
+.amount-total { color: var(--forest-800); }
+.amount-paid { color: #065f46; }
+.amount-remaining { color: var(--red); }
+
+/* Approve button */
+.approve-btn {
+    padding: 7px 16px;
+    background: var(--forest-700); color: white;
+    border: none; border-radius: 7px; cursor: pointer;
+    font-size: 13px; font-family: 'DM Sans', sans-serif;
+    font-weight: 600; transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 6px;
+    white-space: nowrap;
+}
+.approve-btn:hover { background: var(--forest-800); transform: translateY(-1px); }
+
+/* Empty / loading states */
+.empty-state {
+    text-align: center; padding: 48px 24px;
+    color: var(--text-light); font-size: 14px;
+}
+.empty-state .empty-icon { font-size: 42px; margin-bottom: 12px; display: block; }
+.empty-state p { margin-top: 6px; font-size: 13px; }
+
+/* Summary strip */
+.summary-strip {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px; margin-bottom: 24px;
+}
+.summary-card {
+    background: var(--white); border-radius: 10px; padding: 16px 18px;
+    border-left: 4px solid var(--forest-600);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.summary-card:nth-child(2) { border-left-color: var(--gold); }
+.summary-card:nth-child(3) { border-left-color: var(--red-light); }
+.summary-card h4 { font-size: 11px; font-weight: 600; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px; }
+.summary-card .val { font-size: 22px; font-weight: 700; color: var(--forest-800); font-family: 'Playfair Display', serif; font-variant-numeric: tabular-nums; }
+.summary-card:nth-child(2) .val { color: var(--gold); }
+.summary-card:nth-child(3) .val { color: var(--red); }
+
+/* ===== MODAL ===== */
+.overlay {
+    position: fixed; inset: 0;
+    background: rgba(27,67,50,0.45); backdrop-filter: blur(2px);
+    display: none; z-index: 900;
+}
+.modal {
+    display: none; position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--white); padding: 28px 32px;
+    border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    max-width: 480px; width: 100%; z-index: 1000;
+    border-top: 4px solid var(--forest-700);
+}
+.modal h3 {
+    font-family: 'Playfair Display', serif; font-size: 20px;
+    color: var(--forest-900); margin-bottom: 16px;
+    padding-bottom: 12px; border-bottom: 1px solid var(--cream-dark);
+}
+.modal .detail-row {
+    display: flex; justify-content: space-between;
+    padding: 9px 0; border-bottom: 1px solid var(--cream-dark);
+    font-size: 13.5px;
+}
+.modal .detail-row:last-of-type { border-bottom: none; }
+.modal .detail-row span:first-child { color: var(--text-light); font-weight: 500; }
+.modal .detail-row span:last-child { font-weight: 600; color: var(--text-dark); }
+.modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+.modal-confirm {
+    flex: 1; padding: 11px; background: var(--forest-700); color: white;
+    border: none; border-radius: 8px; cursor: pointer;
+    font-size: 14px; font-family: 'DM Sans', sans-serif; font-weight: 600;
+    transition: background 0.2s;
+}
+.modal-confirm:hover { background: var(--forest-800); }
+.modal-cancel {
+    padding: 11px 20px; background: var(--cream-dark); color: var(--text-mid);
+    border: none; border-radius: 8px; cursor: pointer;
+    font-size: 14px; font-family: 'DM Sans', sans-serif; font-weight: 600;
+}
+
+/* ===== FOOTER ===== */
+.site-footer {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: var(--footer-h); background: var(--forest-900);
+    border-top: 2px solid var(--forest-800);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px 0 calc(var(--sidebar-w) + 24px); z-index: 200;
+}
+.footer-copy { font-size: 11.5px; color: var(--forest-500); letter-spacing: 0.03em; }
+.footer-copy strong { color: var(--gold-light); font-weight: 600; }
+.footer-links { display: flex; gap: 16px; align-items: center; }
+.footer-links span {
+    font-size: 11px; color: var(--forest-600); letter-spacing: 0.04em;
+    padding: 4px 10px; border-radius: 4px; border: 1px solid var(--forest-800);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--forest-400); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="site-header">
+    <div class="header-logo-block">
+        <div class="header-seal">🏛️</div>
+        <div class="header-logo-text">
+            <div class="univ-name">University of Manila</div>
+            <div class="univ-sub">Est. 1913 · Manila, Philippines</div>
+        </div>
+    </div>
+    <div class="header-center">
+        <span class="header-badge">Cashier Portal</span>
+        <span class="header-title">Student Information System</span>
+    </div>
+    <div class="header-right">
+        <div class="header-clock">
+            <div class="time" id="clockTime">--:--:--</div>
+            <div class="date" id="clockDate">Loading...</div>
+        </div>
+        <div class="header-divider"></div>
+        <div class="header-user">
+            <div class="header-avatar">👤</div>
+            <div class="header-user-info">
+                <div class="name">Cashier</div>
+                <div class="role-label">Cashier</div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- ===== SIDEBAR ===== -->
+<div class="sidebar">
+    <div class="sidebar-section">
+        <div class="sidebar-section-label">Overview</div>
+        <button class="sidebar-btn active">
+            <span class="icon">📊</span> Dashboard
+        </button>
+    </div>
+    <div class="sidebar-section">
+        <div class="sidebar-section-label">Payments</div>
+        <button class="sidebar-btn active-look" onclick="focusSearch()">
+            <span class="icon">🔍</span> Search Student
+        </button>
+        <button class="sidebar-btn" onclick="clearResults()">
+            <span class="icon">🗑️</span> Clear Results
+        </button>
+    </div>
+    <div class="sidebar-logout">
+        <button onclick="logout()">🚪 Logout</button>
+    </div>
+</div>
+
+<!-- ===== MAIN ===== -->
+<div class="main">
+
+    <div class="welcome-hero">
+        <h2>Cashier Dashboard — <span class="gold-accent">University of Manila</span></h2>
+        <p>Review and approve student pending payments · Academic Year 2025–2026</p>
+    </div>
+
+    <!-- Search Panel -->
+    <div class="search-panel">
+        <div class="field-group">
+            <label>Student ID Number</label>
+            <input type="text" id="studentID" placeholder="e.g. 2024-00123" onkeydown="if(event.key==='Enter') fetchPending()">
+        </div>
+        <button class="search-btn" onclick="fetchPending()">
+            🔍 Search Payments
+        </button>
+    </div>
+
+    <!-- Summary Strip (hidden until results load) -->
+    <div class="summary-strip" id="summaryStrip" style="display:none;">
+        <div class="summary-card">
+            <h4>Pending Count</h4>
+            <div class="val" id="sumCount">0</div>
+        </div>
+        <div class="summary-card">
+            <h4>Total Amount</h4>
+            <div class="val" id="sumTotal">₱0</div>
+        </div>
+        <div class="summary-card">
+            <h4>Total Remaining</h4>
+            <div class="val" id="sumRemaining">₱0</div>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div id="resultsArea" style="display:none;">
+        <div class="results-header">
+            <div class="results-title">Pending Payments</div>
+            <div class="results-count" id="resultsCount">0 records</div>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Payment ID</th>
+                        <th>Subjects Enrolled</th>
+                        <th>Payment Type</th>
+                        <th>Amount Paid</th>
+                        <th>Total Amount</th>
+                        <th>Remaining</th>
+                        <th>Method</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="pendingTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Empty placeholder before search -->
+    <div id="emptyState" class="table-wrapper">
+        <div class="empty-state">
+            <span class="empty-icon">💼</span>
+            <strong>No results yet</strong>
+            <p>Enter a Student ID above and click <strong>Search Payments</strong> to view pending payment records.</p>
+        </div>
+    </div>
+
+</div>
+
+<!-- ===== FOOTER ===== -->
+<footer class="site-footer">
+    <div class="footer-copy">
+        &copy; 2025 <strong>University of Manila</strong> &nbsp;·&nbsp; All rights reserved &nbsp;·&nbsp; Student Information System
+    </div>
+    <div class="footer-links">
+        <span>v2.0.0</span>
+        <span>SIS Cashier Module</span>
+    </div>
+</footer>
+
+<!-- ===== CONFIRM MODAL ===== -->
+<div class="overlay" id="overlay" onclick="closeModal()"></div>
+<div class="modal" id="confirmModal">
+    <h3>✅ Confirm Payment Approval</h3>
+    <div id="modalDetails"></div>
+    <div class="modal-actions">
+        <button class="modal-confirm" id="modalConfirmBtn">Approve Payment</button>
+        <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+    </div>
+</div>
+
+<script>
+const API_BASE = "http://localhost:8080/cashier";
+let pendingPaymentId = null;
+
+/* ===== Clock ===== */
+function updateClock() {
+    const now = new Date();
+    document.getElementById("clockTime").textContent = now.toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    document.getElementById("clockDate").textContent = now.toLocaleDateString('en-PH', {weekday:'short', year:'numeric', month:'short', day:'numeric'});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+function logout() { localStorage.removeItem("jwt"); window.location.href = "/login.html"; }
+function focusSearch() { document.getElementById("studentID").focus(); }
+
+function clearResults() {
+    document.getElementById("pendingTable").innerHTML = "";
+    document.getElementById("resultsArea").style.display = "none";
+    document.getElementById("summaryStrip").style.display = "none";
+    document.getElementById("emptyState").style.display = "";
+    document.getElementById("studentID").value = "";
+}
+
+/* ===== Fetch Pending Payments ===== */
+async function fetchPending() {
+    const studentID = document.getElementById("studentID").value.trim();
+    if(!studentID) { alert("Please enter a Student ID"); return; }
+
+    const tbody = document.getElementById("pendingTable");
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-light);">⏳ Loading...</td></tr>`;
+    document.getElementById("resultsArea").style.display = "block";
+    document.getElementById("emptyState").style.display = "none";
+
+    try {
+        const res = await fetch(`${API_BASE}/pending-payments?student_id=${encodeURIComponent(studentID)}`);
+        const data = await res.json();
+
+        if(!res.ok) {
+            tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><span class="empty-icon">⚠️</span><strong>${data.error || 'Error fetching data'}</strong></div></td></tr>`;
+            document.getElementById("summaryStrip").style.display = "none";
+            return;
+        }
+
+        if(!data.pending || data.pending.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><span class="empty-icon">🎉</span><strong>No pending payments</strong><p>This student has no pending payment records.</p></div></td></tr>`;
+            document.getElementById("summaryStrip").style.display = "none";
+            document.getElementById("resultsCount").textContent = "0 records";
+            return;
+        }
+
+        // Summary
+        const count = data.pending.length;
+        const totalAmt = data.pending.reduce((s, p) => s + (p.total_amount || 0), 0);
+        const totalRem = data.pending.reduce((s, p) => s + (p.remaining || 0), 0);
+        document.getElementById("sumCount").textContent = count;
+        document.getElementById("sumTotal").textContent = "₱" + totalAmt.toLocaleString();
+        document.getElementById("sumRemaining").textContent = "₱" + totalRem.toLocaleString();
+        document.getElementById("summaryStrip").style.display = "grid";
+        document.getElementById("resultsCount").textContent = count + " record" + (count !== 1 ? "s" : "");
+
+        tbody.innerHTML = data.pending.map(p => {
+            // Determine payment type from amounts
+            const isFullPayment = p.amount_paid >= p.total_amount;
+            const typeLabel = isFullPayment
+                ? `<span class="badge badge-full">✅ Full Payment</span>`
+                : `<span class="badge badge-down">⬇ Downpayment</span>`;
+
+            const statusBadge = p.status === 'paid'
+                ? `<span class="badge badge-paid">Paid</span>`
+                : p.status === 'partial'
+                ? `<span class="badge badge-partial">Partial</span>`
+                : `<span class="badge badge-pending">Pending</span>`;
+
+            const subjectsHTML = (p.subjects && p.subjects.length > 0)
+                ? `<div class="subjects-list">${p.subjects.map(s => `<span>${s}</span>`).join('<br>')}</div>`
+                : `<span style="color:var(--text-light);font-size:12.5px;">—</span>`;
+
+            return `<tr>
+                <td style="font-family:monospace;font-size:13px;font-weight:600;color:var(--forest-800);">#${p.payment_id}</td>
+                <td>${subjectsHTML}</td>
+                <td>${typeLabel}</td>
+                <td class="amount amount-paid">₱${(p.amount_paid || 0).toLocaleString()}</td>
+                <td class="amount amount-total">₱${(p.total_amount || 0).toLocaleString()}</td>
+                <td class="amount amount-remaining">₱${(p.remaining || 0).toLocaleString()}</td>
+                <td style="font-size:13px;">${p.payment_method || '—'}</td>
+                <td>${statusBadge}</td>
+                <td>
+                    <button class="approve-btn" onclick="openApproveModal(${p.payment_id}, ${p.amount_paid}, ${p.total_amount}, ${p.remaining}, '${(p.payment_method || '').replace(/'/g,"\\'")}')">
+                        ✅ Approve
+                    </button>
+                </td>
+            </tr>`;
+        }).join('');
+
+    } catch(e) {
+        tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><span class="empty-icon">❌</span><strong>Failed to connect</strong><p>${e.message}</p></div></td></tr>`;
+        document.getElementById("summaryStrip").style.display = "none";
+    }
+}
+
+/* ===== Approve Modal ===== */
+function openApproveModal(paymentId, amountPaid, totalAmount, remaining, method) {
+    pendingPaymentId = paymentId;
+    const isFullPayment = amountPaid >= totalAmount;
+
+    document.getElementById("modalDetails").innerHTML = `
+        <div class="detail-row"><span>Payment ID</span><span>#${paymentId}</span></div>
+        <div class="detail-row"><span>Payment Type</span><span>${isFullPayment ? '✅ Full Payment' : '⬇ Downpayment'}</span></div>
+        <div class="detail-row"><span>Amount Paid</span><span style="color:#065f46;">₱${amountPaid.toLocaleString()}</span></div>
+        <div class="detail-row"><span>Total Amount</span><span>₱${totalAmount.toLocaleString()}</span></div>
+        <div class="detail-row"><span>Remaining</span><span style="color:var(--red);">₱${remaining.toLocaleString()}</span></div>
+        <div class="detail-row"><span>Method</span><span>${method || '—'}</span></div>
+        ${!isFullPayment ? `<div style="margin-top:12px;padding:10px 14px;background:#fef3c7;border-radius:8px;font-size:12.5px;color:#92400e;">
+            ⚠️ This is a <strong>downpayment</strong>. Approving will create <strong>3 installment terms</strong> (Prelim, Midterm, Finals) for the remaining ₱${remaining.toLocaleString()}.
+        </div>` : ''}
+    `;
+
+    document.getElementById("overlay").style.display = "block";
+    document.getElementById("confirmModal").style.display = "block";
+}
+
+function closeModal() {
+    document.getElementById("overlay").style.display = "none";
+    document.getElementById("confirmModal").style.display = "none";
+    pendingPaymentId = null;
+}
+
+document.getElementById("modalConfirmBtn").onclick = async () => {
+    if(!pendingPaymentId) return;
+    const btn = document.getElementById("modalConfirmBtn");
+    btn.textContent = "Processing...";
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(`${API_BASE}/approve-payment`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ payment_id: pendingPaymentId })
+        });
+        const data = await res.json();
+        closeModal();
+        alert(data.message || data.error);
+        fetchPending();
+    } catch(e) {
+        alert("Failed to approve: " + e.message);
+    } finally {
+        btn.textContent = "Approve Payment";
+        btn.disabled = false;
+    }
+};
+</script>
+</body>
+</html>

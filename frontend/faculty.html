@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Faculty Dashboard – University of Manila</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+    --forest-900: #1b4332;
+    --forest-800: #2d6a4f;
+    --forest-700: #40916c;
+    --forest-600: #52b788;
+    --forest-500: #74c69d;
+    --forest-400: #95d5b2;
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --cream: #f8f5f0;
+    --cream-dark: #ede9e2;
+    --text-dark: #1a1a2e;
+    --text-mid: #3d4451;
+    --text-light: #6b7280;
+    --white: #ffffff;
+    --red: #c0392b;
+    --red-light: #e74c3c;
+    --sidebar-w: 240px;
+    --header-h: 72px;
+    --footer-h: 48px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--text-dark);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ===== HEADER ===== */
+.site-header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: var(--header-h);
+    background: var(--forest-900);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    padding: 0 24px 0 0;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.35);
+    border-bottom: 3px solid var(--gold);
+}
+.header-logo-block {
+    width: var(--sidebar-w);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 20px;
+    border-right: 1px solid rgba(255,255,255,0.12);
+    height: 100%;
+}
+.header-seal {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 2px var(--gold-light), 0 0 0 4px rgba(201,168,76,0.3);
+    font-size: 22px;
+}
+.header-logo-text .univ-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--white);
+    letter-spacing: 0.02em;
+}
+.header-logo-text .univ-sub {
+    font-size: 10px;
+    color: var(--forest-400);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+.header-center {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    padding-left: 24px;
+    gap: 8px;
+}
+.header-badge {
+    background: var(--forest-800);
+    color: var(--forest-400);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--forest-700);
+}
+.header-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--white);
+    letter-spacing: 0.01em;
+}
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.header-clock .time {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--gold-light);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.05em;
+    text-align: right;
+}
+.header-clock .date {
+    font-size: 11px;
+    color: var(--forest-400);
+    letter-spacing: 0.04em;
+    text-align: right;
+}
+.header-divider {
+    width: 1px;
+    height: 30px;
+    background: rgba(255,255,255,0.15);
+}
+.header-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--forest-700);
+    border: 2px solid var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: var(--white);
+}
+.header-user-info .name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--white);
+}
+.header-user-info .role-label {
+    font-size: 10px;
+    color: var(--forest-400);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+.header-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+    width: var(--sidebar-w);
+    background: var(--forest-900);
+    position: fixed;
+    top: var(--header-h);
+    bottom: var(--footer-h);
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    border-right: 1px solid rgba(255,255,255,0.07);
+    z-index: 100;
+}
+.sidebar-section {
+    padding: 16px 14px 8px;
+}
+.sidebar-section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--forest-600);
+    padding: 0 8px;
+    margin-bottom: 6px;
+}
+.sidebar-btn {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.75);
+    text-align: left;
+    padding: 10px 12px;
+    width: 100%;
+    cursor: pointer;
+    font-size: 13.5px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s;
+    letter-spacing: 0.01em;
+    margin-bottom: 2px;
+}
+.sidebar-btn:hover {
+    background: rgba(255,255,255,0.08);
+    color: var(--white);
+}
+.sidebar-btn.active {
+    background: var(--forest-800);
+    color: var(--white);
+    box-shadow: inset 3px 0 0 var(--gold);
+}
+.sidebar-btn .icon { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
+.sidebar-logout {
+    margin-top: auto;
+    padding: 14px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+.sidebar-logout button {
+    background: rgba(192,57,43,0.15);
+    border: 1px solid rgba(192,57,43,0.35);
+    color: #e88;
+    text-align: center;
+    padding: 10px;
+    width: 100%;
+    cursor: pointer;
+    font-size: 13.5px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+.sidebar-logout button:hover {
+    background: rgba(192,57,43,0.3);
+    color: #faa;
+}
+
+/* ===== MAIN ===== */
+.main {
+    margin-left: var(--sidebar-w);
+    margin-top: var(--header-h);
+    margin-bottom: var(--footer-h);
+    padding: 28px;
+    min-height: calc(100vh - var(--header-h) - var(--footer-h));
+}
+
+/* Welcome hero */
+.welcome-hero {
+    background: linear-gradient(135deg, var(--forest-900) 0%, var(--forest-800) 60%, var(--forest-700) 100%);
+    border-radius: 14px;
+    padding: 28px 32px;
+    margin-bottom: 28px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(27,67,50,0.25);
+}
+.welcome-hero::before {
+    content: '📚';
+    position: absolute;
+    right: 24px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 80px;
+    opacity: 0.12;
+}
+.welcome-hero h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+.welcome-hero p { font-size: 13.5px; color: var(--forest-400); }
+.welcome-hero .gold-accent { color: var(--gold-light); font-weight: 600; }
+
+/* Quick cards */
+.quick-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.quick-card {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 20px 22px;
+    border-left: 4px solid var(--forest-600);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.quick-card:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.1); }
+.quick-card:nth-child(2) { border-left-color: var(--gold); }
+.quick-card:nth-child(3) { border-left-color: var(--forest-700); }
+.quick-card:nth-child(4) { border-left-color: #5b8def; }
+.quick-card .card-icon { font-size: 28px; }
+.quick-card .card-label { font-size: 13px; font-weight: 600; color: var(--forest-800); }
+.quick-card .card-sub { font-size: 11.5px; color: var(--text-light); }
+
+.quick-hint {
+    color: var(--text-light);
+    font-size: 13.5px;
+    padding: 14px 18px;
+    background: var(--white);
+    border-radius: 10px;
+    border-left: 4px solid var(--forest-500);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+/* ===== POPUPS ===== */
+.popup {
+    display: none;
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--white);
+    padding: 28px 32px;
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    max-width: 600px;
+    width: 100%;
+    z-index: 1000;
+    max-height: 90vh;
+    overflow-y: auto;
+    border-top: 4px solid var(--forest-700);
+}
+.popup h3 {
+    margin-bottom: 20px;
+    color: var(--forest-900);
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    border-bottom: 1px solid var(--cream-dark);
+    padding-bottom: 12px;
+}
+.popup h4 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--forest-800);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 16px 0 10px;
+    padding: 8px 12px;
+    background: var(--cream);
+    border-radius: 6px;
+    border-left: 3px solid var(--forest-600);
+}
+.popup label {
+    display: block;
+    margin: 10px 0 4px;
+    font-weight: 600;
+    color: var(--text-mid);
+    font-size: 13px;
+    letter-spacing: 0.02em;
+}
+.popup input, .popup select, .popup textarea {
+    width: 100%;
+    padding: 10px 13px;
+    margin-bottom: 10px;
+    border: 1.5px solid var(--cream-dark);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13.5px;
+    outline: none;
+    transition: border-color 0.2s;
+    background: var(--cream);
+    color: var(--text-dark);
+}
+.popup input:focus, .popup select:focus, .popup textarea:focus {
+    border-color: var(--forest-600);
+    background: var(--white);
+}
+.popup textarea { resize: vertical; height: 110px; }
+.popup button {
+    padding: 10px 18px;
+    margin-right: 8px;
+    margin-top: 4px;
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13.5px;
+    transition: opacity 0.15s, transform 0.1s;
+}
+.popup button:hover { opacity: 0.88; transform: translateY(-1px); }
+.popup .submit-btn { background: var(--forest-700); color: white; }
+.popup .close-btn { background: var(--cream-dark); color: var(--text-mid); }
+.popup .add-btn {
+    background: transparent;
+    border: 1.5px dashed var(--forest-600);
+    color: var(--forest-700);
+    font-size: 13px;
+    padding: 8px 14px;
+    margin-bottom: 8px;
+}
+.popup .add-btn:hover { background: #f0f7f4; }
+
+/* Schedule row */
+.schedule-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+    background: var(--cream);
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--cream-dark);
+}
+.schedule-row select, .schedule-row input {
+    flex: 1;
+    min-width: 90px;
+    margin-bottom: 0;
+    font-size: 12.5px;
+    padding: 7px 10px;
+}
+.schedule-row .scheduleSubject { flex: 2.5; }
+.schedule-row .scheduleRoom { flex: 0.9; }
+.schedule-row .remove-row-btn {
+    flex: 0 0 auto;
+    background: rgba(231,76,60,0.12);
+    border: 1px solid rgba(231,76,60,0.3);
+    color: var(--red);
+    padding: 7px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    margin-top: 0;
+}
+.schedule-row .remove-row-btn:hover { background: rgba(231,76,60,0.22); }
+
+/* Course list */
+#courseList, #subjectList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+#courseList li, #subjectList li {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--cream-dark);
+    font-size: 13.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.15s;
+}
+#courseList li:hover, #subjectList li:hover { background: var(--cream); }
+#courseList li::before { content: '📖'; font-size: 14px; }
+#subjectList li::before { content: '📌'; font-size: 14px; }
+#courseList li:last-child, #subjectList li:last-child { border-bottom: none; }
+.list-wrapper {
+    background: var(--cream);
+    border-radius: 10px;
+    border: 1px solid var(--cream-dark);
+    overflow: hidden;
+    margin-bottom: 16px;
+    max-height: 320px;
+    overflow-y: auto;
+}
+.empty-state {
+    text-align: center;
+    padding: 24px;
+    color: var(--text-light);
+    font-size: 13.5px;
+}
+
+/* Semester badge */
+.sem-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+.sem-1st { background: #dbeafe; color: #1e40af; }
+.sem-2nd { background: #ede9fe; color: #6d28d9; }
+
+/* ===== OVERLAY ===== */
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(27,67,50,0.45);
+    backdrop-filter: blur(2px);
+    display: none;
+    z-index: 900;
+}
+
+/* ===== FOOTER ===== */
+.site-footer {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: var(--footer-h);
+    background: var(--forest-900);
+    border-top: 2px solid var(--forest-800);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px 0 calc(var(--sidebar-w) + 24px);
+    z-index: 200;
+}
+.footer-copy { font-size: 11.5px; color: var(--forest-500); letter-spacing: 0.03em; }
+.footer-copy strong { color: var(--gold-light); font-weight: 600; }
+.footer-links { display: flex; gap: 16px; align-items: center; }
+.footer-links span {
+    font-size: 11px;
+    color: var(--forest-600);
+    letter-spacing: 0.04em;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--forest-800);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--forest-400); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="site-header">
+    <div class="header-logo-block">
+        <div class="header-seal">🏛️</div>
+        <div class="header-logo-text">
+            <div class="univ-name">University of Manila</div>
+            <div class="univ-sub">Est. 1913 · Manila, Philippines</div>
+        </div>
+    </div>
+    <div class="header-center">
+        <span class="header-badge">Faculty Portal</span>
+        <span class="header-title">Student Information System</span>
+    </div>
+    <div class="header-right">
+        <div class="header-clock">
+            <div class="time" id="clockTime">--:--:--</div>
+            <div class="date" id="clockDate">Loading...</div>
+        </div>
+        <div class="header-divider"></div>
+        <div class="header-user">
+            <div class="header-avatar">👤</div>
+            <div class="header-user-info">
+                <div class="name">Faculty User</div>
+                <div class="role-label">Faculty</div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- ===== SIDEBAR ===== -->
+<div class="sidebar">
+    <div class="sidebar-section">
+        <div class="sidebar-section-label">Overview</div>
+        <button class="sidebar-btn active" onclick="showDashboard(this)">
+            <span class="icon">📊</span> Dashboard
+        </button>
+    </div>
+
+    <div class="sidebar-section">
+        <div class="sidebar-section-label">Subjects</div>
+        <button class="sidebar-btn" onclick="openForm('formCreateSubject', this)">
+            <span class="icon">➕</span> Create Subjects
+        </button>
+        <button class="sidebar-btn" onclick="openForm('formViewSubjects', this)">
+            <span class="icon">📋</span> View Subjects
+        </button>
+    </div>
+
+    <div class="sidebar-section">
+        <div class="sidebar-section-label">Courses</div>
+        <button class="sidebar-btn" onclick="openForm('formCreateCourse', this)">
+            <span class="icon">📁</span> Create Course
+        </button>
+        <button class="sidebar-btn" onclick="openForm('formViewCourses', this)">
+            <span class="icon">📂</span> View Courses
+        </button>
+    </div>
+
+    <div class="sidebar-section">
+        <div class="sidebar-section-label">Management</div>
+        <button class="sidebar-btn" onclick="openForm('formAssignTeacher', this)">
+            <span class="icon">👨‍🏫</span> Assign Teacher
+        </button>
+        <button class="sidebar-btn" onclick="openForm('formSetSchoolYear', this)">
+            <span class="icon">🗓️</span> Set School Year
+        </button>
+    </div>
+
+    <div class="sidebar-logout">
+        <button onclick="logout()">🚪 Logout</button>
+    </div>
+</div>
+
+<!-- ===== MAIN ===== -->
+<div class="main">
+    <div id="dashboardView">
+        <div class="welcome-hero">
+            <h2>Faculty Dashboard — <span class="gold-accent">University of Manila</span></h2>
+            <p>Manage subjects, courses, teacher assignments, and academic scheduling · A.Y. 2025–2026</p>
+        </div>
+
+        <div class="quick-cards">
+            <div class="quick-card" onclick="openForm('formCreateSubject', null)">
+                <div class="card-icon">📌</div>
+                <div>
+                    <div class="card-label">Create Subjects</div>
+                    <div class="card-sub">Add new subject entries</div>
+                </div>
+            </div>
+            <div class="quick-card" onclick="openForm('formCreateCourse', null)">
+                <div class="card-icon">📁</div>
+                <div>
+                    <div class="card-label">Create Course</div>
+                    <div class="card-sub">Register a new course</div>
+                </div>
+            </div>
+            <div class="quick-card" onclick="openForm('formAssignTeacher', null)">
+                <div class="card-icon">👨‍🏫</div>
+                <div>
+                    <div class="card-label">Assign Teacher</div>
+                    <div class="card-sub">Schedule & assignments</div>
+                </div>
+            </div>
+            <div class="quick-card" onclick="openForm('formSetSchoolYear', null)">
+                <div class="card-icon">🗓️</div>
+                <div>
+                    <div class="card-label">Set School Year</div>
+                    <div class="card-sub">Configure academic period</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="quick-hint">
+            📌 Select an action from the sidebar or use the quick-access cards above to manage subjects, courses, and teacher schedules.
+        </div>
+    </div>
+</div>
+
+<!-- ===== FOOTER ===== -->
+<footer class="site-footer">
+    <div class="footer-copy">
+        &copy; 2025 <strong>University of Manila</strong> &nbsp;·&nbsp; All rights reserved &nbsp;·&nbsp; Student Information System
+    </div>
+    <div class="footer-links">
+        <span>v2.0.0</span>
+        <span>SIS Faculty Module</span>
+    </div>
+</footer>
+
+<!-- ===== OVERLAY ===== -->
+<div class="overlay" id="overlay" onclick="closeAllForms()"></div>
+
+<!-- ===== POPUPS ===== -->
+
+<!-- Create Course -->
+<div id="formCreateCourse" class="popup">
+    <h3>📁 Create Course</h3>
+    <label>Course Name</label>
+    <input type="text" id="courseName" placeholder="e.g. Bachelor of Science in Computer Science">
+    <label>Course Code</label>
+    <input type="text" id="courseCode" placeholder="e.g. BSCS">
+    <div style="margin-top: 16px;">
+        <button class="submit-btn" id="submitCreateCourse">Create Course</button>
+        <button class="close-btn" onclick="closeForm('formCreateCourse')">Cancel</button>
+    </div>
+</div>
+
+<!-- View Courses -->
+<div id="formViewCourses" class="popup">
+    <h3>📂 Courses</h3>
+    <div class="list-wrapper">
+        <ul id="courseList"><li class="empty-state">Loading courses...</li></ul>
+    </div>
+    <button class="close-btn" onclick="closeForm('formViewCourses')">Close</button>
+</div>
+
+<!-- Create Subjects -->
+<div id="formCreateSubject" class="popup">
+    <h3>➕ Create Subjects</h3>
+    <label>Course</label>
+    <select id="subjectCourse">
+        <option value="">Select Course</option>
+    </select>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div>
+            <label>Year Level</label>
+            <select id="subjectYearLevel">
+                <option value="">Select Year</option>
+                <option value="1">1st Year</option>
+                <option value="2">2nd Year</option>
+                <option value="3">3rd Year</option>
+                <option value="4">4th Year</option>
+            </select>
+        </div>
+        <div>
+            <label>Semester</label>
+            <select id="subjectSemester">
+                <option value="">Select Semester</option>
+                <option value="1st">1st Semester</option>
+                <option value="2nd">2nd Semester</option>
+            </select>
+        </div>
+    </div>
+
+    <label>Subjects <span style="font-weight:400;color:var(--text-light);">(one per line: CODE, Name)</span></label>
+    <textarea id="subjectNames" placeholder="CS101, Introduction to Programming&#10;CS102, Data Structures&#10;CC103"></textarea>
+    <p style="font-size:12px;color:var(--text-light);margin-top:-6px;margin-bottom:10px;">Format: CODE, Subject Name — name is optional</p>
+
+    <div style="margin-top: 16px;">
+        <button class="submit-btn" id="submitCreateSubject">Create Subjects</button>
+        <button class="close-btn" onclick="closeForm('formCreateSubject')">Cancel</button>
+    </div>
+</div>
+
+<!-- View Subjects -->
+<div id="formViewSubjects" class="popup" style="max-width: 680px;">
+    <h3>📋 Subjects</h3>
+    <div class="list-wrapper">
+        <ul id="subjectList"><li class="empty-state">Loading subjects...</li></ul>
+    </div>
+    <button class="close-btn" onclick="closeForm('formViewSubjects')">Close</button>
+</div>
+
+<!-- Assign Teacher -->
+<div id="formAssignTeacher" class="popup" style="max-width: 750px;">
+    <h3>👨‍🏫 Assign Teacher</h3>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div>
+            <label>Teacher</label>
+            <select id="assignTeacher"><option value="">Select Teacher</option></select>
+        </div>
+        <div>
+            <label>Course</label>
+            <select id="assignCourse"><option value="">Select Course</option></select>
+        </div>
+    </div>
+
+    <label>Year Level</label>
+    <select id="assignYearLevel">
+        <option value="">Select Year</option>
+        <option value="1">1st Year</option>
+        <option value="2">2nd Year</option>
+        <option value="3">3rd Year</option>
+        <option value="4">4th Year</option>
+    </select>
+
+    <h4>📅 Schedules</h4>
+    <div id="scheduleContainer"></div>
+    <button class="add-btn" type="button" onclick="addScheduleRow()">+ Add Schedule Row</button>
+
+    <div style="margin-top: 16px;">
+        <button class="submit-btn" id="submitAssignTeacher">Assign Teacher</button>
+        <button class="close-btn" onclick="closeForm('formAssignTeacher')">Cancel</button>
+    </div>
+</div>
+
+<!-- Set School Year -->
+<div id="formSetSchoolYear" class="popup">
+    <h3>🗓️ Set School Year</h3>
+    <label>Academic Year</label>
+    <input type="text" id="schoolYear" placeholder="e.g. 2024-2025">
+    <label>Semester</label>
+    <select id="schoolSemester">
+        <option value="">Select Semester</option>
+        <option value="1st">1st Semester</option>
+        <option value="2nd">2nd Semester</option>
+    </select>
+    <div style="margin-top: 16px;">
+        <button class="submit-btn" id="submitSchoolYear">Set School Year</button>
+        <button class="close-btn" onclick="closeForm('formSetSchoolYear')">Cancel</button>
+    </div>
+</div>
+
+<script>
+const API = "http://localhost:8080";
+
+/* ===== Clock ===== */
+function updateClock() {
+    const now = new Date();
+    document.getElementById("clockTime").textContent = now.toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    document.getElementById("clockDate").textContent = now.toLocaleDateString('en-PH', {weekday:'short', year:'numeric', month:'short', day:'numeric'});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+/* ===== Utils ===== */
+function getToken() {
+    const token = localStorage.getItem("jwt");
+    if(!token){ alert("Login required"); window.location.href="/login.html"; throw new Error("No token"); }
+    return token;
+}
+async function apiFetch(url, options = {}) {
+    options.headers = { "Authorization": "Bearer " + getToken(), "Content-Type": "application/json" };
+    const res = await fetch(API + url, options);
+    let data = {};
+    try { data = await res.json(); } catch {}
+    if(!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    return data;
+}
+function logout() { localStorage.removeItem("jwt"); window.location.href = "/login.html"; }
+
+/* ===== Sidebar active state ===== */
+function showDashboard(btn) {
+    closeAllForms();
+    document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+}
+
+/* ===== Popups ===== */
+function openForm(id, btn) {
+    closeAllForms();
+    document.getElementById("overlay").style.display = "block";
+    document.getElementById(id).style.display = "block";
+    document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+    if(id === "formViewCourses") loadCourses();
+    if(id === "formViewSubjects") loadSubjects();
+}
+function closeForm(id) { document.getElementById("overlay").style.display = "none"; document.getElementById(id).style.display = "none"; }
+function closeAllForms() { document.getElementById("overlay").style.display = "none"; document.querySelectorAll('.popup').forEach(p => p.style.display = 'none'); }
+
+/* ===== Load Data ===== */
+async function loadCourses() {
+    try {
+        const courses = await apiFetch("/faculty/courses");
+        const list = document.getElementById("courseList");
+        if(!courses || courses.length === 0) {
+            list.innerHTML = '<li class="empty-state">No courses found.</li>';
+            return;
+        }
+        list.innerHTML = courses.map(c => `<li><strong>${c.course_name}</strong>&nbsp;<span style="color:var(--text-light);font-size:12.5px;">(${c.code})</span></li>`).join('');
+    } catch(e) { alert("Failed loading courses: " + e.message); }
+}
+
+async function loadSubjects() {
+    try {
+        const subjects = await apiFetch("/faculty/subjects");
+        const list = document.getElementById("subjectList");
+        if(!subjects || subjects.length === 0) {
+            list.innerHTML = '<li class="empty-state">No subjects found.</li>';
+            return;
+        }
+        list.innerHTML = subjects.map(s => {
+            const semBadge = s.semester ? `<span class="sem-badge ${s.semester === '1st' ? 'sem-1st' : 'sem-2nd'}">${s.semester} Sem</span>` : '';
+            return `<li>
+                <div style="flex:1;">
+                    <strong>${s.subject_name}</strong>
+                    <span style="color:var(--text-light);font-size:12px;margin-left:6px;">(${s.code})</span>
+                </div>
+                <span style="font-size:12px;color:var(--forest-700);margin-right:8px;">Year ${s.year_level}</span>
+                ${semBadge}
+            </li>`;
+        }).join('');
+    } catch(e) { alert("Failed loading subjects: " + e.message); }
+}
+
+/* ===== Populate Sidebar Data ===== */
+async function populateSidebarData() {
+    try {
+        const courses = await apiFetch("/faculty/courses");
+        const subjectCourse = document.getElementById("subjectCourse");
+        const assignCourse = document.getElementById("assignCourse");
+        subjectCourse.innerHTML = "<option value=''>Select Course</option>";
+        assignCourse.innerHTML = "<option value=''>Select Course</option>";
+        courses.forEach(c => {
+            const opt = `<option value="${c.id}">${c.course_name} (${c.code})</option>`;
+            subjectCourse.innerHTML += opt;
+            assignCourse.innerHTML += opt;
+        });
+
+        const teachers = await apiFetch("/faculty/teachers");
+        const assignTeacher = document.getElementById("assignTeacher");
+        assignTeacher.innerHTML = "<option value=''>Select Teacher</option>";
+        teachers.forEach(t => assignTeacher.innerHTML += `<option value="${t.id}">${t.username}</option>`);
+    } catch(e) { console.error("Failed loading sidebar data:", e); }
+}
+populateSidebarData();
+
+/* ===== Load Subjects for Assign Teacher ===== */
+async function loadAssignSubjects(row = null) {
+    const course_id = parseInt(document.getElementById("assignCourse").value);
+    const year_level = parseInt(document.getElementById("assignYearLevel").value);
+    if(!course_id || !year_level) return;
+    try {
+        const subjects = await apiFetch(`/faculty/subjects?course_id=${course_id}&year_level=${year_level}`);
+        const html = '<option value="">Select Subject</option>' + subjects.map(s =>
+            `<option value="${s.id}">${s.code} - ${s.subject_name}${s.semester ? ' (' + s.semester + ' Sem)' : ''}</option>`
+        ).join('');
+        if(row) row.querySelector(".scheduleSubject").innerHTML = html;
+        else document.querySelectorAll(".scheduleSubject").forEach(s => s.innerHTML = html);
+    } catch(e) { console.error(e); }
+}
+
+document.getElementById("assignCourse").addEventListener("change", () => loadAssignSubjects());
+document.getElementById("assignYearLevel").addEventListener("change", () => loadAssignSubjects());
+
+/* ===== Schedule Rows ===== */
+function addScheduleRow() {
+    const container = document.getElementById("scheduleContainer");
+    const row = document.createElement("div");
+    row.className = "schedule-row";
+    row.innerHTML = `
+        <select class="scheduleSubject"><option value="">Select Subject</option></select>
+        <input type="text" class="scheduleRoom" placeholder="Room (e.g. 101)">
+        <select class="scheduleDay">
+            <option value="">Day</option>
+            <option>Monday</option>
+            <option>Tuesday</option>
+            <option>Wednesday</option>
+            <option>Thursday</option>
+            <option>Friday</option>
+            <option>Saturday</option>
+        </select>
+        <input type="time" class="scheduleStart">
+        <input type="time" class="scheduleEnd">
+        <button type="button" class="remove-row-btn" onclick="this.parentElement.remove()">✕</button>
+    `;
+    container.appendChild(row);
+    loadAssignSubjects(row);
+}
+
+/* ===== Submit Handlers ===== */
+
+// Create Course
+document.getElementById("submitCreateCourse").onclick = async () => {
+    const course_name = document.getElementById("courseName").value.trim();
+    const code = document.getElementById("courseCode").value.trim();
+    if(!course_name || !code) { alert("Please fill all fields"); return; }
+    try {
+        await apiFetch("/faculty/courses", { method: "POST", body: JSON.stringify({ course_name, code }) });
+        alert("Course created successfully");
+        closeForm("formCreateCourse");
+        document.getElementById("courseName").value = "";
+        document.getElementById("courseCode").value = "";
+        populateSidebarData();
+    } catch(e) { alert("Failed: " + e.message); }
+};
+
+// Create Subjects
+document.getElementById("submitCreateSubject").onclick = async () => {
+    const course_id = parseInt(document.getElementById("subjectCourse").value);
+    const year_level = parseInt(document.getElementById("subjectYearLevel").value);
+    const semester = document.getElementById("subjectSemester").value;
+    const subjects = document.getElementById("subjectNames").value.trim().split("\n").map(s => s.trim()).filter(s => s);
+
+    if(!course_id) { alert("Please select a course"); return; }
+    if(!year_level) { alert("Please select a year level"); return; }
+    if(!semester) { alert("Please select a semester"); return; }
+    if(subjects.length === 0) { alert("Please enter at least one subject"); return; }
+
+    try {
+        for(const line of subjects) {
+            const [code, name] = line.split(",").map(x => x.trim());
+            await apiFetch("/faculty/subjects", {
+                method: "POST",
+                body: JSON.stringify({ course_id, year_level, semester, code, subject_name: name || code })
+            });
+        }
+        alert("Subjects created successfully");
+        closeForm("formCreateSubject");
+        document.getElementById("subjectCourse").value = "";
+        document.getElementById("subjectYearLevel").value = "";
+        document.getElementById("subjectSemester").value = "";
+        document.getElementById("subjectNames").value = "";
+    } catch(e) { alert("Failed: " + e.message); }
+};
+
+// Assign Teacher
+document.getElementById("submitAssignTeacher").onclick = async () => {
+    const teacher_id = parseInt(document.getElementById("assignTeacher").value || "0");
+    const course_id = parseInt(document.getElementById("assignCourse").value || "0");
+    if(!teacher_id) { alert("Select a teacher"); return; }
+    if(!course_id) { alert("Select a course"); return; }
+
+    const rows = document.querySelectorAll("#scheduleContainer > .schedule-row");
+    const schedules = [];
+    rows.forEach(row => {
+        const subject_id = parseInt(row.querySelector(".scheduleSubject").value || "0");
+        const room = row.querySelector(".scheduleRoom").value.trim();
+        const day = row.querySelector(".scheduleDay").value;
+        const start_time = row.querySelector(".scheduleStart").value;
+        const end_time = row.querySelector(".scheduleEnd").value;
+        if(subject_id && room && day && start_time && end_time) {
+            schedules.push({ subject_id, course_id, room, day, start_time, end_time });
+        }
+    });
+    if(schedules.length === 0) { alert("Add at least one complete schedule row"); return; }
+
+    try {
+        await apiFetch("/faculty/assign-teacher", {
+            method: "POST",
+            body: JSON.stringify({ teacher_id, schedules })
+        });
+        alert("Teacher assigned successfully!");
+        closeForm("formAssignTeacher");
+        document.getElementById("assignTeacher").value = "";
+        document.getElementById("assignCourse").value = "";
+        document.getElementById("assignYearLevel").value = "";
+        document.getElementById("scheduleContainer").innerHTML = "";
+    } catch(e) { alert("Failed: " + e.message); }
+};
+
+// Set School Year
+document.getElementById("submitSchoolYear").onclick = async () => {
+    const year = document.getElementById("schoolYear").value.trim();
+    const semester = document.getElementById("schoolSemester").value;
+    if(!year || !semester) { alert("Please fill all fields"); return; }
+    try {
+        await apiFetch("/faculty/school-year", { method: "POST", body: JSON.stringify({ year, semester }) });
+        alert("School year set successfully!");
+        closeForm("formSetSchoolYear");
+        document.getElementById("schoolYear").value = "";
+        document.getElementById("schoolSemester").value = "";
+    } catch(e) { alert("Failed: " + e.message); }
+};
+</script>
+</body>
+</html>

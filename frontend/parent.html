@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parent Dashboard</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f0f2f5; }
+  header { background: #28a745; color: white; padding: 20px; text-align: center; }
+  h1 { margin: 0; font-size: 24px; }
+  .container { padding: 20px; }
+  .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+  button { padding: 10px 20px; border: none; background: #28a745; color: white; border-radius: 5px; cursor: pointer; }
+  button:hover { background: #218838; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+  th { background: #f2f2f2; }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>Parent Dashboard</h1>
+    <button id="logoutBtn">Logout</button>
+</header>
+
+<div class="container">
+    <div class="card">
+        <h2>Welcome, <span id="parentName"></span></h2>
+        <p>Role: <span id="parentRole"></span></p>
+    </div>
+
+    <div class="card">
+        <h2>Your Children</h2>
+        <table id="childrenTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Grade</th>
+                    <th>Attendance</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Children info will load here -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+    const logoutBtn = document.getElementById("logoutBtn");
+    const parentName = document.getElementById("parentName");
+    const parentRole = document.getElementById("parentRole");
+    const childrenTable = document.getElementById("childrenTable").querySelector("tbody");
+
+    try {
+        const res = await fetch("/parent/info", { method: "GET", credentials: "include" });
+        if (res.status === 401 || res.status === 403) {
+            window.location.href = "/login";
+            return;
+        }
+
+        const data = await res.json();
+        parentName.textContent = data.name || "Parent";
+        parentRole.textContent = data.role || "parent";
+
+        if (data.children && data.children.length > 0) {
+            data.children.forEach(child => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `<td>${child.name}</td><td>${child.grade}</td><td>${child.attendance}</td>`;
+                childrenTable.appendChild(tr);
+            });
+        } else {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<td colspan="3">No children data available.</td>`;
+            childrenTable.appendChild(tr);
+        }
+
+    } catch (err) {
+        console.error(err);
+        window.location.href = "/login";
+    }
+
+    logoutBtn.addEventListener("click", async () => {
+        await fetch("/logout", { method: "POST", credentials: "include" });
+        window.location.href = "/login";
+    });
+});
+</script>
+
+</body>
+</html>

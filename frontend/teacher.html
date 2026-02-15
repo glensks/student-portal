@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teacher Dashboard - University of Manila</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --forest-900: #1b4332;
+    --forest-800: #2d6a4f;
+    --forest-700: #40916c;
+    --forest-600: #52b788;
+    --forest-500: #74c69d;
+    --forest-400: #95d5b2;
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --cream: #f8f5f0;
+    --cream-dark: #ede9e2;
+    --text-dark: #1a1a2e;
+    --text-mid: #3d4451;
+    --text-light: #6b7280;
+    --white: #ffffff;
+    --red: #c0392b;
+    --red-light: #e74c3c;
+    --sidebar-w: 240px;
+    --header-h: 72px;
+    --footer-h: 48px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--text-dark);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ===== HEADER ===== */
+.site-header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: var(--header-h);
+    background: var(--forest-900);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    padding: 0 24px 0 0;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.35);
+    border-bottom: 3px solid var(--gold);
+}
+.header-logo-block {
+    width: var(--sidebar-w);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 20px;
+    border-right: 1px solid rgba(255,255,255,0.12);
+    height: 100%;
+}
+.header-seal {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 2px var(--gold-light), 0 0 0 4px rgba(201,168,76,0.3);
+    font-size: 22px;
+}
+.header-logo-text {
+    line-height: 1.15;
+}
+.header-logo-text .univ-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--white);
+    letter-spacing: 0.02em;
+}
+.header-logo-text .univ-sub {
+    font-size: 10px;
+    color: var(--forest-400);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+.header-center {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    padding-left: 24px;
+    gap: 8px;
+}
+.header-badge {
+    background: var(--forest-800);
+    color: var(--forest-400);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--forest-700);
+}
+.header-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--white);
+    letter-spacing: 0.01em;
+}
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.header-clock {
+    text-align: right;
+}
+.header-clock .time {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--gold-light);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.05em;
+}
+.header-clock .date {
+    font-size: 11px;
+    color: var(--forest-400);
+    letter-spacing: 0.04em;
+}
+.header-divider {
+    width: 1px;
+    height: 30px;
+    background: rgba(255,255,255,0.15);
+}
+.header-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.header-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--forest-700);
+    border: 2px solid var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: var(--white);
+}
+.header-user-info .name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--white);
+}
+.header-user-info .role-label {
+    font-size: 10px;
+    color: var(--forest-400);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+    width: var(--sidebar-w);
+    background: var(--forest-900);
+    position: fixed;
+    top: var(--header-h);
+    bottom: var(--footer-h);
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    border-right: 1px solid rgba(255,255,255,0.07);
+    z-index: 100;
+}
+.sidebar-section {
+    padding: 16px 14px 8px;
+}
+.sidebar-section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--forest-600);
+    padding: 0 8px;
+    margin-bottom: 6px;
+}
+.sidebar-btn {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.75);
+    text-align: left;
+    padding: 10px 12px;
+    width: 100%;
+    cursor: pointer;
+    font-size: 13.5px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s;
+    letter-spacing: 0.01em;
+    margin-bottom: 2px;
+}
+.sidebar-btn:hover {
+    background: rgba(255,255,255,0.08);
+    color: var(--white);
+}
+.sidebar-btn.active {
+    background: var(--forest-800);
+    color: var(--white);
+    box-shadow: inset 3px 0 0 var(--gold);
+}
+.sidebar-btn .icon {
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+}
+.sidebar-logout {
+    margin-top: auto;
+    padding: 14px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+.sidebar-logout button {
+    background: rgba(192,57,43,0.15);
+    border: 1px solid rgba(192,57,43,0.35);
+    color: #e88;
+    text-align: center;
+    padding: 10px;
+    width: 100%;
+    cursor: pointer;
+    font-size: 13.5px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
+}
+.sidebar-logout button:hover {
+    background: rgba(192,57,43,0.3);
+    color: #faa;
+}
+
+/* ===== MAIN ===== */
+.main {
+    margin-left: var(--sidebar-w);
+    margin-top: var(--header-h);
+    margin-bottom: var(--footer-h);
+    padding: 28px;
+    min-height: calc(100vh - var(--header-h) - var(--footer-h));
+}
+
+/* Welcome hero */
+.welcome-hero {
+    background: linear-gradient(135deg, var(--forest-900) 0%, var(--forest-800) 60%, var(--forest-700) 100%);
+    border-radius: 14px;
+    padding: 28px 32px;
+    margin-bottom: 28px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(27,67,50,0.25);
+}
+.welcome-hero::before {
+    content: '👨‍🏫';
+    position: absolute;
+    right: 24px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 80px;
+    opacity: 0.12;
+}
+.welcome-hero h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    letter-spacing: 0.01em;
+}
+.welcome-hero p {
+    font-size: 13.5px;
+    color: var(--forest-400);
+    letter-spacing: 0.02em;
+}
+.welcome-hero .gold-accent {
+    color: var(--gold-light);
+    font-weight: 600;
+}
+
+/* Section styling */
+.section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--forest-900);
+    margin: 32px 0 20px 0;
+    padding-bottom: 14px;
+    border-bottom: 2px solid var(--cream-dark);
+    letter-spacing: 0.01em;
+}
+
+/* Controls */
+.controls-panel {
+    background: var(--white);
+    padding: 20px 24px;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    border: 1px solid var(--cream-dark);
+    margin-bottom: 24px;
+}
+
+.controls-panel select {
+    width: 100%;
+    max-width: 450px;
+    padding: 12px 15px;
+    border: 1.5px solid var(--cream-dark);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--text-dark);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.controls-panel select:hover {
+    border-color: var(--forest-600);
+}
+
+.controls-panel select:focus {
+    border-color: var(--forest-700);
+    box-shadow: 0 0 0 3px rgba(64, 145, 108, 0.1);
+}
+
+/* Tables */
+.table-wrapper {
+    background: var(--white);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    border: 1px solid var(--cream-dark);
+    margin-top: 20px;
+}
+
+table { 
+    width: 100%; 
+    border-collapse: collapse;
+}
+
+th {
+    background: var(--forest-900);
+    color: rgba(255,255,255,0.9);
+    padding: 13px 14px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+td {
+    padding: 12px 14px;
+    font-size: 13.5px;
+    border-bottom: 1px solid var(--cream-dark);
+    vertical-align: middle;
+}
+
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #f0f7f4; }
+
+/* Input fields */
+input, textarea, select {
+    padding: 10px 14px;
+    border: 1.5px solid var(--cream-dark);
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--text-dark);
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+input:focus, textarea:focus, select:focus {
+    border-color: var(--forest-700);
+    box-shadow: 0 0 0 3px rgba(64, 145, 108, 0.1);
+}
+
+input[type="number"] { width: 90px; }
+input[type="text"] { width: 100%; }
+input[type="datetime-local"] { width: 200px; }
+textarea { 
+    width: 100%; 
+    resize: vertical;
+    min-height: 120px;
+}
+
+/* Buttons */
+button {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: 0.02em;
+}
+
+.btn-primary {
+    background: var(--forest-700);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--forest-800);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(64, 145, 108, 0.3);
+}
+
+.btn-success {
+    background: var(--forest-600);
+    color: white;
+}
+
+.btn-success:hover {
+    background: var(--forest-700);
+    transform: translateY(-1px);
+}
+
+.btn-danger {
+    background: var(--red-light);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: var(--red);
+}
+
+.btn-warning {
+    background: var(--gold);
+    color: #3a2800;
+}
+
+.btn-warning:hover {
+    background: var(--gold-light);
+}
+
+/* Badges */
+.badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 14px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+}
+
+.badge-success { background: #d1fae5; color: #065f46; }
+.badge-danger { background: #fee2e2; color: #991b1b; }
+.badge-warning { background: #fef3c7; color: #92400e; }
+.badge-info { background: #dbeafe; color: #1e40af; }
+
+/* Upload Form */
+.upload-form {
+    background: var(--cream);
+    padding: 24px;
+    border-radius: 12px;
+    border: 1px solid var(--cream-dark);
+    margin: 20px 0;
+}
+
+.upload-form h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--forest-900);
+    margin-bottom: 20px;
+    letter-spacing: 0.01em;
+}
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--forest-900);
+    margin-bottom: 8px;
+    letter-spacing: 0.02em;
+}
+
+/* Announcement Cards */
+.ann-card {
+    background: var(--white);
+    border: 1px solid var(--cream-dark);
+    border-left: 4px solid var(--forest-600);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 18px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    transition: all 0.2s ease;
+}
+
+.ann-card:hover {
+    box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.ann-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.ann-card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--forest-900);
+    margin: 0 0 8px 0;
+    letter-spacing: 0.01em;
+}
+
+.ann-card-meta {
+    font-size: 12px;
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ann-card-body {
+    color: var(--text-dark);
+    font-size: 13.5px;
+    line-height: 1.7;
+    margin: 14px 0 0 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.ann-card-img-wrap {
+    margin-top: 16px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--cream-dark);
+    display: inline-block;
+    max-width: 100%;
+    background: var(--cream);
+}
+
+.ann-card-img-wrap img {
+    max-width: 100%;
+    max-height: 300px;
+    object-fit: contain;
+    display: block;
+    cursor: zoom-in;
+    transition: opacity 0.2s;
+}
+
+.ann-card-img-wrap img:hover { opacity: 0.9; }
+
+.ann-delete-btn {
+    background: var(--red-light);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 14px;
+    font-size: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.ann-delete-btn:hover {
+    background: var(--red);
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(27, 67, 50, 0.45);
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    background: var(--white);
+    margin: 5% auto;
+    padding: 32px;
+    border-radius: 14px;
+    border-top: 4px solid var(--forest-700);
+    width: 90%;
+    max-width: 800px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.modal-content.large {
+    max-width: 1100px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--cream-dark);
+}
+
+.modal-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--forest-900);
+    letter-spacing: 0.01em;
+    margin: 0;
+}
+
+.close {
+    background: none;
+    border: none;
+    font-size: 32px;
+    cursor: pointer;
+    color: var(--text-light);
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    line-height: 1;
+    padding: 0;
+}
+
+.close:hover {
+    background: var(--cream);
+    color: var(--text-dark);
+}
+
+/* Empty state */
+.no-data {
+    text-align: center;
+    color: var(--text-light);
+    font-style: italic;
+    padding: 40px 20px;
+    font-size: 14px;
+}
+
+.ann-empty {
+    text-align: center;
+    color: var(--text-light);
+    padding: 60px 20px;
+    font-size: 14px;
+}
+
+.ann-empty-icon {
+    font-size: 56px;
+    display: block;
+    margin-bottom: 16px;
+    opacity: 0.4;
+}
+
+/* Footer */
+.site-footer {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: var(--footer-h);
+    background: var(--forest-900);
+    border-top: 2px solid var(--forest-800);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px 0 calc(var(--sidebar-w) + 24px);
+    z-index: 200;
+}
+
+.footer-copy {
+    font-size: 11.5px;
+    color: var(--forest-500);
+    letter-spacing: 0.03em;
+}
+
+.footer-copy strong {
+    color: var(--gold-light);
+    font-weight: 600;
+}
+
+.footer-links {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.footer-links span {
+    font-size: 11px;
+    color: var(--forest-600);
+    letter-spacing: 0.04em;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--forest-800);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--forest-400); border-radius: 3px; }
+
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+    }
+    
+    .main {
+        margin-left: 0;
+    }
+    
+    .site-footer {
+        padding-left: 24px;
+    }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="site-header">
+    <div class="header-logo-block">
+        <div class="header-seal">🏛️</div>
+        <div class="header-logo-text">
+            <div class="univ-name">University of Manila</div>
+            <div class="univ-sub">Est. 1913 · Manila, Philippines</div>
+        </div>
+    </div>
+    <div class="header-center">
+        <span class="header-badge">Teacher Portal</span>
+        <span class="header-title">Learning Management System</span>
+    </div>
+    <div class="header-right">
+        <div class="header-clock">
+            <div class="time" id="clockTime">--:--:--</div>
+            <div class="date" id="clockDate">Loading...</div>
+        </div>
+        <div class="header-divider"></div>
+        <div class="header-user">
+            <div class="header-avatar">👨‍🏫</div>
+            <div class="header-user-info">
+                <div class="name">Faculty</div>
+                <div class="role-label">Teaching Staff</div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- ===== SIDEBAR ===== -->
+<div class="sidebar">
+    <div class="sidebar-section">
+        <div class="sidebar-section-label">Teaching</div>
+        <button class="sidebar-btn" onclick="fetchClasses()">
+            <span class="icon">📋</span> My Classes
+        </button>
+        <button class="sidebar-btn" onclick="showStudentsDropdown()">
+            <span class="icon">👥</span> View Students
+        </button>
+        <button class="sidebar-btn" onclick="showGradesDropdown()">
+            <span class="icon">📊</span> Submit Grades
+        </button>
+    </div>
+
+    <div class="sidebar-section">
+        <div class="sidebar-section-label">Resources</div>
+        <button class="sidebar-btn" onclick="showLessonsDropdown()">
+            <span class="icon">📁</span> Lesson Materials
+        </button>
+        <button class="sidebar-btn" onclick="showAnnouncementsDropdown()">
+            <span class="icon">📢</span> Announcements
+        </button>
+    </div>
+
+    <div class="sidebar-logout">
+        <button onclick="logout()">🚪 Logout</button>
+    </div>
+</div>
+
+<!-- ===== MAIN ===== -->
+<div class="main">
+    <div class="welcome-hero">
+        <h2>Welcome to the <span class="gold-accent">Teacher Portal</span></h2>
+        <p>Learning Management System &nbsp;·&nbsp; Academic Year 2025–2026</p>
+    </div>
+
+    <!-- Classes -->
+    <h2 id="classesTitle" class="section-title" style="display:none;"></h2>
+    <div class="table-wrapper" id="classesTableWrapper" style="display:none;">
+        <table id="classesTable">
+            <thead>
+                <tr>
+                    <th>ID</th><th>Subject</th><th>Code</th><th>Course</th><th>Room</th><th>Day</th><th>Time</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <!-- Students -->
+    <h2 id="studentsTitle" class="section-title" style="display:none;">👥 Students Enrolled</h2>
+    <div class="controls-panel" id="selectClassPanel" style="display:none;">
+        <select id="selectClass"></select>
+    </div>
+    <div class="table-wrapper" id="studentsTableWrapper" style="display:none;">
+        <table id="studentsTable">
+            <thead>
+                <tr><th>Student ID</th><th>Full Name</th><th>Email</th><th>Year Level</th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <!-- Grades -->
+    <h2 id="gradesTitle" class="section-title" style="display:none;">📊 Submit / View Grades</h2>
+    <div class="controls-panel" id="selectClassGradesPanel" style="display:none;">
+        <select id="selectClassGrades">
+            <option value="">-- Select Class to Input Grades --</option>
+        </select>
+    </div>
+    <div class="table-wrapper" id="gradesTableWrapper" style="display:none;">
+        <table id="gradesTable">
+            <thead>
+                <tr>
+                    <th>Student ID</th><th>Full Name</th><th>Year</th><th>Prelim</th><th>Midterm</th><th>Finals</th><th>Remarks</th><th>Action</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <!-- Lessons -->
+    <h2 id="lessonsTitle" class="section-title" style="display:none;">📁 Lesson Materials</h2>
+    <div class="controls-panel" id="selectClassLessonsPanel" style="display:none;">
+        <select id="selectClassLessons">
+            <option value="">-- Select Class --</option>
+        </select>
+    </div>
+    <div id="uploadForm" class="upload-form" style="display:none;">
+        <h3>Upload Lesson Material</h3>
+        <form id="lessonForm" onsubmit="uploadLesson(event)">
+            <div class="form-group">
+                <label>Title:</label>
+                <input type="text" id="lessonTitle" required>
+            </div>
+            <div class="form-group">
+                <label>Description:</label>
+                <textarea id="lessonDescription"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Type:</label>
+                <select id="lessonType" required style="width:100%; max-width:300px;">
+                    <option value="">-- Select Type --</option>
+                    <option value="video">Video</option>
+                    <option value="image">Image</option>
+                    <option value="document">Document</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Due Date (Optional):</label>
+                <input type="datetime-local" id="lessonDueDate">
+            </div>
+            <div class="form-group">
+                <label>File:</label>
+                <input type="file" id="lessonFile" required accept="video/*,image/*,application/pdf">
+            </div>
+            <button type="submit" class="btn-success">⬆️ Upload</button>
+        </form>
+    </div>
+    <div class="table-wrapper" id="lessonsTableWrapper" style="display:none;">
+        <table id="lessonsTable">
+            <thead>
+                <tr>
+                    <th>ID</th><th>Title</th><th>Type</th><th>File Size</th><th>Due Date</th><th>Status</th><th>Submissions</th><th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <!-- Announcements -->
+    <h2 id="announcementsTitle" class="section-title" style="display:none;">📢 Announcements</h2>
+    <div class="controls-panel" id="selectClassAnnouncementsPanel" style="display:none;">
+        <select id="selectClassAnnouncements">
+            <option value="">-- Select Class --</option>
+        </select>
+    </div>
+
+    <div id="announcementForm" class="upload-form" style="display:none;">
+        <h3>📢 Post New Announcement</h3>
+        <form id="annForm" onsubmit="postAnnouncement(event)">
+            <div class="form-group">
+                <label>Title</label>
+                <input type="text" id="annTitle" required placeholder="e.g. No Class Tomorrow">
+            </div>
+            <div class="form-group">
+                <label>Message</label>
+                <textarea id="annContent" required placeholder="Write your announcement here..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Image (Optional)</label>
+                <input type="file" id="annImage" accept="image/*">
+            </div>
+            <button type="submit" class="btn-primary">📢 Post Announcement</button>
+        </form>
+    </div>
+
+    <div id="announcementsList" style="display:none; margin-top:20px;"></div>
+</div>
+
+<!-- ===== FOOTER ===== -->
+<footer class="site-footer">
+    <div class="footer-copy">
+        &copy; 2025 <strong>University of Manila</strong> &nbsp;·&nbsp; All rights reserved &nbsp;·&nbsp; Teacher Portal
+    </div>
+    <div class="footer-links">
+        <span>v2.0.0</span>
+        <span>LMS Module</span>
+    </div>
+</footer>
+
+<!-- Review Modal -->
+<div id="reviewModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Review Submission</h2>
+            <button class="close" onclick="closeReviewModal()">×</button>
+        </div>
+        <div id="reviewDetails"></div>
+        <form id="reviewForm" onsubmit="submitReview(event)" style="margin-top:20px;">
+            <input type="hidden" id="reviewSubmissionId">
+            <div class="form-group">
+                <label>Decision:</label>
+                <select id="reviewStatus" required style="width:100%;">
+                    <option value="">-- Select Decision --</option>
+                    <option value="accepted">✅ Accept</option>
+                    <option value="rejected">❌ Reject</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Grade (Optional, 0-100):</label>
+                <input type="number" id="reviewGrade" min="0" max="100" step="0.01" style="width:100%;">
+            </div>
+            <div class="form-group">
+                <label>Feedback / Remarks:</label>
+                <textarea id="reviewRemarks"></textarea>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button type="submit" class="btn-success">Submit Review</button>
+                <button type="button" onclick="closeReviewModal()" class="btn-danger">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// ===== Clock ===== 
+function updateClock() {
+    const now = new Date();
+    document.getElementById("clockTime").textContent = now.toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    document.getElementById("clockDate").textContent = now.toLocaleDateString('en-PH', {weekday:'short', year:'numeric', month:'short', day:'numeric'});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+const API = "http://localhost:8080";
+function token() { return localStorage.getItem("jwt") || ""; }
+function logout() {
+    if (confirm('Are you sure you want to logout?')) {
+        localStorage.removeItem('jwt');
+        window.location.href = '/login.html';
+    }
+}
+let classesData = [];
+let selectedClassForLessons = null;
+let selectedClassForAnnouncements = null;
+
+// ====================== HIDE ALL ======================
+function hideAll() {
+    const ids = [
+        "classesTableWrapper", "classesTitle",
+        "studentsTableWrapper", "studentsTitle", "selectClassPanel",
+        "gradesTableWrapper", "gradesTitle", "selectClassGradesPanel",
+        "lessonsTableWrapper", "lessonsTitle", "selectClassLessonsPanel", "uploadForm",
+        "announcementsTitle", "selectClassAnnouncementsPanel", "announcementForm", "announcementsList"
+    ];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = "none";
+    });
+    selectedClassForLessons = null;
+    selectedClassForAnnouncements = null;
+    
+    document.querySelectorAll('.sidebar-btn').forEach(btn => btn.classList.remove('active'));
+}
+
+// ====================== CLASSES ======================
+async function fetchClasses() {
+    hideAll();
+    event.target.classList.add('active');
+    try {
+        const res = await fetch(`${API}/teacher/classes`, { headers: { Authorization: "Bearer " + token() } });
+        const data = await res.json();
+        classesData = data.classes || [];
+        const tbody = document.querySelector("#classesTable tbody");
+        tbody.innerHTML = "";
+        if (classesData.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="no-data">No classes assigned</td></tr>`;
+        } else {
+            classesData.forEach(c => {
+                tbody.innerHTML += `<tr>
+                    <td>${c.id}</td><td><strong>${c.subject}</strong></td><td>${c.subject_code}</td>
+                    <td>${c.course}</td><td>${c.room}</td><td>${c.day}</td>
+                    <td>${c.time_start} - ${c.time_end}</td>
+                </tr>`;
+            });
+        }
+        document.getElementById("classesTitle").innerText = `📋 My Classes (${classesData.length})`;
+        document.getElementById("classesTitle").style.display = "block";
+        document.getElementById("classesTableWrapper").style.display = "block";
+    } catch (e) { alert("Error fetching classes: " + e.message); }
+}
+
+// ====================== STUDENTS ======================
+async function showStudentsDropdown() {
+    hideAll();
+    event.target.classList.add('active');
+    if (classesData.length === 0) await fetchClasses();
+    const select = document.getElementById("selectClass");
+    select.innerHTML = `<option value="">-- Select Class --</option>`;
+    classesData.forEach(c => {
+        select.innerHTML += `<option value="${c.id}">${c.subject} (${c.subject_code}) - ${c.day} ${c.time_start}-${c.time_end}</option>`;
+    });
+    select.onchange = () => { if (select.value) fetchStudents(select.value); else document.getElementById("studentsTableWrapper").style.display = "none"; };
+    document.getElementById("selectClassPanel").style.display = "block";
+    document.getElementById("studentsTitle").style.display = "block";
+}
+
+async function fetchStudents(classId) {
+    try {
+        const res = await fetch(`${API}/teacher/students?class_id=${classId}`, { headers: { Authorization: "Bearer " + token() } });
+        const data = await res.json();
+        const students = data.students || [];
+        const tbody = document.querySelector("#studentsTable tbody");
+        tbody.innerHTML = "";
+        if (students.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" class="no-data">No students enrolled</td></tr>`;
+        } else {
+            students.forEach(s => {
+                tbody.innerHTML += `<tr>
+                    <td>${s.student_id}</td><td><strong>${s.full_name}</strong></td>
+                    <td>${s.email}</td><td>Year ${s.year_level}</td>
+                </tr>`;
+            });
+        }
+        document.getElementById("studentsTableWrapper").style.display = "block";
+    } catch (e) { alert("Error fetching students: " + e.message); }
+}
+
+// ====================== GRADES ======================
+async function showGradesDropdown() {
+    hideAll();
+    event.target.classList.add('active');
+    if (classesData.length === 0) await fetchClasses();
+    const select = document.getElementById("selectClassGrades");
+    select.innerHTML = `<option value="">-- Select Class --</option>`;
+    classesData.forEach(c => {
+        select.innerHTML += `<option value="${c.id}">${c.subject} (${c.subject_code}) - ${c.course}</option>`;
+    });
+    select.onchange = () => {
+        const val = select.value;
+        if (val) fetchGrades(val);
+        else document.getElementById("gradesTableWrapper").style.display = "none";
+    };
+    document.getElementById("selectClassGradesPanel").style.display = "block";
+    document.getElementById("gradesTitle").style.display = "block";
+}
+
+async function fetchGrades(classId) {
+    try {
+        const res = await fetch(`${API}/teacher/grades?class_id=${classId}`, { headers: { Authorization: "Bearer " + token() } });
+        const data = await res.json();
+        if (!res.ok) { alert(data.error || "Failed"); return; }
+        const students = data.students || [];
+        const tbody = document.querySelector("#gradesTable tbody");
+        tbody.innerHTML = "";
+        if (students.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" class="no-data">No students enrolled</td></tr>`;
+        } else {
+            students.forEach(s => {
+                tbody.innerHTML += `<tr>
+                    <td>${s.student_id}</td><td><strong>${s.full_name}</strong></td><td>Year ${s.year_level}</td>
+                    <td><input type="number" id="prelim_${s.student_id}" value="${s.prelim || ''}" min="0" max="100" step="0.01"></td>
+                    <td><input type="number" id="midterm_${s.student_id}" value="${s.midterm || ''}" min="0" max="100" step="0.01"></td>
+                    <td><input type="number" id="finals_${s.student_id}" value="${s.finals || ''}" min="0" max="100" step="0.01"></td>
+                    <td><input type="text" id="remarks_${s.student_id}" value="${s.remarks || ''}" style="width:150px;"></td>
+                    <td><button class="btn-success" onclick="submitGrade(${classId},${s.student_id})">Submit</button></td>
+                </tr>`;
+            });
+        }
+        document.getElementById("gradesTableWrapper").style.display = "block";
+    } catch (e) { alert("Error: " + e.message); }
+}
+
+async function submitGrade(classId, studentId) {
+    const prelim = parseFloat(document.getElementById(`prelim_${studentId}`).value) || null;
+    const midterm = parseFloat(document.getElementById(`midterm_${studentId}`).value) || null;
+    const finals = parseFloat(document.getElementById(`finals_${studentId}`).value) || null;
+    const remarks = document.getElementById(`remarks_${studentId}`).value || "";
+    if (!prelim && !midterm && !finals) { alert("Please enter at least one grade"); return; }
+    const payload = { class_id: classId, student_id: studentId, prelim, midterm, finals, remarks };
+    try {
+        const res = await fetch(`${API}/teacher/grades`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token() },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) { alert(data.message); fetchGrades(classId); }
+        else alert(data.error || "Error");
+    } catch (e) { alert("Network error: " + e.message); }
+}
+
+// ====================== LESSONS ======================
+async function showLessonsDropdown() {
+    hideAll();
+    event.target.classList.add('active');
+    if (classesData.length === 0) await fetchClasses();
+    const select = document.getElementById("selectClassLessons");
+    select.innerHTML = `<option value="">-- Select Class --</option>`;
+    classesData.forEach(c => {
+        select.innerHTML += `<option value="${c.id}">${c.subject} (${c.subject_code}) - ${c.course}</option>`;
+    });
+    select.onchange = () => {
+        const val = select.value;
+        if (val) {
+            selectedClassForLessons = val;
+            fetchLessons(val);
+            document.getElementById("uploadForm").style.display = "block";
+        } else {
+            selectedClassForLessons = null;
+            document.getElementById("uploadForm").style.display = "none";
+            document.getElementById("lessonsTableWrapper").style.display = "none";
+        }
+    };
+    document.getElementById("selectClassLessonsPanel").style.display = "block";
+    document.getElementById("lessonsTitle").style.display = "block";
+}
+
+async function uploadLesson(e) {
+    e.preventDefault();
+    if (!selectedClassForLessons) { alert("Select class first"); return; }
+    const title = document.getElementById("lessonTitle").value;
+    const description = document.getElementById("lessonDescription").value;
+    const type = document.getElementById("lessonType").value;
+    const dueDate = document.getElementById("lessonDueDate").value;
+    const file = document.getElementById("lessonFile").files[0];
+    if (!file) { alert("Select file"); return; }
+    const formData = new FormData();
+    formData.append("class_id", selectedClassForLessons);
+    formData.append("title", title);
+    formData.append("description", description);
+    formData.append("type", type);
+    formData.append("file", file);
+    if (dueDate) { formData.append("due_date", new Date(dueDate).toISOString().slice(0, 19).replace('T', ' ')); }
+    try {
+        const res = await fetch(`${API}/teacher/lessons`, {
+            method: "POST",
+            headers: { Authorization: "Bearer " + token() },
+            body: formData
+        });
+        const data = await res.json();
+        if (res.ok) { alert(data.message); document.getElementById("lessonForm").reset(); fetchLessons(selectedClassForLessons); }
+        else alert(data.error || "Error uploading");
+    } catch (e) { alert("Network error: " + e.message); }
+}
+
+async function fetchLessons(classId) {
+    try {
+        const res = await fetch(`${API}/teacher/lessons?class_id=${classId}`, { headers: { Authorization: "Bearer " + token() } });
+        const data = await res.json();
+        if (!res.ok) { alert(data.error || "Failed fetching"); return; }
+        const materials = data.materials || [];
+        const tbody = document.querySelector("#lessonsTable tbody");
+        tbody.innerHTML = "";
+        if (materials.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" class="no-data">No lessons uploaded yet</td></tr>`;
+        } else {
+            materials.forEach(m => {
+                const due = m.due_date ? new Date(m.due_date).toLocaleString() : "No deadline";
+                const status = m.is_overdue
+                    ? '<span class="badge badge-danger">Overdue</span>'
+                    : '<span class="badge badge-success">Active</span>';
+                const size = (m.file_size / 1024 / 1024).toFixed(2) + " MB";
+                tbody.innerHTML += `<tr>
+                    <td>${m.id}</td><td><strong>${m.title}</strong></td>
+                    <td><span class="badge badge-warning">${m.type.toUpperCase()}</span></td>
+                    <td>${size}</td><td>${due}</td><td>${status}</td>
+                    <td>${m.total_submissions}${m.late_submissions > 0 ? ` <span style="color:#dc2626;font-size:12px;">(${m.late_submissions} late)</span>` : ''}</td>
+                    <td>
+                        <button class="btn-success" onclick="viewSubmissions(${m.id})" style="font-size:12px; padding:6px 12px;">View</button>
+                        <button class="btn-danger" onclick="deleteLesson(${m.id})" style="font-size:12px; padding:6px 12px;">Delete</button>
+                    </td>
+                </tr>`;
+            });
+        }
+        document.getElementById("lessonsTableWrapper").style.display = "block";
+    } catch (e) { alert("Error fetching lessons: " + e.message); }
+}
+
+async function viewSubmissions(materialId) {
+    try {
+        const res = await fetch(`${API}/teacher/lessons/${materialId}/submissions`, { headers: { Authorization: "Bearer " + token() } });
+        const data = await res.json();
+        if (!res.ok) { alert(data.error || "Failed to fetch submissions"); return; }
+        const subs = data.submissions || [];
+        if (subs.length === 0) { alert("No submissions yet for this lesson"); return; }
+        showSubmissionsModal(subs, materialId);
+    } catch (e) { alert("Error: " + e.message); }
+}
+
+function showSubmissionsModal(submissions, materialId) {
+    let tableHTML = `
+        <div style="max-height:480px;overflow-y:auto;">
+        <table style="width:100%;border-collapse:collapse;">
+            <thead style="position:sticky;top:0;background:var(--forest-900);color:white;">
+                <tr>
+                    <th style="padding:10px;border:1px solid #ddd;">Student</th>
+                    <th style="padding:10px;border:1px solid #ddd;">Email</th>
+                    <th style="padding:10px;border:1px solid #ddd;">File</th>
+                    <th style="padding:10px;border:1px solid #ddd;">Submitted</th>
+                    <th style="padding:10px;border:1px solid #ddd;">Status</th>
+                    <th style="padding:10px;border:1px solid #ddd;">Remarks</th>
+                    <th style="padding:10px;border:1px solid #ddd;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>`;
+    submissions.forEach(s => {
+        const statusLower = (s.status || '').toLowerCase();
+        const statusBadge = statusLower === 'late' ? '<span class="badge badge-danger">LATE</span>'
+            : statusLower === 'accepted' ? '<span class="badge badge-success">ACCEPTED</span>'
+            : statusLower === 'rejected' ? '<span class="badge badge-danger">REJECTED</span>'
+            : statusLower === 'on-time' ? '<span class="badge badge-info">ON TIME</span>'
+            : '<span class="badge badge-info">PENDING</span>';
+        const submitted = new Date(s.submitted_at).toLocaleString();
+        const downloadUrl = s.download_url || s.file_path || '';
+        const isPending = (statusLower === 'pending' || statusLower === 'on-time' || statusLower === 'late');
+        const remarksText = s.remarks ? `<small>${s.remarks}</small>` : '<small style="color:#9ca3af;">—</small>';
+        const rowBg = statusLower === 'accepted' ? '#f0fdf4' : statusLower === 'rejected' ? '#fef2f2' : 'white';
+        const actionButtons = isPending
+            ? `<button class="btn-success" onclick="quickReview(${s.id},'${s.student_name.replace(/'/g,"\\'")}','accept')" style="font-size:11px;padding:4px 8px;margin:2px;">✅ Accept</button>
+               <button class="btn-danger" onclick="quickReview(${s.id},'${s.student_name.replace(/'/g,"\\'")}','reject')" style="font-size:11px;padding:4px 8px;margin:2px;">❌ Reject</button>
+               <br><button class="btn-warning" onclick="openDetailedReview(${s.id},'${s.student_name.replace(/'/g,"\\'")}','${s.file_name.replace(/'/g,"\\'")}','${downloadUrl}')" style="font-size:11px;padding:4px 8px;margin:2px;">📝 Grade</button>`
+            : `<small style="color:#16a34a;">✓ Reviewed</small>`;
+        tableHTML += `<tr style="background:${rowBg}">
+            <td style="padding:10px;border:1px solid #f0f0f0;"><strong>${s.student_name}</strong></td>
+            <td style="padding:10px;border:1px solid #f0f0f0;">${s.email}</td>
+            <td style="padding:10px;border:1px solid #f0f0f0;">
+                <a href="${API}/${downloadUrl}" target="_blank" download style="color:var(--forest-700);text-decoration:none;">📥 ${s.file_name}</a>
+                <br><small style="color:#9ca3af;">${(s.file_size/1024/1024).toFixed(2)} MB</small>
+            </td>
+            <td style="padding:10px;border:1px solid #f0f0f0;"><small>${submitted}</small></td>
+            <td style="padding:10px;border:1px solid #f0f0f0;text-align:center;">${statusBadge}</td>
+            <td style="padding:10px;border:1px solid #f0f0f0;">${remarksText}</td>
+            <td style="padding:10px;border:1px solid #f0f0f0;text-align:center;">${actionButtons}</td>
+        </tr>`;
+    });
+    tableHTML += `</tbody></table></div>`;
+    const modalDiv = document.createElement('div');
+    modalDiv.className = 'modal';
+    modalDiv.style.display = 'block';
+    modalDiv.innerHTML = `
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2 class="modal-title">📋 Submissions (${submissions.length})</h2>
+                <button class="close" onclick="this.parentElement.parentElement.parentElement.remove()">×</button>
+            </div>
+            ${tableHTML}
+            <button onclick="this.parentElement.parentElement.remove()" class="btn-danger" style="margin-top:20px;">Close</button>
+        </div>`;
+    document.body.appendChild(modalDiv);
+}
+
+async function quickReview(submissionId, studentName, action) {
+    const status = action === 'accept' ? 'accepted' : 'rejected';
+    if (!confirm(`${action.toUpperCase()} submission from ${studentName}?`)) return;
+    const payload = { status, remarks: action === 'accept' ? 'Accepted by teacher' : 'Needs revision' };
+    try {
+        const res = await fetch(`${API}/teacher/submissions/${submissionId}/review`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token() },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+            alert(`✅ ${data.message}`);
+            document.querySelectorAll('.modal').forEach(m => m.remove());
+            if (selectedClassForLessons) fetchLessons(selectedClassForLessons);
+        } else { alert("❌ " + (data.error || "Failed")); }
+    } catch (e) { alert("Network error: " + e.message); }
+}
+
+function openDetailedReview(submissionId, studentName, fileName, downloadUrl) {
+    document.querySelectorAll('.modal').forEach(m => m.remove());
+    document.getElementById("reviewSubmissionId").value = submissionId;
+    document.getElementById("reviewDetails").innerHTML = `
+        <p><strong>Student:</strong> ${studentName}</p>
+        <p><strong>File:</strong> ${fileName}</p>
+        <p><a href="${API}/${downloadUrl}" target="_blank" style="color:var(--forest-700);">📥 Download Submission</a></p>`;
+    document.getElementById("reviewStatus").value = "";
+    document.getElementById("reviewGrade").value = "";
+    document.getElementById("reviewRemarks").value = "";
+    document.getElementById("reviewModal").style.display = "block";
+}
+
+async function deleteLesson(materialId) {
+    if (!confirm("Delete this lesson?")) return;
+    try {
+        const res = await fetch(`${API}/teacher/lessons/${materialId}`, { method: "DELETE", headers: { Authorization: "Bearer " + token() } });
+        const data = await res.json();
+        if (res.ok) { alert(data.message); fetchLessons(selectedClassForLessons); }
+        else alert(data.error || "Failed");
+    } catch (e) { alert("Network error: " + e.message); }
+}
+
+// ====================== REVIEW MODAL ======================
+function closeReviewModal() { document.getElementById("reviewModal").style.display = "none"; }
+
+async function submitReview(e) {
+    e.preventDefault();
+    const submissionId = document.getElementById("reviewSubmissionId").value;
+    const status = document.getElementById("reviewStatus").value;
+    const gradeValue = document.getElementById("reviewGrade").value;
+    const remarks = document.getElementById("reviewRemarks").value;
+    if (!status) { alert("Please select a decision"); return; }
+    const payload = { status, remarks: remarks || (status === 'accepted' ? 'Accepted' : 'Needs revision') };
+    if (gradeValue) payload.grade = parseFloat(gradeValue);
+    try {
+        const res = await fetch(`${API}/teacher/submissions/${submissionId}/review`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token() },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+            alert(`✅ ${data.message}`);
+            closeReviewModal();
+            if (selectedClassForLessons) fetchLessons(selectedClassForLessons);
+        } else { alert("❌ " + (data.error || "Failed")); }
+    } catch (e) { alert("Network error: " + e.message); }
+}
+
+window.onclick = function(event) {
+    if (event.target == document.getElementById("reviewModal")) closeReviewModal();
+}
+
+// ====================== ANNOUNCEMENTS ======================
+async function showAnnouncementsDropdown() {
+    hideAll();
+    event.target.classList.add('active');
+    if (classesData.length === 0) await fetchClasses();
+
+    const select = document.getElementById("selectClassAnnouncements");
+    select.innerHTML = `<option value="">-- Select Class --</option>`;
+    classesData.forEach(c => {
+        select.innerHTML += `<option value="${c.id}">${c.subject} (${c.subject_code}) - ${c.course}</option>`;
+    });
+    select.onchange = () => {
+        const val = select.value;
+        selectedClassForAnnouncements = val || null;
+        if (val) {
+            document.getElementById("announcementForm").style.display = "block";
+            fetchAnnouncements(val);
+        } else {
+            document.getElementById("announcementForm").style.display = "none";
+            document.getElementById("announcementsList").style.display = "none";
+        }
+    };
+
+    document.getElementById("selectClassAnnouncementsPanel").style.display = "block";
+    document.getElementById("announcementsTitle").style.display = "block";
+}
+
+async function postAnnouncement(e) {
+    e.preventDefault();
+    if (!selectedClassForAnnouncements) { alert("Select a class first"); return; }
+
+    const title = document.getElementById("annTitle").value.trim();
+    const content = document.getElementById("annContent").value.trim();
+    const imageFile = document.getElementById("annImage").files[0];
+
+    if (!title || !content) { alert("Title and message are required"); return; }
+
+    const formData = new FormData();
+    formData.append("class_id", selectedClassForAnnouncements);
+    formData.append("title", title);
+    formData.append("content", content);
+    if (imageFile) formData.append("image", imageFile);
+
+    try {
+        const res = await fetch(`${API}/teacher/announcements`, {
+            method: "POST",
+            headers: { Authorization: "Bearer " + token() },
+            body: formData
+        });
+        const rawText = await res.text();
+        let data;
+        try { data = JSON.parse(rawText); } catch { alert("Server error: " + rawText.substring(0, 200)); return; }
+
+        if (res.ok) {
+            alert("✅ " + data.message);
+            document.getElementById("annForm").reset();
+            fetchAnnouncements(selectedClassForAnnouncements);
+        } else {
+            alert("❌ " + (data.error || "Error posting"));
+        }
+    } catch (e) { alert("Network error: " + e.message); }
+}
+
+async function fetchAnnouncements(classId) {
+    const list = document.getElementById("announcementsList");
+    list.innerHTML = `<div style="text-align:center;padding:20px;color:#9ca3af;">Loading...</div>`;
+    list.style.display = "block";
+
+    try {
+        const res = await fetch(`${API}/teacher/announcements?class_id=${classId}`, {
+            headers: { Authorization: "Bearer " + token() }
+        });
+        const rawText = await res.text();
+        let data;
+        try { data = JSON.parse(rawText); } catch { alert("Server error: " + rawText.substring(0, 200)); return; }
+        if (!res.ok) { alert(data.error || "Failed"); return; }
+
+        const items = data.announcements || [];
+
+        if (items.length === 0) {
+            list.innerHTML = `
+                <div class="ann-empty">
+                    <span class="ann-empty-icon">📭</span>
+                    No announcements yet. Post one above!
+                </div>`;
+        } else {
+            list.innerHTML = `<p style="font-size:13px; color:var(--text-light); margin-bottom:16px; font-weight:600;">Showing ${items.length} announcement${items.length !== 1 ? 's' : ''}</p>`;
+            items.forEach(a => {
+                const dateStr = formatDate(a.created_at);
+                const imgHtml = a.image_url ? `
+                    <div class="ann-card-img-wrap">
+                        <img src="${API}${a.image_url}"
+                             alt="Announcement image"
+                             onclick="window.open('${API}${a.image_url}', '_blank')"
+                             title="Click to open full size">
+                    </div>` : '';
+
+                list.innerHTML += `
+                    <div class="ann-card">
+                        <div class="ann-card-header">
+                            <div>
+                                <div class="ann-card-title">${escapeHtml(a.title)}</div>
+                                <div class="ann-card-meta">🕒 ${dateStr}</div>
+                            </div>
+                            <button class="ann-delete-btn" onclick="deleteAnnouncement(${a.id})">🗑 Delete</button>
+                        </div>
+                        <div class="ann-card-body">${escapeHtml(a.content)}</div>
+                        ${imgHtml}
+                    </div>`;
+            });
+        }
+    } catch (e) { alert("Error: " + e.message); }
+}
+
+async function deleteAnnouncement(id) {
+    if (!confirm("Delete this announcement? This cannot be undone.")) return;
+    try {
+        const res = await fetch(`${API}/teacher/announcements/${id}`, {
+            method: "DELETE",
+            headers: { Authorization: "Bearer " + token() }
+        });
+        const data = await res.json();
+        if (res.ok) {
+            fetchAnnouncements(selectedClassForAnnouncements);
+        } else {
+            alert("❌ " + (data.error || "Failed to delete"));
+        }
+    } catch (e) { alert("Network error: " + e.message); }
+}
+
+// ====================== HELPERS ======================
+function escapeHtml(str) {
+    if (!str) return '';
+    return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '—';
+    try {
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+             + ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    } catch { return dateStr; }
+}
+</script>
+</body>
+</html>

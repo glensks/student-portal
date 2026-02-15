@@ -1,0 +1,1241 @@
+package controllers
+
+import (
+	"database/sql"
+	"fmt"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"student-portal/config"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+)
+
+func RecordsDashboard(c *gin.Context) {
+	userID := c.GetInt("user_id")
+	role := c.GetString("role")
+
+	if role != "records" {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": "access denied",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Welcome Records Officer",
+		"user_id": userID,
+	})
+}
+
+func RecordsMe(c *gin.Context) {
+	userID := c.GetInt("user_id")
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Welcome Records Officer",
+		"user_id": userID,
+	})
+}
+
+// ===================== GET ALL DOCUMENT REQUESTS =====================
+
+func RecordsGetDocumentRequests(c *gin.Context) {
+	role := c.GetString("role")
+	if role != "records" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
+		return
+	}
+
+	// Optional filter by status
+	statusFilter := c.Query("status")
+
+	query := `
+		SELECT 
+			dr.id,
+			dr.student_id,
+			IFNULL(s.student_id, 'N/A') as student_number,
+			IFNULL(s.first_name, 'Unknown') as first_name,
+			IFNULL(s.last_name, 'Student') as last_name,
+			IFNULL(c.course_name, 'N/A') as course,
+			IFNULL(sa.year_level, 'N/A') as year,
+			dr.document_type,
+			dr.purpose,
+			dr.copies,
+			dr.status,
+			DATE_FORMAT(dr.requested_at, '%Y-%m-%d %H:%i:%s') as requested_at,
+			DATE_FORMAT(dr.processed_at, '%Y-%m-%d %H:%i:%s') as processed_at,
+			IFNULL(dr.notes, ''),
+			IFNULL(dr.document_file, '')
+		FROM document_requests dr
+		LEFT JOIN students s ON dr.student_id = s.id
+		LEFT JOIN student_academic sa ON s.id = sa.student_id
+		LEFT JOIN courses c ON sa.course = c.id
+	`
+
+	args := []interface{}{}
+
+	if statusFilter != "" {
+		query += " WHERE dr.status = ?"
+		args = append(args, statusFilter)
+	}
+
+	query += " ORDER BY dr.requested_at DESC"
+
+	rows, err := config.DB.Query(query, args...)
+	if err != nil {
+		fmt.Println("❌ Database query error:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch requests"})
+		return
+	}
+	defer rows.Close()
+
+	var requests []gin.H
+
+	for rows.Next() {
+		var (
+			id, studentID, copies                            int
+			studentNumber, firstName, lastName, course, year string
+			docType, purpose                                 string
+			status, notes, docPath                           string
+			requestedAt                                      string
+			processedAt                                      *string
+		)
+
+		err := rows.Scan(
+			&id, &studentID, &studentNumber, &firstName, &lastName,
+			&course, &year, &docType, &purpose, &copies, &status, &requestedAt,
+			&processedAt, &notes, &docPath,
+		)
+
+		if err != nil {
+			fmt.Println("❌ Row scan error:", err)
+			continue
+		}
+
+		studentName := firstName + " " + lastName
+
+		requests = append(requests, gin.H{
+			"request_id":     id,
+			"student_id":     studentID,
+			"student_number": studentNumber,
+			"student_name":   studentName,
+			"course":         course,
+			"year":           year,
+			"document_type":  docType,
+			"purpose":        purpose,
+			"copies":         copies,
+			"status":         status,
+			"requested_at":   requestedAt,
+			"processed_at":   processedAt,
+			"notes":          notes,
+			"document_path":  docPath,
+		})
+	}
+
+	fmt.Printf("✅ Found %d requests\n", len(requests))
+
+	c.JSON(http.StatusOK, gin.H{
+		"requests": requests,
+	})
+}
+
+// ===================== PROCESS DOCUMENT REQUEST (WITH FILE UPLOAD) =====================
+
+func RecordsProcessDocumentRequest(c *gin.Context) {
+	role := c.GetString("role")
+	if role != "records" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
+		return
+	}
+
+	// Get request ID from URL parameter
+	requestIDStr := c.Param("id")
+	requestID, err := strconv.Atoi(requestIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request_id"})
+		return
+	}
+
+	// Get form data
+	status := c.PostForm("status") // approved or rejected
+	notes := c.PostForm("notes")   // optional notes
+
+	// Validate status
+	if status != "approved" && status != "rejected" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "status must be 'approved' or 'rejected'",
+		})
+		return
+	}
+
+	// Check if request exists
+	var currentStatus string
+	err = config.DB.QueryRow(`
+		SELECT status FROM document_requests WHERE id = ?
+	`, requestID).Scan(&currentStatus)
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "request not found"})
+		return
+	}
+
+	if currentStatus != "pending" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "request already processed",
+		})
+		return
+	}
+
+	var documentPath string
+
+	// If approved, require document upload
+	if status == "approved" {
+		file, err := c.FormFile("document")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "document image is required for approval",
+			})
+			return
+		}
+
+		// Validate file type (images only)
+		ext := filepath.Ext(file.Filename)
+		allowedExts := map[string]bool{
+			".jpg":  true,
+			".jpeg": true,
+			".png":  true,
+			".pdf":  true,
+		}
+
+		if !allowedExts[ext] {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "only jpg, jpeg, png, and pdf files are allowed",
+			})
+			return
+		}
+
+		// Validate file size (max 5MB)
+		if file.Size > 5*1024*1024 {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "file size must not exceed 5MB",
+			})
+			return
+		}
+
+		// Create uploads directory if not exists
+		uploadsDir := "./uploads/documents"
+		if err := os.MkdirAll(uploadsDir, os.ModePerm); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "failed to create upload directory",
+			})
+			return
+		}
+
+		// Generate unique filename
+		timestamp := time.Now().Unix()
+		filename := fmt.Sprintf("doc_%d_%d%s", requestID, timestamp, ext)
+		filepath := filepath.Join(uploadsDir, filename)
+
+		// Save the file
+		if err := c.SaveUploadedFile(file, filepath); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "failed to save document",
+			})
+			return
+		}
+
+		documentPath = filepath
+	}
+
+	// Update request
+	_, err = config.DB.Exec(`
+		UPDATE document_requests
+		SET 
+			status = ?,
+			processed_at = NOW(),
+			notes = ?,
+			document_file = ?
+		WHERE id = ?
+	`, status, notes, documentPath, requestID)
+
+	if err != nil {
+		fmt.Println("❌ Update error:", err) // Add debug logging
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "failed to process request",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":       "request processed successfully",
+		"request_id":    requestID,
+		"status":        status,
+		"document_path": documentPath,
+	})
+}
+
+// ===================== GET SINGLE DOCUMENT REQUEST DETAILS =====================
+
+func RecordsGetDocumentRequestDetails(c *gin.Context) {
+	role := c.GetString("role")
+	if role != "records" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
+		return
+	}
+
+	requestIDStr := c.Param("id")
+	requestID, err := strconv.Atoi(requestIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request_id"})
+		return
+	}
+
+	fmt.Printf("🔍 Looking for request ID: %d\n", requestID)
+
+	var (
+		id, studentDBID, copies                          int
+		studentNumber, firstName, lastName, course, year string
+		docType, purpose                                 string
+		status, notes, docPath                           string
+		requestedAt                                      string
+		processedAt                                      *string
+	)
+
+	err = config.DB.QueryRow(`
+		SELECT 
+			dr.id,
+			dr.student_id,
+			IFNULL(s.student_id, 'N/A') as student_number,
+			IFNULL(s.first_name, 'Unknown'),
+			IFNULL(s.last_name, 'Student'),
+			IFNULL(c.course_name, 'N/A') as course,
+			IFNULL(sa.year_level, 'N/A') as year,
+			dr.document_type,
+			dr.purpose,
+			dr.copies,
+			dr.status,
+			DATE_FORMAT(dr.requested_at, '%Y-%m-%d %H:%i:%s') as requested_at,
+			DATE_FORMAT(dr.processed_at, '%Y-%m-%d %H:%i:%s') as processed_at,
+			IFNULL(dr.notes, ''),
+			IFNULL(dr.document_file, '')
+		FROM document_requests dr
+		LEFT JOIN students s ON dr.student_id = s.id
+		LEFT JOIN student_academic sa ON s.id = sa.student_id
+		LEFT JOIN courses c ON sa.course = c.id
+		WHERE dr.id = ?
+	`, requestID).Scan(
+		&id, &studentDBID, &studentNumber, &firstName, &lastName,
+		&course, &year, &docType, &purpose, &copies, &status, &requestedAt,
+		&processedAt, &notes, &docPath,
+	)
+
+	if err != nil {
+		fmt.Println("❌ Query error:", err)
+		c.JSON(http.StatusNotFound, gin.H{"error": "request not found"})
+		return
+	}
+
+	studentName := firstName + " " + lastName
+
+	fmt.Printf("✅ Found: ID=%d, Student=%s, Course=%s, Year=%s, Type=%s, Purpose=%s\n",
+		id, studentName, course, year, docType, purpose)
+
+	c.JSON(http.StatusOK, gin.H{
+		"request_id":     id,
+		"student_id":     studentDBID,
+		"student_number": studentNumber,
+		"student_name":   studentName,
+		"course":         course,
+		"year":           year,
+		"document_type":  docType,
+		"purpose":        purpose,
+		"copies":         copies,
+		"status":         status,
+		"requested_at":   requestedAt,
+		"processed_at":   processedAt,
+		"notes":          notes,
+		"document_path":  docPath,
+	})
+}
+
+// ===================== GET ALL GRADES (FOR RECORDS OFFICER) =====================
+
+func RecordsGetAllGrades(c *gin.Context) {
+	role := c.GetString("role")
+	if role != "records" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
+		return
+	}
+
+	// Optional filters
+	studentID := c.Query("student_id")
+	subjectID := c.Query("subject_id")
+	courseID := c.Query("course_id")
+	yearLevel := c.Query("year_level")
+
+	query := `
+		SELECT 
+			g.id as grade_id,
+			st.id as student_db_id,
+			IFNULL(st.student_id, 'N/A') as student_number,
+			IFNULL(st.first_name, 'Unknown') as first_name,
+			IFNULL(st.last_name, 'Student') as last_name,
+			IFNULL(st.email, 'N/A') as email,
+			IFNULL(c.course_name, 'N/A') as course,
+			IFNULL(c.code, 'N/A') as course_code,
+			IFNULL(sa.year_level, 0) as year_level,
+			s.subject_name,
+			s.code as subject_code,
+			g.teacher_id,
+			g.prelim,
+			g.midterm,
+			g.finals,
+			CASE 
+				WHEN g.prelim IS NOT NULL AND g.midterm IS NOT NULL AND g.finals IS NOT NULL 
+				THEN ROUND((g.prelim + g.midterm + g.finals) / 3, 2)
+				ELSE NULL
+			END as average,
+			IFNULL(g.remarks, '') as remarks,
+			IFNULL(g.is_released, FALSE) as is_released,
+			DATE_FORMAT(g.created_at, '%Y-%m-%d %H:%i:%s') as submitted_at,
+			DATE_FORMAT(g.updated_at, '%Y-%m-%d %H:%i:%s') as updated_at,
+			DATE_FORMAT(g.released_at, '%Y-%m-%d %H:%i:%s') as released_at
+		FROM grades g
+		INNER JOIN students st ON g.student_id = st.id
+		INNER JOIN subjects s ON g.subject_id = s.id
+		LEFT JOIN student_academic sa ON st.id = sa.student_id
+		LEFT JOIN courses c ON sa.course = c.id
+		WHERE 1=1
+	`
+
+	args := []interface{}{}
+
+	// Apply filters
+	if studentID != "" {
+		query += " AND st.id = ?"
+		args = append(args, studentID)
+	}
+
+	if subjectID != "" {
+		query += " AND s.id = ?"
+		args = append(args, subjectID)
+	}
+
+	if courseID != "" {
+		query += " AND c.id = ?"
+		args = append(args, courseID)
+	}
+
+	if yearLevel != "" {
+		query += " AND sa.year_level = ?"
+		args = append(args, yearLevel)
+	}
+
+	query += " ORDER BY st.last_name, st.first_name, s.subject_name"
+
+	rows, err := config.DB.Query(query, args...)
+	if err != nil {
+		fmt.Println("❌ Database query error:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch grades"})
+		return
+	}
+	defer rows.Close()
+
+	var grades []gin.H
+
+	for rows.Next() {
+		var (
+			gradeID, studentDBID, yearLevel, teacherID   int
+			studentNumber, firstName, lastName, email    string
+			course, courseCode, subjectName, subjectCode string
+			prelim, midterm, finals, average             *float64
+			remarks, submittedAt, updatedAt              string
+			isReleased                                   bool
+			releasedAt                                   *string
+		)
+
+		err := rows.Scan(
+			&gradeID, &studentDBID, &studentNumber, &firstName, &lastName, &email,
+			&course, &courseCode, &yearLevel, &subjectName, &subjectCode, &teacherID,
+			&prelim, &midterm, &finals, &average, &remarks, &isReleased,
+			&submittedAt, &updatedAt, &releasedAt,
+		)
+
+		if err != nil {
+			fmt.Println("❌ Row scan error:", err)
+			continue
+		}
+
+		studentName := firstName + " " + lastName
+
+		// Get teacher name in a separate query
+		var teacherName string
+		err = config.DB.QueryRow(`
+			SELECT IFNULL(username, CONCAT('Teacher #', id))
+			FROM users 
+			WHERE id = ? AND role = 'teacher'
+		`, teacherID).Scan(&teacherName)
+
+		if err != nil {
+			teacherName = fmt.Sprintf("Teacher #%d", teacherID)
+		}
+
+		grades = append(grades, gin.H{
+			"grade_id":       gradeID,
+			"student_id":     studentDBID,
+			"student_number": studentNumber,
+			"student_name":   studentName,
+			"email":          email,
+			"course":         course,
+			"course_code":    courseCode,
+			"year_level":     yearLevel,
+			"subject":        subjectName,
+			"subject_code":   subjectCode,
+			"teacher_name":   teacherName,
+			"prelim":         prelim,
+			"midterm":        midterm,
+			"finals":         finals,
+			"average":        average,
+			"remarks":        remarks,
+			"is_released":    isReleased,
+			"submitted_at":   submittedAt,
+			"updated_at":     updatedAt,
+			"released_at":    releasedAt,
+		})
+	}
+
+	if grades == nil {
+		grades = []gin.H{}
+	}
+
+	fmt.Printf("✅ Found %d grades\n", len(grades))
+
+	c.JSON(http.StatusOK, gin.H{
+		"grades": grades,
+		"total":  len(grades),
+	})
+}
+
+// ===================== RELEASE GRADE =====================
+
+func RecordsReleaseGrade(c *gin.Context) {
+	role := c.GetString("role")
+	if role != "records" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
+		return
+	}
+
+	gradeIDStr := c.Param("grade_id")
+	gradeID, err := strconv.Atoi(gradeIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid grade_id"})
+		return
+	}
+
+	// Get the action from request body
+	var input struct {
+		Action string `json:"action"` // "release" or "hold"
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+
+	if input.Action != "release" && input.Action != "hold" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "action must be 'release' or 'hold'"})
+		return
+	}
+
+	// Check if grade exists
+	var exists bool
+	err = config.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM grades WHERE id = ?)", gradeID).Scan(&exists)
+	if err != nil || !exists {
+		c.JSON(http.StatusNotFound, gin.H{"error": "grade not found"})
+		return
+	}
+
+	// Update the is_released status
+	isReleased := input.Action == "release"
+
+	var err2 error
+	if isReleased {
+		_, err2 = config.DB.Exec(`
+			UPDATE grades 
+			SET is_released = ?,
+			    released_at = NOW()
+			WHERE id = ?
+		`, isReleased, gradeID)
+	} else {
+		_, err2 = config.DB.Exec(`
+			UPDATE grades 
+			SET is_released = ?,
+			    released_at = NULL
+			WHERE id = ?
+		`, isReleased, gradeID)
+	}
+
+	err = err2
+
+	if err != nil {
+		fmt.Println("❌ Update error:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update grade status"})
+		return
+	}
+
+	message := "Grade released successfully"
+	if input.Action == "hold" {
+		message = "Grade put on hold successfully"
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":     message,
+		"grade_id":    gradeID,
+		"is_released": isReleased,
+	})
+}
+
+// ===================== GET STUDENT GRADE DETAILS =====================
+
+func RecordsGetStudentGrades(c *gin.Context) {
+	role := c.GetString("role")
+	if role != "records" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
+		return
+	}
+
+	studentIDStr := c.Param("student_id")
+	studentID, err := strconv.Atoi(studentIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid student_id"})
+		return
+	}
+
+	// Get student info
+	var (
+		studentNumber, firstName, lastName, email string
+		course, courseCode                        string
+		yearLevel                                 int
+	)
+
+	err = config.DB.QueryRow(`
+		SELECT 
+			IFNULL(st.student_id, 'N/A'),
+			IFNULL(st.first_name, 'Unknown'),
+			IFNULL(st.last_name, 'Student'),
+			IFNULL(st.email, 'N/A'),
+			IFNULL(c.course_name, 'N/A'),
+			IFNULL(c.code, 'N/A'),
+			IFNULL(sa.year_level, 0)
+		FROM students st
+		LEFT JOIN student_academic sa ON st.id = sa.student_id
+		LEFT JOIN courses c ON sa.course = c.id
+		WHERE st.id = ?
+	`, studentID).Scan(&studentNumber, &firstName, &lastName, &email, &course, &courseCode, &yearLevel)
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "student not found"})
+		return
+	}
+
+	// Get all grades for this student
+	query := `
+		SELECT 
+			g.id as grade_id,
+			s.subject_name,
+			s.code as subject_code,
+			g.teacher_id,
+			g.prelim,
+			g.midterm,
+			g.finals,
+			CASE 
+				WHEN g.prelim IS NOT NULL AND g.midterm IS NOT NULL AND g.finals IS NOT NULL 
+				THEN ROUND((g.prelim + g.midterm + g.finals) / 3, 2)
+				ELSE NULL
+			END as average,
+			IFNULL(g.remarks, '') as remarks,
+			IFNULL(g.is_released, FALSE) as is_released,
+			DATE_FORMAT(g.created_at, '%Y-%m-%d %H:%i:%s') as submitted_at,
+			DATE_FORMAT(g.updated_at, '%Y-%m-%d %H:%i:%s') as updated_at,
+			DATE_FORMAT(g.released_at, '%Y-%m-%d %H:%i:%s') as released_at
+		FROM grades g
+		INNER JOIN subjects s ON g.subject_id = s.id
+		WHERE g.student_id = ?
+		ORDER BY s.subject_name
+	`
+
+	rows, err := config.DB.Query(query, studentID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch grades"})
+		return
+	}
+	defer rows.Close()
+
+	var grades []gin.H
+
+	for rows.Next() {
+		var (
+			gradeID, teacherID               int
+			subjectName, subjectCode         string
+			prelim, midterm, finals, average *float64
+			remarks, submittedAt, updatedAt  string
+			isReleased                       bool
+			releasedAt                       *string
+		)
+
+		err := rows.Scan(
+			&gradeID, &subjectName, &subjectCode, &teacherID,
+			&prelim, &midterm, &finals, &average, &remarks, &isReleased,
+			&submittedAt, &updatedAt, &releasedAt,
+		)
+
+		if err != nil {
+			continue
+		}
+
+		// Get teacher name
+		var teacherName string
+		err = config.DB.QueryRow(`
+			SELECT IFNULL(username, CONCAT('Teacher #', id))
+			FROM users 
+			WHERE id = ? AND role = 'teacher'
+		`, teacherID).Scan(&teacherName)
+
+		if err != nil {
+			teacherName = fmt.Sprintf("Teacher #%d", teacherID)
+		}
+
+		grades = append(grades, gin.H{
+			"grade_id":     gradeID,
+			"subject":      subjectName,
+			"subject_code": subjectCode,
+			"teacher_name": teacherName,
+			"prelim":       prelim,
+			"midterm":      midterm,
+			"finals":       finals,
+			"average":      average,
+			"remarks":      remarks,
+			"is_released":  isReleased,
+			"submitted_at": submittedAt,
+			"updated_at":   updatedAt,
+			"released_at":  releasedAt,
+		})
+	}
+
+	if grades == nil {
+		grades = []gin.H{}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"student": gin.H{
+			"student_id":     studentID,
+			"student_number": studentNumber,
+			"name":           firstName + " " + lastName,
+			"email":          email,
+			"course":         course,
+			"course_code":    courseCode,
+			"year_level":     yearLevel,
+		},
+		"grades": grades,
+		"total":  len(grades),
+	})
+}
+
+// ===================== POST ANNOUNCEMENT =====================
+
+func RecordsPostAnnouncement(c *gin.Context) {
+	role := c.GetString("role")
+	recordsOfficerID := c.GetInt("user_id")
+
+	if role != "records" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
+		return
+	}
+
+	title := c.PostForm("title")
+	content := c.PostForm("content")
+	priority := c.PostForm("priority")              // low, normal, high, urgent
+	targetAudience := c.PostForm("target_audience") // all, students, teachers
+
+	if title == "" || content == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "title and content are required"})
+		return
+	}
+
+	// Set defaults
+	if priority == "" {
+		priority = "normal"
+	}
+	if targetAudience == "" {
+		targetAudience = "all"
+	}
+
+	// Validate priority
+	validPriorities := map[string]bool{"low": true, "normal": true, "high": true, "urgent": true}
+	if !validPriorities[priority] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid priority"})
+		return
+	}
+
+	// Validate target audience
+	validAudiences := map[string]bool{"all": true, "students": true, "teachers": true}
+	if !validAudiences[targetAudience] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid target audience"})
+		return
+	}
+
+	// Handle optional image upload
+	var imageName, imagePath sql.NullString
+	var imageSize sql.NullInt64
+
+	file, err := c.FormFile("image")
+	if err == nil {
+		// Image was provided — validate it
+		allowedTypes := []string{"image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"}
+
+		fileHeader, err := file.Open()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to read image"})
+			return
+		}
+		defer fileHeader.Close()
+
+		buffer := make([]byte, 512)
+		fileHeader.Read(buffer)
+		contentType := http.DetectContentType(buffer)
+
+		valid := false
+		for _, t := range allowedTypes {
+			if t == contentType {
+				valid = true
+				break
+			}
+		}
+		if !valid {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "image must be JPEG, PNG, GIF, or WebP"})
+			return
+		}
+
+		// 10MB max
+		if file.Size > int64(10*1024*1024) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "image too large. Max 10MB"})
+			return
+		}
+
+		uploadDir := "./uploads/records_announcements"
+		if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create upload directory"})
+			return
+		}
+
+		fileExt := filepath.Ext(file.Filename)
+		fileName := fmt.Sprintf("%d_%d_%s%s", recordsOfficerID, time.Now().Unix(),
+			strings.ReplaceAll(uuid.New().String(), "-", ""), fileExt)
+		savedPath := filepath.Join(uploadDir, fileName)
+
+		if err := c.SaveUploadedFile(file, savedPath); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save image"})
+			return
+		}
+
+		imageName = sql.NullString{String: file.Filename, Valid: true}
+		imagePath = sql.NullString{String: savedPath, Valid: true}
+		imageSize = sql.NullInt64{Int64: file.Size, Valid: true}
+	}
+
+	result, err := config.DB.Exec(`
+		INSERT INTO records_announcements 
+		(records_officer_id, title, content, image_name, image_path, image_size, priority, target_audience, is_active, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE, NOW(), NOW())
+	`, recordsOfficerID, title, content, imageName, imagePath, imageSize, priority, targetAudience)
+
+	if err != nil {
+		fmt.Println("❌ Insert error:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to post announcement"})
+		return
+	}
+
+	newID, _ := result.LastInsertId()
+
+	response := gin.H{
+		"message":         "announcement posted successfully",
+		"announcement_id": newID,
+		"title":           title,
+		"priority":        priority,
+		"target_audience": targetAudience,
+	}
+
+	if imagePath.Valid {
+		cleanPath := strings.ReplaceAll(imagePath.String, "\\", "/")
+		if strings.HasPrefix(cleanPath, "./") {
+			cleanPath = cleanPath[2:]
+		}
+		response["image_url"] = "/" + cleanPath
+	}
+
+	c.JSON(http.StatusCreated, response)
+}
+
+// ===================== GET ALL ANNOUNCEMENTS =====================
+
+func RecordsGetAnnouncements(c *gin.Context) {
+	role := c.GetString("role")
+	if role != "records" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
+		return
+	}
+
+	// Optional filters
+	targetFilter := c.Query("target_audience")
+	priorityFilter := c.Query("priority")
+	activeFilter := c.Query("is_active")
+
+	query := `
+		SELECT 
+			ra.id,
+			ra.records_officer_id,
+			u.username as officer_name,
+			ra.title,
+			ra.content,
+			ra.image_name,
+			ra.image_path,
+			ra.image_size,
+			ra.priority,
+			ra.target_audience,
+			ra.is_active,
+			DATE_FORMAT(ra.created_at, '%Y-%m-%d %H:%i:%s') as created_at,
+			DATE_FORMAT(ra.updated_at, '%Y-%m-%d %H:%i:%s') as updated_at
+		FROM records_announcements ra
+		INNER JOIN users u ON ra.records_officer_id = u.id
+		WHERE 1=1
+	`
+
+	args := []interface{}{}
+
+	if targetFilter != "" {
+		query += " AND ra.target_audience = ?"
+		args = append(args, targetFilter)
+	}
+
+	if priorityFilter != "" {
+		query += " AND ra.priority = ?"
+		args = append(args, priorityFilter)
+	}
+
+	if activeFilter != "" {
+		query += " AND ra.is_active = ?"
+		args = append(args, activeFilter == "true")
+	}
+
+	query += " ORDER BY ra.created_at DESC"
+
+	rows, err := config.DB.Query(query, args...)
+	if err != nil {
+		fmt.Println("❌ Database query error:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch announcements"})
+		return
+	}
+	defer rows.Close()
+
+	var announcements []gin.H
+
+	for rows.Next() {
+		var (
+			id, recordsOfficerID        int
+			officerName, title, content string
+			imageName, imagePath        sql.NullString
+			imageSize                   sql.NullInt64
+			priority, targetAudience    string
+			isActive                    bool
+			createdAt, updatedAt        string
+		)
+
+		err := rows.Scan(
+			&id, &recordsOfficerID, &officerName, &title, &content,
+			&imageName, &imagePath, &imageSize, &priority, &targetAudience,
+			&isActive, &createdAt, &updatedAt,
+		)
+
+		if err != nil {
+			fmt.Println("❌ Row scan error:", err)
+			continue
+		}
+
+		announcement := gin.H{
+			"id":                 id,
+			"records_officer_id": recordsOfficerID,
+			"officer_name":       officerName,
+			"title":              title,
+			"content":            content,
+			"priority":           priority,
+			"target_audience":    targetAudience,
+			"is_active":          isActive,
+			"created_at":         createdAt,
+			"updated_at":         updatedAt,
+			"image_url":          nil,
+			"image_size":         nil,
+		}
+
+		if imagePath.Valid {
+			cleanPath := strings.ReplaceAll(imagePath.String, "\\", "/")
+			if strings.HasPrefix(cleanPath, "./") {
+				cleanPath = cleanPath[2:]
+			}
+			announcement["image_url"] = "/" + cleanPath
+			announcement["image_size"] = imageSize.Int64
+		}
+
+		announcements = append(announcements, announcement)
+	}
+
+	if announcements == nil {
+		announcements = []gin.H{}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"announcements": announcements,
+		"total":         len(announcements),
+	})
+}
+
+// ===================== GET SINGLE ANNOUNCEMENT =====================
+
+func RecordsGetAnnouncementDetails(c *gin.Context) {
+	role := c.GetString("role")
+	if role != "records" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
+		return
+	}
+
+	announcementID := c.Param("id")
+
+	var (
+		id, recordsOfficerID        int
+		officerName, title, content string
+		imageName, imagePath        sql.NullString
+		imageSize                   sql.NullInt64
+		priority, targetAudience    string
+		isActive                    bool
+		createdAt, updatedAt        string
+	)
+
+	err := config.DB.QueryRow(`
+		SELECT 
+			ra.id,
+			ra.records_officer_id,
+			u.username as officer_name,
+			ra.title,
+			ra.content,
+			ra.image_name,
+			ra.image_path,
+			ra.image_size,
+			ra.priority,
+			ra.target_audience,
+			ra.is_active,
+			DATE_FORMAT(ra.created_at, '%Y-%m-%d %H:%i:%s') as created_at,
+			DATE_FORMAT(ra.updated_at, '%Y-%m-%d %H:%i:%s') as updated_at
+		FROM records_announcements ra
+		INNER JOIN users u ON ra.records_officer_id = u.id
+		WHERE ra.id = ?
+	`, announcementID).Scan(
+		&id, &recordsOfficerID, &officerName, &title, &content,
+		&imageName, &imagePath, &imageSize, &priority, &targetAudience,
+		&isActive, &createdAt, &updatedAt,
+	)
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "announcement not found"})
+		return
+	}
+
+	response := gin.H{
+		"id":                 id,
+		"records_officer_id": recordsOfficerID,
+		"officer_name":       officerName,
+		"title":              title,
+		"content":            content,
+		"priority":           priority,
+		"target_audience":    targetAudience,
+		"is_active":          isActive,
+		"created_at":         createdAt,
+		"updated_at":         updatedAt,
+		"image_url":          nil,
+		"image_size":         nil,
+	}
+
+	if imagePath.Valid {
+		cleanPath := strings.ReplaceAll(imagePath.String, "\\", "/")
+		if strings.HasPrefix(cleanPath, "./") {
+			cleanPath = cleanPath[2:]
+		}
+		response["image_url"] = "/" + cleanPath
+		response["image_size"] = imageSize.Int64
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// ===================== UPDATE ANNOUNCEMENT =====================
+
+func RecordsUpdateAnnouncement(c *gin.Context) {
+	role := c.GetString("role")
+	recordsOfficerID := c.GetInt("user_id")
+
+	if role != "records" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
+		return
+	}
+
+	announcementID := c.Param("id")
+
+	// Verify ownership
+	var exists bool
+	err := config.DB.QueryRow(`
+		SELECT EXISTS(SELECT 1 FROM records_announcements WHERE id = ? AND records_officer_id = ?)
+	`, announcementID, recordsOfficerID).Scan(&exists)
+
+	if err != nil || !exists {
+		c.JSON(http.StatusForbidden, gin.H{"error": "announcement not found or not owned by you"})
+		return
+	}
+
+	title := c.PostForm("title")
+	content := c.PostForm("content")
+	priority := c.PostForm("priority")
+	targetAudience := c.PostForm("target_audience")
+
+	if title == "" || content == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "title and content are required"})
+		return
+	}
+
+	// Validate priority if provided
+	if priority != "" {
+		validPriorities := map[string]bool{"low": true, "normal": true, "high": true, "urgent": true}
+		if !validPriorities[priority] {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid priority"})
+			return
+		}
+	}
+
+	// Validate target audience if provided
+	if targetAudience != "" {
+		validAudiences := map[string]bool{"all": true, "students": true, "teachers": true}
+		if !validAudiences[targetAudience] {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid target audience"})
+			return
+		}
+	}
+
+	// Update database
+	_, err = config.DB.Exec(`
+		UPDATE records_announcements 
+		SET title = ?, content = ?, priority = ?, target_audience = ?, updated_at = NOW()
+		WHERE id = ?
+	`, title, content, priority, targetAudience, announcementID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update announcement"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "announcement updated successfully",
+	})
+}
+
+// ===================== TOGGLE ANNOUNCEMENT STATUS =====================
+
+func RecordsToggleAnnouncement(c *gin.Context) {
+	role := c.GetString("role")
+	recordsOfficerID := c.GetInt("user_id")
+
+	if role != "records" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
+		return
+	}
+
+	announcementID := c.Param("id")
+
+	// Verify ownership
+	var currentStatus bool
+	err := config.DB.QueryRow(`
+		SELECT is_active FROM records_announcements 
+		WHERE id = ? AND records_officer_id = ?
+	`, announcementID, recordsOfficerID).Scan(&currentStatus)
+
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": "announcement not found or not owned by you"})
+		return
+	}
+
+	newStatus := !currentStatus
+
+	_, err = config.DB.Exec(`
+		UPDATE records_announcements 
+		SET is_active = ?, updated_at = NOW()
+		WHERE id = ?
+	`, newStatus, announcementID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to toggle announcement"})
+		return
+	}
+
+	statusText := "deactivated"
+	if newStatus {
+		statusText = "activated"
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":   fmt.Sprintf("announcement %s successfully", statusText),
+		"is_active": newStatus,
+	})
+}
+
+// ===================== DELETE ANNOUNCEMENT =====================
+
+func RecordsDeleteAnnouncement(c *gin.Context) {
+	role := c.GetString("role")
+	recordsOfficerID := c.GetInt("user_id")
+
+	if role != "records" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
+		return
+	}
+
+	announcementID := c.Param("id")
+
+	var filePath sql.NullString
+	err := config.DB.QueryRow(`
+		SELECT image_path FROM records_announcements 
+		WHERE id = ? AND records_officer_id = ?
+	`, announcementID, recordsOfficerID).Scan(&filePath)
+
+	if err == sql.ErrNoRows {
+		c.JSON(http.StatusNotFound, gin.H{"error": "announcement not found or not owned by you"})
+		return
+	}
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	_, err = config.DB.Exec(`DELETE FROM records_announcements WHERE id = ?`, announcementID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete announcement"})
+		return
+	}
+
+	// Delete image file if exists
+	if filePath.Valid {
+		os.Remove(filePath.String)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "announcement deleted successfully"})
+}

@@ -1,0 +1,252 @@
+:root {
+    --forest-900: #1b4332;
+    --forest-800: #2d6a4f;
+    --forest-700: #40916c;
+    --forest-600: #52b788;
+    --forest-500: #74c69d;
+    --forest-400: #95d5b2;
+    --forest-300: #b7e4c7;
+    --forest-200: #d8f3dc;
+    --forest-100: #f1faee;
+
+    --neutral-900: #1a1a1a;
+    --neutral-800: #2d2d2d;
+    --neutral-700: #404040;
+    --neutral-600: #666666;
+    --neutral-500: #808080;
+    --neutral-400: #b3b3b3;
+    --neutral-300: #d9d9d9;
+    --neutral-200: #ededed;
+    --neutral-100: #f7f7f7;
+
+    --accent-gold: #d4af37;
+    --error: #dc2626;
+    --success: #16a34a;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--neutral-100);
+    color: var(--neutral-900);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ================= HEADER ================= */
+.portal-header {
+    background: linear-gradient(135deg, var(--forest-900) 0%, var(--forest-800) 100%);
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.header-top {
+    background: rgba(0,0,0,0.2);
+    padding: 8px 0;
+    font-size: 13px;
+}
+
+.header-top-content {
+    max-width: 1200px;
+    margin: auto;
+    padding: 0 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-links {
+    display: flex;
+    gap: 20px;
+}
+
+.header-links a {
+    color: rgba(255,255,255,0.9);
+    text-decoration: none;
+}
+
+.header-links a:hover {
+    color: white;
+}
+
+.header-main {
+    max-width: 1200px;
+    margin: auto;
+    padding: 20px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.university-brand {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.university-seal {
+    width: 60px;
+    height: 60px;
+    background: white;
+    border-radius: 50%;
+    font-size: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.university-info h1 {
+    font-family: 'Crimson Pro', serif;
+    font-size: 26px;
+}
+
+.university-info p {
+    font-size: 13px;
+    opacity: .9;
+}
+
+.help-link {
+    color: white;
+    text-decoration: none;
+}
+
+/* ================= MAIN ================= */
+.main-container {
+    max-width: 1200px;
+    margin: 32px auto;
+    padding: 0 24px;
+}
+
+.breadcrumb {
+    font-size: 13px;
+    margin-bottom: 20px;
+}
+
+/* ================= NAV ================= */
+.portal-nav {
+    display: flex;
+    background: white;
+    border-radius: 12px 12px 0 0;
+    border-bottom: 2px solid var(--neutral-200);
+}
+
+.nav-tab {
+    flex: 1;
+    padding: 18px;
+    font-weight: 600;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.nav-tab.active {
+    border-bottom: 3px solid var(--forest-700);
+    color: var(--forest-800);
+}
+
+/* ================= CONTENT ================= */
+.portal-content {
+    background: white;
+    padding: 40px;
+    border-radius: 0 0 12px 12px;
+}
+
+.content-section {
+    display: none;
+}
+
+.content-section.active {
+    display: block;
+}
+
+/* ================= FORMS ================= */
+.form-card {
+    background: var(--neutral-100);
+    border: 1px solid var(--neutral-200);
+    border-radius: 10px;
+    padding: 28px;
+    margin-bottom: 24px;
+}
+
+.form-card-header {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    border-bottom: 2px solid var(--neutral-200);
+    padding-bottom: 16px;
+}
+
+.form-card-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--forest-700), var(--forest-600));
+    border-radius: 10px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.form-grid {
+    display: grid;
+    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.form-label {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.form-control {
+    padding: 12px 14px;
+    border: 1.5px solid var(--neutral-300);
+    border-radius: 8px;
+}
+
+/* ================= BUTTONS ================= */
+.btn {
+    padding: 14px 28px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--forest-700), var(--forest-600));
+    color: white;
+}
+
+.btn-block {
+    width: 100%;
+}
+
+/* ================= FOOTER ================= */
+.portal-footer {
+    max-width: 1200px;
+    margin: 40px auto 20px;
+    padding: 24px;
+    text-align: center;
+    border-top: 1px solid var(--neutral-300);
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 768px) {
+    .header-main,
+    .portal-nav {
+        flex-direction: column;
+    }
+
+    .portal-content {
+        padding: 24px;
+    }
+}
