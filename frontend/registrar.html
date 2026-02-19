@@ -1471,17 +1471,20 @@ async function approveStudent(student, safeId) {
 }
 
 async function rejectStudent(studentId) {
+    const remarks = prompt("Reason for rejection (optional):") ?? '';
     if (!confirm("⚠️ Are you sure you want to reject this student's enrollment?")) return;
     try {
-        await fetch('/registrar/student/status', {
+        const res = await fetch('/registrar/student/status', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ student_id: studentId, action: "reject" })
+            body: JSON.stringify({ student_id: studentId, action: "reject", remarks: remarks })
         });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Rejection failed');
         alert("✅ Student enrollment rejected");
         filterStudents();
     } catch (err) {
-        alert("❌ Error: Failed to reject student");
+        alert("❌ Error: " + err.message);
     }
 }
 

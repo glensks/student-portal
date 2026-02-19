@@ -1001,3 +1001,43 @@ func RegistrarRejectEnrollmentApplication(c *gin.Context) {
 
 	c.JSON(200, gin.H{"message": "Enrollment application rejected"})
 }
+
+// POST /registrar/student/status
+func RegistrarUpdateStudentStatus(c *gin.Context) {
+	var req struct {
+		StudentID string `json:"student_id"`
+		Action    string `json:"action"`
+		Remarks   string `json:"remarks"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	var newStatus string
+	switch strings.ToLower(req.Action) {
+	case "reject":
+		newStatus = "rejected"
+	case "approve":
+		newStatus = "approved"
+	default:
+		c.JSON(400, gin.H{"error": "Invalid action"})
+		return
+	}
+
+	result, err := config.DB.Exec(`
+        UPDATE students SET status = ? WHERE student_id = ?
+    `, newStatus, req.StudentID)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		c.JSON(404, gin.H{"error": "Student not found"})
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "Student status updated to " + newStatus})
+}

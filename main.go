@@ -194,6 +194,8 @@ func main() {
 	registrar.GET("/enrollment-applications", controllers.RegistrarGetEnrollmentApplications)
 	registrar.POST("/enrollment-applications/approve", controllers.RegistrarApproveEnrollmentApplication)
 	registrar.POST("/enrollment-applications/reject", controllers.RegistrarRejectEnrollmentApplication)
+	r.POST("/registrar/student/status", controllers.RegistrarUpdateStudentStatus)
+
 	// ---------------- FACULTY ROUTES ----------------
 	faculty := protected.Group("/faculty")
 	faculty.Use(middleware.RoleOnly("faculty"))
