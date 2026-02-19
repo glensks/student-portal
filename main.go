@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"student-portal/config"
 	"student-portal/controllers"
 	"student-portal/middleware"
@@ -221,6 +222,6 @@ func main() {
 	r.GET("/ping", func(c *gin.Context) { c.JSON(200, gin.H{"message": "pong"}) })
 
 	// ---------------- RUN SERVER ----------------
-	r.Run()
+	r.Run(":" + os.Getenv("PORT"))
 
 }
