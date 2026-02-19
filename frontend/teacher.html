@@ -303,6 +303,20 @@ body {
     font-weight: 600;
 }
 
+/* Grade scale hint */
+.grade-scale-hint {
+    background: #fffbeb;
+    border: 1px solid #fbbf24;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 12px;
+    color: #92400e;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 /* Section styling */
 .section-title {
     font-family: 'Playfair Display', serif;
@@ -340,10 +354,7 @@ body {
     outline: none;
 }
 
-.controls-panel select:hover {
-    border-color: var(--forest-600);
-}
-
+.controls-panel select:hover { border-color: var(--forest-600); }
 .controls-panel select:focus {
     border-color: var(--forest-700);
     box-shadow: 0 0 0 3px rgba(64, 145, 108, 0.1);
@@ -359,10 +370,7 @@ body {
     margin-top: 20px;
 }
 
-table { 
-    width: 100%; 
-    border-collapse: collapse;
-}
+table { width: 100%; border-collapse: collapse; }
 
 th {
     background: var(--forest-900);
@@ -403,11 +411,12 @@ input:focus, textarea:focus, select:focus {
     box-shadow: 0 0 0 3px rgba(64, 145, 108, 0.1);
 }
 
-input[type="number"] { width: 90px; }
+/* FIX: Grade inputs sized for 1.0-5.0 scale */
+input.grade-input { width: 80px; text-align: center; }
 input[type="text"] { width: 100%; }
 input[type="datetime-local"] { width: 200px; }
-textarea { 
-    width: 100%; 
+textarea {
+    width: 100%;
     resize: vertical;
     min-height: 120px;
 }
@@ -425,44 +434,18 @@ button {
     letter-spacing: 0.02em;
 }
 
-.btn-primary {
-    background: var(--forest-700);
-    color: white;
-}
-
+.btn-primary { background: var(--forest-700); color: white; }
 .btn-primary:hover {
     background: var(--forest-800);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(64, 145, 108, 0.3);
 }
-
-.btn-success {
-    background: var(--forest-600);
-    color: white;
-}
-
-.btn-success:hover {
-    background: var(--forest-700);
-    transform: translateY(-1px);
-}
-
-.btn-danger {
-    background: var(--red-light);
-    color: white;
-}
-
-.btn-danger:hover {
-    background: var(--red);
-}
-
-.btn-warning {
-    background: var(--gold);
-    color: #3a2800;
-}
-
-.btn-warning:hover {
-    background: var(--gold-light);
-}
+.btn-success { background: var(--forest-600); color: white; }
+.btn-success:hover { background: var(--forest-700); transform: translateY(-1px); }
+.btn-danger { background: var(--red-light); color: white; }
+.btn-danger:hover { background: var(--red); }
+.btn-warning { background: var(--gold); color: #3a2800; }
+.btn-warning:hover { background: var(--gold-light); }
 
 /* Badges */
 .badge {
@@ -497,9 +480,7 @@ button {
     letter-spacing: 0.01em;
 }
 
-.form-group {
-    margin-bottom: 18px;
-}
+.form-group { margin-bottom: 18px; }
 
 .form-group label {
     display: block;
@@ -521,12 +502,10 @@ button {
     box-shadow: 0 1px 4px rgba(0,0,0,0.07);
     transition: all 0.2s ease;
 }
-
 .ann-card:hover {
     box-shadow: 0 4px 14px rgba(0,0,0,0.1);
     transform: translateY(-2px);
 }
-
 .ann-card-header {
     display: flex;
     justify-content: space-between;
@@ -534,7 +513,6 @@ button {
     gap: 12px;
     margin-bottom: 14px;
 }
-
 .ann-card-title {
     font-family: 'Playfair Display', serif;
     font-size: 19px;
@@ -543,7 +521,6 @@ button {
     margin: 0 0 8px 0;
     letter-spacing: 0.01em;
 }
-
 .ann-card-meta {
     font-size: 12px;
     color: var(--text-light);
@@ -551,7 +528,6 @@ button {
     align-items: center;
     gap: 8px;
 }
-
 .ann-card-body {
     color: var(--text-dark);
     font-size: 13.5px;
@@ -560,7 +536,6 @@ button {
     white-space: pre-wrap;
     word-break: break-word;
 }
-
 .ann-card-img-wrap {
     margin-top: 16px;
     border-radius: 10px;
@@ -570,7 +545,6 @@ button {
     max-width: 100%;
     background: var(--cream);
 }
-
 .ann-card-img-wrap img {
     max-width: 100%;
     max-height: 300px;
@@ -579,9 +553,7 @@ button {
     cursor: zoom-in;
     transition: opacity 0.2s;
 }
-
 .ann-card-img-wrap img:hover { opacity: 0.9; }
-
 .ann-delete-btn {
     background: var(--red-light);
     color: white;
@@ -593,24 +565,18 @@ button {
     font-weight: 600;
     transition: all 0.2s;
 }
-
-.ann-delete-btn:hover {
-    background: var(--red);
-}
+.ann-delete-btn:hover { background: var(--red); }
 
 /* Modal */
 .modal {
     display: none;
     position: fixed;
     z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
     background: rgba(27, 67, 50, 0.45);
     backdrop-filter: blur(4px);
 }
-
 .modal-content {
     background: var(--white);
     margin: 5% auto;
@@ -623,11 +589,7 @@ button {
     overflow-y: auto;
     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
 }
-
-.modal-content.large {
-    max-width: 1100px;
-}
-
+.modal-content.large { max-width: 1100px; }
 .modal-header {
     display: flex;
     justify-content: space-between;
@@ -636,7 +598,6 @@ button {
     padding-bottom: 16px;
     border-bottom: 2px solid var(--cream-dark);
 }
-
 .modal-title {
     font-family: 'Playfair Display', serif;
     font-size: 24px;
@@ -645,15 +606,13 @@ button {
     letter-spacing: 0.01em;
     margin: 0;
 }
-
 .close {
     background: none;
     border: none;
     font-size: 32px;
     cursor: pointer;
     color: var(--text-light);
-    width: 36px;
-    height: 36px;
+    width: 36px; height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -662,11 +621,7 @@ button {
     line-height: 1;
     padding: 0;
 }
-
-.close:hover {
-    background: var(--cream);
-    color: var(--text-dark);
-}
+.close:hover { background: var(--cream); color: var(--text-dark); }
 
 /* Empty state */
 .no-data {
@@ -676,14 +631,12 @@ button {
     padding: 40px 20px;
     font-size: 14px;
 }
-
 .ann-empty {
     text-align: center;
     color: var(--text-light);
     padding: 60px 20px;
     font-size: 14px;
 }
-
 .ann-empty-icon {
     font-size: 56px;
     display: block;
@@ -704,24 +657,13 @@ button {
     padding: 0 24px 0 calc(var(--sidebar-w) + 24px);
     z-index: 200;
 }
-
 .footer-copy {
     font-size: 11.5px;
     color: var(--forest-500);
     letter-spacing: 0.03em;
 }
-
-.footer-copy strong {
-    color: var(--gold-light);
-    font-weight: 600;
-}
-
-.footer-links {
-    display: flex;
-    gap: 16px;
-    align-items: center;
-}
-
+.footer-copy strong { color: var(--gold-light); font-weight: 600; }
+.footer-links { display: flex; gap: 16px; align-items: center; }
 .footer-links span {
     font-size: 11px;
     color: var(--forest-600);
@@ -737,18 +679,9 @@ button {
 ::-webkit-scrollbar-thumb { background: var(--forest-400); border-radius: 3px; }
 
 @media (max-width: 768px) {
-    .sidebar {
-        transform: translateX(-100%);
-        transition: transform 0.3s ease;
-    }
-    
-    .main {
-        margin-left: 0;
-    }
-    
-    .site-footer {
-        padding-left: 24px;
-    }
+    .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; }
+    .main { margin-left: 0; }
+    .site-footer { padding-left: 24px; }
 }
 </style>
 </head>
@@ -797,7 +730,6 @@ button {
             <span class="icon">📊</span> Submit Grades
         </button>
     </div>
-
     <div class="sidebar-section">
         <div class="sidebar-section-label">Resources</div>
         <button class="sidebar-btn" onclick="showLessonsDropdown()">
@@ -807,7 +739,6 @@ button {
             <span class="icon">📢</span> Announcements
         </button>
     </div>
-
     <div class="sidebar-logout">
         <button onclick="logout()">🚪 Logout</button>
     </div>
@@ -854,11 +785,19 @@ button {
             <option value="">-- Select Class to Input Grades --</option>
         </select>
     </div>
+    <!-- FIX: Grade scale reminder shown above the table -->
+    <div id="gradeScaleHint" class="grade-scale-hint" style="display:none;">
+        📌 <strong>Filipino GWA Scale:</strong>&nbsp; 1.0 = Excellent &nbsp;|&nbsp; 2.0 = Good &nbsp;|&nbsp; 3.0 = Satisfactory &nbsp;|&nbsp; 4.0 = Conditional Pass &nbsp;|&nbsp; 5.0 = Failed
+    </div>
     <div class="table-wrapper" id="gradesTableWrapper" style="display:none;">
         <table id="gradesTable">
             <thead>
                 <tr>
-                    <th>Student ID</th><th>Full Name</th><th>Year</th><th>Prelim</th><th>Midterm</th><th>Finals</th><th>Remarks</th><th>Action</th>
+                    <th>Student ID</th><th>Full Name</th><th>Year</th>
+                    <th>Prelim<br><small style="font-weight:400;opacity:0.75;">(1.0–5.0)</small></th>
+                    <th>Midterm<br><small style="font-weight:400;opacity:0.75;">(1.0–5.0)</small></th>
+                    <th>Finals<br><small style="font-weight:400;opacity:0.75;">(1.0–5.0)</small></th>
+                    <th>Remarks</th><th>Action</th>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -921,7 +860,6 @@ button {
             <option value="">-- Select Class --</option>
         </select>
     </div>
-
     <div id="announcementForm" class="upload-form" style="display:none;">
         <h3>📢 Post New Announcement</h3>
         <form id="annForm" onsubmit="postAnnouncement(event)">
@@ -940,7 +878,6 @@ button {
             <button type="submit" class="btn-primary">📢 Post Announcement</button>
         </form>
     </div>
-
     <div id="announcementsList" style="display:none; margin-top:20px;"></div>
 </div>
 
@@ -950,7 +887,7 @@ button {
         &copy; 2025 <strong>University of Manila</strong> &nbsp;·&nbsp; All rights reserved &nbsp;·&nbsp; Teacher Portal
     </div>
     <div class="footer-links">
-        <span>v2.0.0</span>
+        <span>v2.0.1</span>
         <span>LMS Module</span>
     </div>
 </footer>
@@ -974,7 +911,7 @@ button {
                 </select>
             </div>
             <div class="form-group">
-                <label>Grade (Optional, 0-100):</label>
+                <label>Grade (Optional, 0–100):</label>
                 <input type="number" id="reviewGrade" min="0" max="100" step="0.01" style="width:100%;">
             </div>
             <div class="form-group">
@@ -990,7 +927,7 @@ button {
 </div>
 
 <script>
-// ===== Clock ===== 
+// ===== Clock =====
 function updateClock() {
     const now = new Date();
     document.getElementById("clockTime").textContent = now.toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
@@ -1007,6 +944,29 @@ function logout() {
         window.location.href = '/login.html';
     }
 }
+
+// ====================== SAFE JSON FETCH ======================
+async function safeJSON(res) {
+    const text = await res.text();
+    try {
+        return { ok: res.ok, status: res.status, data: JSON.parse(text) };
+    } catch {
+        // Log full details so we can diagnose what the server actually returned
+        console.group("🔴 Non-JSON server response");
+        console.log("URL:    ", res.url);
+        console.log("Status: ", res.status, res.statusText);
+        console.log("Body:   ", text);
+        console.groupEnd();
+        // Show the actual server text in the alert so it's visible without opening DevTools
+        const preview = text.trim().substring(0, 300);
+        return {
+            ok: false,
+            status: res.status,
+            data: { error: `HTTP ${res.status} — Server said: ${preview || "(empty body)"}` }
+        };
+    }
+}
+
 let classesData = [];
 let selectedClassForLessons = null;
 let selectedClassForAnnouncements = null;
@@ -1016,7 +976,7 @@ function hideAll() {
     const ids = [
         "classesTableWrapper", "classesTitle",
         "studentsTableWrapper", "studentsTitle", "selectClassPanel",
-        "gradesTableWrapper", "gradesTitle", "selectClassGradesPanel",
+        "gradesTableWrapper", "gradesTitle", "selectClassGradesPanel", "gradeScaleHint",
         "lessonsTableWrapper", "lessonsTitle", "selectClassLessonsPanel", "uploadForm",
         "announcementsTitle", "selectClassAnnouncementsPanel", "announcementForm", "announcementsList"
     ];
@@ -1026,7 +986,6 @@ function hideAll() {
     });
     selectedClassForLessons = null;
     selectedClassForAnnouncements = null;
-    
     document.querySelectorAll('.sidebar-btn').forEach(btn => btn.classList.remove('active'));
 }
 
@@ -1036,7 +995,8 @@ async function fetchClasses() {
     event.target.classList.add('active');
     try {
         const res = await fetch(`${API}/teacher/classes`, { headers: { Authorization: "Bearer " + token() } });
-        const data = await res.json();
+        const { ok, data } = await safeJSON(res);
+        if (!ok) { alert("Error: " + (data.error || "Failed to fetch classes")); return; }
         classesData = data.classes || [];
         const tbody = document.querySelector("#classesTable tbody");
         tbody.innerHTML = "";
@@ -1061,13 +1021,20 @@ async function fetchClasses() {
 async function showStudentsDropdown() {
     hideAll();
     event.target.classList.add('active');
-    if (classesData.length === 0) await fetchClasses();
+    if (classesData.length === 0) {
+        const res = await fetch(`${API}/teacher/classes`, { headers: { Authorization: "Bearer " + token() } });
+        const { data } = await safeJSON(res);
+        classesData = data.classes || [];
+    }
     const select = document.getElementById("selectClass");
     select.innerHTML = `<option value="">-- Select Class --</option>`;
     classesData.forEach(c => {
         select.innerHTML += `<option value="${c.id}">${c.subject} (${c.subject_code}) - ${c.day} ${c.time_start}-${c.time_end}</option>`;
     });
-    select.onchange = () => { if (select.value) fetchStudents(select.value); else document.getElementById("studentsTableWrapper").style.display = "none"; };
+    select.onchange = () => {
+        if (select.value) fetchStudents(select.value);
+        else document.getElementById("studentsTableWrapper").style.display = "none";
+    };
     document.getElementById("selectClassPanel").style.display = "block";
     document.getElementById("studentsTitle").style.display = "block";
 }
@@ -1075,7 +1042,8 @@ async function showStudentsDropdown() {
 async function fetchStudents(classId) {
     try {
         const res = await fetch(`${API}/teacher/students?class_id=${classId}`, { headers: { Authorization: "Bearer " + token() } });
-        const data = await res.json();
+        const { ok, data } = await safeJSON(res);
+        if (!ok) { alert(data.error || "Failed"); return; }
         const students = data.students || [];
         const tbody = document.querySelector("#studentsTable tbody");
         tbody.innerHTML = "";
@@ -1097,7 +1065,11 @@ async function fetchStudents(classId) {
 async function showGradesDropdown() {
     hideAll();
     event.target.classList.add('active');
-    if (classesData.length === 0) await fetchClasses();
+    if (classesData.length === 0) {
+        const res = await fetch(`${API}/teacher/classes`, { headers: { Authorization: "Bearer " + token() } });
+        const { data } = await safeJSON(res);
+        classesData = data.classes || [];
+    }
     const select = document.getElementById("selectClassGrades");
     select.innerHTML = `<option value="">-- Select Class --</option>`;
     classesData.forEach(c => {
@@ -1105,8 +1077,13 @@ async function showGradesDropdown() {
     });
     select.onchange = () => {
         const val = select.value;
-        if (val) fetchGrades(val);
-        else document.getElementById("gradesTableWrapper").style.display = "none";
+        if (val) {
+            document.getElementById("gradeScaleHint").style.display = "flex";
+            fetchGrades(val);
+        } else {
+            document.getElementById("gradeScaleHint").style.display = "none";
+            document.getElementById("gradesTableWrapper").style.display = "none";
+        }
     };
     document.getElementById("selectClassGradesPanel").style.display = "block";
     document.getElementById("gradesTitle").style.display = "block";
@@ -1115,8 +1092,8 @@ async function showGradesDropdown() {
 async function fetchGrades(classId) {
     try {
         const res = await fetch(`${API}/teacher/grades?class_id=${classId}`, { headers: { Authorization: "Bearer " + token() } });
-        const data = await res.json();
-        if (!res.ok) { alert(data.error || "Failed"); return; }
+        const { ok, data } = await safeJSON(res);
+        if (!ok) { alert(data.error || "Failed"); return; }
         const students = data.students || [];
         const tbody = document.querySelector("#gradesTable tbody");
         tbody.innerHTML = "";
@@ -1124,13 +1101,43 @@ async function fetchGrades(classId) {
             tbody.innerHTML = `<tr><td colspan="8" class="no-data">No students enrolled</td></tr>`;
         } else {
             students.forEach(s => {
+                // FIX: Use 1.0-5.0 scale inputs with step 0.25 (common PH university increments)
                 tbody.innerHTML += `<tr>
-                    <td>${s.student_id}</td><td><strong>${s.full_name}</strong></td><td>Year ${s.year_level}</td>
-                    <td><input type="number" id="prelim_${s.student_id}" value="${s.prelim || ''}" min="0" max="100" step="0.01"></td>
-                    <td><input type="number" id="midterm_${s.student_id}" value="${s.midterm || ''}" min="0" max="100" step="0.01"></td>
-                    <td><input type="number" id="finals_${s.student_id}" value="${s.finals || ''}" min="0" max="100" step="0.01"></td>
-                    <td><input type="text" id="remarks_${s.student_id}" value="${s.remarks || ''}" style="width:150px;"></td>
-                    <td><button class="btn-success" onclick="submitGrade(${classId},${s.student_id})">Submit</button></td>
+                    <td>${s.student_id}</td>
+                    <td><strong>${s.full_name}</strong></td>
+                    <td>Year ${s.year_level}</td>
+                    <td>
+                        <input type="number" class="grade-input"
+                            id="prelim_${s.student_id}"
+                            value="${s.prelim !== null && s.prelim !== undefined ? s.prelim : ''}"
+                            min="1.0" max="5.0" step="0.25"
+                            placeholder="1.0–5.0">
+                    </td>
+                    <td>
+                        <input type="number" class="grade-input"
+                            id="midterm_${s.student_id}"
+                            value="${s.midterm !== null && s.midterm !== undefined ? s.midterm : ''}"
+                            min="1.0" max="5.0" step="0.25"
+                            placeholder="1.0–5.0">
+                    </td>
+                    <td>
+                        <input type="number" class="grade-input"
+                            id="finals_${s.student_id}"
+                            value="${s.finals !== null && s.finals !== undefined ? s.finals : ''}"
+                            min="1.0" max="5.0" step="0.25"
+                            placeholder="1.0–5.0">
+                    </td>
+                    <td>
+                        <input type="text" id="remarks_${s.student_id}"
+                            value="${s.remarks || ''}"
+                            style="width:140px;" placeholder="Optional">
+                    </td>
+                    <td>
+                        <button class="btn-success" onclick="submitGrade(${classId}, ${s.student_id})"
+                            style="font-size:12px; padding:7px 14px;">
+                            💾 Save
+                        </button>
+                    </td>
                 </tr>`;
             });
         }
@@ -1138,30 +1145,78 @@ async function fetchGrades(classId) {
     } catch (e) { alert("Error: " + e.message); }
 }
 
+// FIX: submitGrade now uses safeJSON + validates 1.0-5.0 client-side before sending
 async function submitGrade(classId, studentId) {
-    const prelim = parseFloat(document.getElementById(`prelim_${studentId}`).value) || null;
-    const midterm = parseFloat(document.getElementById(`midterm_${studentId}`).value) || null;
-    const finals = parseFloat(document.getElementById(`finals_${studentId}`).value) || null;
-    const remarks = document.getElementById(`remarks_${studentId}`).value || "";
-    if (!prelim && !midterm && !finals) { alert("Please enter at least one grade"); return; }
-    const payload = { class_id: classId, student_id: studentId, prelim, midterm, finals, remarks };
+    const prelimRaw  = document.getElementById(`prelim_${studentId}`).value.trim();
+    const midtermRaw = document.getElementById(`midterm_${studentId}`).value.trim();
+    const finalsRaw  = document.getElementById(`finals_${studentId}`).value.trim();
+    const remarks    = document.getElementById(`remarks_${studentId}`).value || "";
+
+    // Parse — null if empty
+    const prelim  = prelimRaw  !== "" ? parseFloat(prelimRaw)  : null;
+    const midterm = midtermRaw !== "" ? parseFloat(midtermRaw) : null;
+    const finals  = finalsRaw  !== "" ? parseFloat(finalsRaw)  : null;
+
+    // Client-side validation
+    if (prelim === null && midterm === null && finals === null) {
+        alert("Please enter at least one grade (1.0–5.0).");
+        return;
+    }
+
+    const rangeErr = (val, label) => {
+        if (val !== null && (isNaN(val) || val < 1.0 || val > 5.0)) {
+            alert(`${label} must be between 1.0 and 5.0 (1.0 = Excellent, 5.0 = Failed).`);
+            return true;
+        }
+        return false;
+    };
+
+    if (rangeErr(prelim, "Prelim"))   return;
+    if (rangeErr(midterm, "Midterm")) return;
+    if (rangeErr(finals, "Finals"))   return;
+
+    const payload = {
+        class_id:   classId,
+        student_id: studentId,
+        prelim,
+        midterm,
+        finals,
+        remarks
+    };
+
     try {
         const res = await fetch(`${API}/teacher/grades`, {
             method: "POST",
-            headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token() },
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token()
+            },
             body: JSON.stringify(payload)
         });
-        const data = await res.json();
-        if (res.ok) { alert(data.message); fetchGrades(classId); }
-        else alert(data.error || "Error");
-    } catch (e) { alert("Network error: " + e.message); }
+
+        // FIX: Use safeJSON so a non-JSON server response never crashes the parse
+        const { ok, data } = await safeJSON(res);
+
+        if (ok) {
+            alert("✅ " + (data.message || "Grade saved!"));
+            fetchGrades(classId);   // Refresh the row
+        } else {
+            alert("❌ " + (data.error || "Failed to save grade."));
+        }
+    } catch (e) {
+        alert("Network error: " + e.message);
+    }
 }
 
 // ====================== LESSONS ======================
 async function showLessonsDropdown() {
     hideAll();
     event.target.classList.add('active');
-    if (classesData.length === 0) await fetchClasses();
+    if (classesData.length === 0) {
+        const res = await fetch(`${API}/teacher/classes`, { headers: { Authorization: "Bearer " + token() } });
+        const { data } = await safeJSON(res);
+        classesData = data.classes || [];
+    }
     const select = document.getElementById("selectClassLessons");
     select.innerHTML = `<option value="">-- Select Class --</option>`;
     classesData.forEach(c => {
@@ -1205,8 +1260,8 @@ async function uploadLesson(e) {
             headers: { Authorization: "Bearer " + token() },
             body: formData
         });
-        const data = await res.json();
-        if (res.ok) { alert(data.message); document.getElementById("lessonForm").reset(); fetchLessons(selectedClassForLessons); }
+        const { ok, data } = await safeJSON(res);
+        if (ok) { alert(data.message); document.getElementById("lessonForm").reset(); fetchLessons(selectedClassForLessons); }
         else alert(data.error || "Error uploading");
     } catch (e) { alert("Network error: " + e.message); }
 }
@@ -1214,8 +1269,8 @@ async function uploadLesson(e) {
 async function fetchLessons(classId) {
     try {
         const res = await fetch(`${API}/teacher/lessons?class_id=${classId}`, { headers: { Authorization: "Bearer " + token() } });
-        const data = await res.json();
-        if (!res.ok) { alert(data.error || "Failed fetching"); return; }
+        const { ok, data } = await safeJSON(res);
+        if (!ok) { alert(data.error || "Failed fetching"); return; }
         const materials = data.materials || [];
         const tbody = document.querySelector("#lessonsTable tbody");
         tbody.innerHTML = "";
@@ -1247,8 +1302,8 @@ async function fetchLessons(classId) {
 async function viewSubmissions(materialId) {
     try {
         const res = await fetch(`${API}/teacher/lessons/${materialId}/submissions`, { headers: { Authorization: "Bearer " + token() } });
-        const data = await res.json();
-        if (!res.ok) { alert(data.error || "Failed to fetch submissions"); return; }
+        const { ok, data } = await safeJSON(res);
+        if (!ok) { alert(data.error || "Failed to fetch submissions"); return; }
         const subs = data.submissions || [];
         if (subs.length === 0) { alert("No submissions yet for this lesson"); return; }
         showSubmissionsModal(subs, materialId);
@@ -1327,8 +1382,8 @@ async function quickReview(submissionId, studentName, action) {
             headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token() },
             body: JSON.stringify(payload)
         });
-        const data = await res.json();
-        if (res.ok) {
+        const { ok, data } = await safeJSON(res);
+        if (ok) {
             alert(`✅ ${data.message}`);
             document.querySelectorAll('.modal').forEach(m => m.remove());
             if (selectedClassForLessons) fetchLessons(selectedClassForLessons);
@@ -1353,8 +1408,8 @@ async function deleteLesson(materialId) {
     if (!confirm("Delete this lesson?")) return;
     try {
         const res = await fetch(`${API}/teacher/lessons/${materialId}`, { method: "DELETE", headers: { Authorization: "Bearer " + token() } });
-        const data = await res.json();
-        if (res.ok) { alert(data.message); fetchLessons(selectedClassForLessons); }
+        const { ok, data } = await safeJSON(res);
+        if (ok) { alert(data.message); fetchLessons(selectedClassForLessons); }
         else alert(data.error || "Failed");
     } catch (e) { alert("Network error: " + e.message); }
 }
@@ -1377,8 +1432,8 @@ async function submitReview(e) {
             headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token() },
             body: JSON.stringify(payload)
         });
-        const data = await res.json();
-        if (res.ok) {
+        const { ok, data } = await safeJSON(res);
+        if (ok) {
             alert(`✅ ${data.message}`);
             closeReviewModal();
             if (selectedClassForLessons) fetchLessons(selectedClassForLessons);
@@ -1394,8 +1449,11 @@ window.onclick = function(event) {
 async function showAnnouncementsDropdown() {
     hideAll();
     event.target.classList.add('active');
-    if (classesData.length === 0) await fetchClasses();
-
+    if (classesData.length === 0) {
+        const res = await fetch(`${API}/teacher/classes`, { headers: { Authorization: "Bearer " + token() } });
+        const { data } = await safeJSON(res);
+        classesData = data.classes || [];
+    }
     const select = document.getElementById("selectClassAnnouncements");
     select.innerHTML = `<option value="">-- Select Class --</option>`;
     classesData.forEach(c => {
@@ -1412,7 +1470,6 @@ async function showAnnouncementsDropdown() {
             document.getElementById("announcementsList").style.display = "none";
         }
     };
-
     document.getElementById("selectClassAnnouncementsPanel").style.display = "block";
     document.getElementById("announcementsTitle").style.display = "block";
 }
@@ -1420,30 +1477,23 @@ async function showAnnouncementsDropdown() {
 async function postAnnouncement(e) {
     e.preventDefault();
     if (!selectedClassForAnnouncements) { alert("Select a class first"); return; }
-
     const title = document.getElementById("annTitle").value.trim();
     const content = document.getElementById("annContent").value.trim();
     const imageFile = document.getElementById("annImage").files[0];
-
     if (!title || !content) { alert("Title and message are required"); return; }
-
     const formData = new FormData();
     formData.append("class_id", selectedClassForAnnouncements);
     formData.append("title", title);
     formData.append("content", content);
     if (imageFile) formData.append("image", imageFile);
-
     try {
         const res = await fetch(`${API}/teacher/announcements`, {
             method: "POST",
             headers: { Authorization: "Bearer " + token() },
             body: formData
         });
-        const rawText = await res.text();
-        let data;
-        try { data = JSON.parse(rawText); } catch { alert("Server error: " + rawText.substring(0, 200)); return; }
-
-        if (res.ok) {
+        const { ok, data } = await safeJSON(res);
+        if (ok) {
             alert("✅ " + data.message);
             document.getElementById("annForm").reset();
             fetchAnnouncements(selectedClassForAnnouncements);
@@ -1457,18 +1507,13 @@ async function fetchAnnouncements(classId) {
     const list = document.getElementById("announcementsList");
     list.innerHTML = `<div style="text-align:center;padding:20px;color:#9ca3af;">Loading...</div>`;
     list.style.display = "block";
-
     try {
         const res = await fetch(`${API}/teacher/announcements?class_id=${classId}`, {
             headers: { Authorization: "Bearer " + token() }
         });
-        const rawText = await res.text();
-        let data;
-        try { data = JSON.parse(rawText); } catch { alert("Server error: " + rawText.substring(0, 200)); return; }
-        if (!res.ok) { alert(data.error || "Failed"); return; }
-
+        const { ok, data } = await safeJSON(res);
+        if (!ok) { alert(data.error || "Failed"); return; }
         const items = data.announcements || [];
-
         if (items.length === 0) {
             list.innerHTML = `
                 <div class="ann-empty">
@@ -1486,7 +1531,6 @@ async function fetchAnnouncements(classId) {
                              onclick="window.open('${API}${a.image_url}', '_blank')"
                              title="Click to open full size">
                     </div>` : '';
-
                 list.innerHTML += `
                     <div class="ann-card">
                         <div class="ann-card-header">
@@ -1511,8 +1555,8 @@ async function deleteAnnouncement(id) {
             method: "DELETE",
             headers: { Authorization: "Bearer " + token() }
         });
-        const data = await res.json();
-        if (res.ok) {
+        const { ok, data } = await safeJSON(res);
+        if (ok) {
             fetchAnnouncements(selectedClassForAnnouncements);
         } else {
             alert("❌ " + (data.error || "Failed to delete"));

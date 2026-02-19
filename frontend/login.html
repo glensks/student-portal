@@ -684,6 +684,18 @@ select[multiple] option:checked { background: linear-gradient(135deg, var(--fore
                             </div>
                         </div>
 
+                                            <div class="form-group">
+                        <label class="form-label" for="scholarship_status">
+                            Scholarship Status <span class="required-mark">*</span>
+                        </label>
+                        <select id="scholarship_status" class="form-control" onchange="updateProgress()">
+                            <option value="">Select scholarship status</option>
+                            <option value="scholar">Scholar</option>
+                            <option value="non-scholar">Non-Scholar</option>
+                        </select>
+                        <div class="form-hint">💡 Select if you are a scholar or non-scholar student.</div>
+                    </div>
+
                         <!-- ✅ SEMESTER MOVED BEFORE SUBJECTS -->
                         <div class="form-group" style="margin-bottom: 20px;">
                             <label class="form-label" for="semester">
@@ -984,7 +996,7 @@ function removeSubject(id) {
 }
 
 function updateProgress() {
-    const fields = ['student_id','password','first_name','last_name','age','contact_number','email','address','last_school_attended','last_school_year','course','year_level','semester'];
+    const fields = ['student_id','password','first_name','last_name','age','contact_number','email','address','last_school_attended','last_school_year','course','year_level','semester','scholarship_status'];
     let filled = fields.filter(f => { const el = document.getElementById(f); return el && el.value.trim(); }).length;
     if (Array.from(document.getElementById('subjects').selectedOptions).length > 0) filled++;
     const total = fields.length + 1;
@@ -1098,13 +1110,14 @@ async function register() {
         last_school_year: document.getElementById('last_school_year').value,
         course: document.getElementById('course').value,
         year_level: document.getElementById('year_level').value,
-        semester: document.getElementById('semester').value
+        semester: document.getElementById('semester').value,
+        scholarship_status: document.getElementById('scholarship_status').value
     };
 
     if (!fields.student_id || !fields.password || !fields.first_name || !fields.last_name ||
         !fields.age || !fields.contact_number || !fields.email || !fields.address ||
         !fields.last_school_attended || !fields.last_school_year || !fields.course ||
-        !fields.year_level || !fields.semester) {
+        !fields.year_level || !fields.semester || !fields.scholarship_status) {
         msgEl.className = 'message-box error';
         msgEl.innerHTML = '⚠️ Please complete all required fields marked with *.';
         msgEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1169,7 +1182,6 @@ async function register() {
         btn.disabled = false;
     }
 }
-
 function togglePw(id, btn) {
     const el = document.getElementById(id);
     const show = el.type === 'password';

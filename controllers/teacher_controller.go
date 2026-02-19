@@ -300,17 +300,18 @@ func TeacherSubmitGrade(c *gin.Context) {
 		return
 	}
 
-	// Validate grades (0-100 or NULL)
-	if request.Prelim != nil && (*request.Prelim < 0 || *request.Prelim > 100) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Prelim grade must be between 0 and 100"})
+	// ===== FIX: Validate grades using Filipino GWA scale (1.0 = highest, 5.0 = failed) =====
+	// 1.0 = Excellent, 2.0 = Good, 3.0 = Satisfactory, 4.0 = Conditional, 5.0 = Failed
+	if request.Prelim != nil && (*request.Prelim < 1.0 || *request.Prelim > 5.0) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Prelim grade must be between 1.0 and 5.0 (Filipino GWA scale)"})
 		return
 	}
-	if request.Midterm != nil && (*request.Midterm < 0 || *request.Midterm > 100) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Midterm grade must be between 0 and 100"})
+	if request.Midterm != nil && (*request.Midterm < 1.0 || *request.Midterm > 5.0) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Midterm grade must be between 1.0 and 5.0 (Filipino GWA scale)"})
 		return
 	}
-	if request.Finals != nil && (*request.Finals < 0 || *request.Finals > 100) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Finals grade must be between 0 and 100"})
+	if request.Finals != nil && (*request.Finals < 1.0 || *request.Finals > 5.0) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Finals grade must be between 1.0 and 5.0 (Filipino GWA scale)"})
 		return
 	}
 
@@ -627,7 +628,6 @@ func TeacherUploadLesson(c *gin.Context) {
 }
 
 // ===== GET LESSON MATERIALS FOR A CLASS =====
-// ===== GET LESSON MATERIALS FOR A CLASS =====
 func TeacherGetLessonMaterials(c *gin.Context) {
 	role := c.GetString("role")
 	teacherID := c.GetInt("user_id")
@@ -692,7 +692,7 @@ func TeacherGetLessonMaterials(c *gin.Context) {
 			fileName         string
 			filePath         string
 			fileSize         int64
-			dueDate          sql.NullString // CHANGED: from sql.NullTime to sql.NullString
+			dueDate          sql.NullString
 			createdAt        string
 			totalSubmissions int
 			lateSubmissions  int
@@ -718,7 +718,6 @@ func TeacherGetLessonMaterials(c *gin.Context) {
 		}
 
 		if dueDate.Valid {
-			// Parse the string date
 			parsedTime, err := time.Parse("2006-01-02 15:04:05", dueDate.String)
 			if err == nil {
 				material["due_date"] = parsedTime.Format("2006-01-02 15:04:05")
@@ -746,7 +745,6 @@ func TeacherGetLessonMaterials(c *gin.Context) {
 }
 
 // ===== GET SUBMISSIONS FOR A LESSON =====
-// ===== FIXED: GET SUBMISSIONS FOR A LESSON =====
 func TeacherGetSubmissions(c *gin.Context) {
 	role := c.GetString("role")
 	teacherID := c.GetInt("user_id")
@@ -822,7 +820,6 @@ func TeacherGetSubmissions(c *gin.Context) {
 			remarksValue = remarks.String
 		}
 
-		// ⭐ FIXED: Normalize file path for frontend
 		cleanPath := strings.ReplaceAll(filePath, "\\", "/")
 		if strings.HasPrefix(cleanPath, "./") {
 			cleanPath = cleanPath[2:]
@@ -834,8 +831,8 @@ func TeacherGetSubmissions(c *gin.Context) {
 			"student_name": firstName + " " + lastName,
 			"email":        email,
 			"file_name":    fileName,
-			"file_path":    cleanPath, // ⭐ ADDED: Clean path
-			"download_url": cleanPath, // ⭐ ADDED: Same as file_path for compatibility
+			"file_path":    cleanPath,
+			"download_url": cleanPath,
 			"file_size":    fileSize,
 			"submitted_at": submitted,
 			"status":       status,
@@ -1071,8 +1068,6 @@ func TeacherReviewSubmission(c *gin.Context) {
 			`, studentID, subjectID, teacherID).Scan(&gradeID)
 
 			if err == nil {
-				// Update existing grade (you might want to update a specific term)
-				// For now, we'll add it to remarks
 				_, _ = config.DB.Exec(`
 					UPDATE grades 
 					SET remarks = CONCAT(IFNULL(remarks, ''), '\nSubmission Grade: ', ?), updated_at = NOW()

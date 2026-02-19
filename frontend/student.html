@@ -665,6 +665,88 @@
       color: #165a28;
     }
 
+    /* Announcement Filter Dropdown */
+/* Announcement Filter Dropdown */
+.filter-dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+.filter-dropdown-btn {
+  color: #333;
+  background: white;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-dropdown-btn:hover {
+  border-color: #165a28;
+  background: #f8f9fa;
+}
+
+.filter-dropdown-menu {
+  display: none;
+  position: absolute;
+  right: 0;   /* ← changed from left:0 to right:0 */
+  top: 100%;
+  margin-top: 5px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  min-width: 200px;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.filter-dropdown-menu.show {
+  display: block;
+  animation: slideDown 0.2s ease;
+}
+
+.filter-dropdown-item {
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.filter-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.filter-dropdown-item:hover {
+  background: #f8f9fa;
+  color: #165a28;
+}
+
+.filter-dropdown-item.active {
+  background: #e8f5e9;
+  color: #165a28;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .filter-dropdown-menu {
+    left: 0;
+    right: auto;
+  }
+}
+
     .view-all-btn {
       color: #165a28;
       text-decoration: none;
@@ -1937,12 +2019,42 @@
       background: #f5f5f5;
     }
 
-    .document-image-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 400px;
-    }
+   .document-image-container {
+  background: white;
+  border-radius: 8px;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 600px;
+}
+
+    /* PDF Viewer Styles */
+
+.document-image-container embed {
+  width: 100%;
+  height: 80vh;
+  max-height: 800px;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+.document-image-container embed::-webkit-scrollbar {
+  display: none;
+}
+
+.document-viewer-body {
+  background: #f5f5f5;
+  padding: 20px;
+  overflow: auto;
+  max-height: calc(90vh - 180px);
+}
+.document-image-container {
+  background: #f5f5f5;
+  border-radius: 8px;
+  padding: 10px;
+}
 
     .document-image {
       max-width: 100%;
@@ -2207,7 +2319,62 @@
 
 
 
+/* ── Semester Filter Bar ── */
+.semester-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  align-items: center;
+}
 
+.sem-filter-btn {
+  padding: 6px 14px;
+  border: 2px solid #e0e0e0;
+  background: white;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #555;
+}
+
+.sem-filter-btn:hover { border-color: #165a28; color: #165a28; }
+.sem-filter-btn.active { background: #165a28; color: white; border-color: #165a28; }
+
+/* ── Semester Group ── */
+.semester-group { margin-bottom: 30px; }
+
+.semester-group-header {
+  background: linear-gradient(135deg, #165a28 0%, #0d3d1a 100%);
+  color: white;
+  padding: 14px 20px;
+  border-radius: 8px 8px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.semester-group-title {
+  font-family: 'Crimson Text', serif;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.semester-gwa-badge {
+  background: #d4af37;
+  color: #333;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+}
 
 /* Profile Settings Modal */
 .profile-modal {
@@ -3054,6 +3221,9 @@
   margin-top: 5px;
 }
   </style>
+  
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 </head>
 
 <body>
@@ -3130,6 +3300,10 @@
       <a href="#" onclick="showGrades(event)">
         <span class="icon">📊</span> My Grades
       </a>
+
+      <a href="#" onclick="showEnrollment(event)">
+  <span class="icon">📝</span> Re-Enrollment
+</a>
     </div>
 
     <div class="nav-section">
@@ -3145,8 +3319,7 @@
   </a>
 </div>
   </div>
-
-  <!-- Main Content -->
+<!-- Main Content -->
   <div class="main-content">
     <!-- Page Header -->
     <div class="page-header">
@@ -3158,6 +3331,7 @@
 
     <!-- Content Wrapper -->
     <div class="content-wrapper">
+
       <!-- Dashboard View -->
       <div id="dashboardView">
         <div class="dashboard-grid">
@@ -3166,19 +3340,16 @@
             <div class="stat-label">Enrolled Subjects</div>
             <div class="stat-value" id="statSubjects">-</div>
           </div>
-
           <div class="stat-card">
             <div class="stat-icon">📊</div>
             <div class="stat-label">Total Units</div>
             <div class="stat-value" id="statUnits">-</div>
           </div>
-
           <div class="stat-card">
             <div class="stat-icon">💰</div>
             <div class="stat-label">Balance Due</div>
             <div class="stat-value" id="statBalance">₱0</div>
           </div>
-
           <div class="stat-card">
             <div class="stat-icon">✅</div>
             <div class="stat-label">Payment Status</div>
@@ -3186,16 +3357,33 @@
           </div>
         </div>
 
-        <div class="announcements-section">
-          <div class="section-header">
-            <h2>📢 Latest Announcements</h2>
-            <a href="#" class="view-all-btn">View All</a>
-          </div>
-
-          <div id="announcementsContainer">
-            <div style="text-align:center; padding:40px; color:#999;">
-              Loading announcements...
+        <div class="section-header">
+          <h2>📢 Latest Announcements</h2>
+          <div class="filter-dropdown-container">
+            <button class="filter-dropdown-btn" onclick="toggleAnnouncementFilter(event)">
+              <span id="currentFilterLabel">All Announcements</span>
+              <span style="font-size: 10px;">▼</span>
+            </button>
+            <div class="filter-dropdown-menu" id="announcementFilterMenu">
+              <div class="filter-dropdown-item active" onclick="filterAnnouncements('all')" data-filter="all">
+                <span>📢</span> All Announcements
+              </div>
+              <div class="filter-dropdown-item" onclick="filterAnnouncements('teacher')" data-filter="teacher">
+                <span>👨‍🏫</span> Teacher
+              </div>
+              <div class="filter-dropdown-item" onclick="filterAnnouncements('registrar')" data-filter="registrar">
+                <span>📢</span> Registrar
+              </div>
+              <div class="filter-dropdown-item" onclick="filterAnnouncements('records')" data-filter="records">
+                <span>📋</span> Records
+              </div>
             </div>
+          </div>
+        </div>
+
+        <div id="announcementsContainer">
+          <div style="text-align:center; padding:40px; color:#999;">
+            Loading announcements...
           </div>
         </div>
       </div>
@@ -3216,8 +3404,6 @@
               <button onclick="toggleView('list')">📋 List View</button>
             </div>
           </div>
-
-          <!-- Calendar View -->
           <div id="calendarView" class="calendar-view">
             <div class="calendar-grid" id="calendarGrid">
               <div class="calendar-day-header" style="background:#f8f9fa;"></div>
@@ -3229,8 +3415,6 @@
               <div class="calendar-day-header">Saturday</div>
             </div>
           </div>
-
-          <!-- List View -->
           <div id="listView" class="schedule-list">
             <div id="scheduleListContent"></div>
           </div>
@@ -3239,16 +3423,13 @@
 
       <!-- Document Request View -->
       <div id="documentsView" style="display:none;">
-        <!-- Request Form -->
         <div class="document-request-form">
           <h2 class="request-form-title">📄 Request a Document</h2>
-          
           <div class="info-box">
             <strong>📌 Request Instructions:</strong><br>
-            Select the document type you need, specify your purpose, and choose the number of copies. 
+            Select the document type you need, specify your purpose, and choose the number of copies.
             All requests will be reviewed by the Registrar's Office within 2-3 business days.
           </div>
-
           <form id="documentRequestForm">
             <div class="form-group">
               <label class="form-label">Select Document Type</label>
@@ -3280,7 +3461,6 @@
               </div>
               <input type="hidden" id="selectedDocumentType" />
             </div>
-
             <div class="form-group">
               <label class="form-label">Number of Copies</label>
               <div class="copies-selector">
@@ -3290,18 +3470,25 @@
                 <span style="color:#666; font-size:12px; margin-left:10px;">(Maximum: 10 copies)</span>
               </div>
             </div>
-
-            <div class="form-group">
-              <label class="form-label">Purpose of Request</label>
-              <textarea 
-                id="purposeInput"
+            <div class="form-group" id="purposeGroup" style="display:none;">
+              <label class="form-label">Purpose of Request *</label>
+              <select id="purposeDropdown" class="form-input" required>
+                <option value="">-- Select Purpose --</option>
+              </select>
+              <div style="margin-top:8px; font-size:12px; color:#666;">
+                💡 If your purpose is not listed, select "Other" and specify below
+              </div>
+            </div>
+            <div class="form-group" id="otherPurposeGroup" style="display:none;">
+              <label class="form-label">Please Specify Purpose *</label>
+              <textarea
+                id="otherPurposeInput"
                 class="form-input"
-                placeholder="Example: For scholarship application, employment requirement, etc."
-                rows="4"
+                placeholder="Please provide details about your specific purpose..."
+                rows="3"
                 style="resize: vertical;"
               ></textarea>
             </div>
-
             <div class="quick-actions">
               <button type="submit" class="action-btn primary">
                 <span>📤</span> Submit Request
@@ -3312,14 +3499,11 @@
             </div>
           </form>
         </div>
-
-        <!-- Requests History -->
         <div class="requests-history">
           <div class="section-header">
             <h2>📋 My Document Requests</h2>
             <button class="view-all-btn" onclick="loadDocumentRequests()">🔄 Refresh</button>
           </div>
-
           <div id="requestsContainer">
             <div style="text-align:center; padding:40px; color:#999;">
               Loading requests...
@@ -3329,7 +3513,6 @@
       </div>
 
       <!-- Grades View -->
-      
       <div id="gradesView" style="display:none;">
         <div id="gradesMessage"></div>
         <div id="gradesResult">
@@ -3339,29 +3522,25 @@
         </div>
       </div>
 
-      <!-- ✅ FIXED: Lesson Materials View -->
+      <!-- Lesson Materials View -->
       <div id="materialsView" style="display:none;">
         <div id="materialsMessage"></div>
-
         <div class="announcements-section">
           <div class="section-header">
             <h2>📚 Available Lesson Materials</h2>
             <button class="view-all-btn" onclick="loadLessonMaterials()">🔄 Refresh</button>
           </div>
-
           <div id="materialsContainer">
             <div style="text-align:center;padding:40px;color:#999;">
               Loading materials...
             </div>
           </div>
         </div>
-
         <div class="announcements-section" style="margin-top:25px;">
           <div class="section-header">
             <h2>📤 My Submissions</h2>
             <button class="view-all-btn" onclick="loadMySubmissions()">🔄 Refresh</button>
           </div>
-
           <div id="submissionsContainer">
             <div style="text-align:center;padding:40px;color:#999;">
               Loading submissions...
@@ -3370,30 +3549,347 @@
         </div>
       </div>
 
-    </div>
-  </div>
-</div>
+      <!-- ✅ ENROLLMENT VIEW — INSIDE content-wrapper (FIXED) -->
+      <div id="enrollmentView" style="display:none;">
+     
+      
+        <!-- Application Form -->
+        <div class="announcements-section" style="margin-bottom:20px;">
+          <div class="section-header">
+            <h2>📝 Re-Enrollment Application</h2>
+            <button class="view-all-btn" onclick="document.getElementById('enrollmentForm').reset(); resetEnrollForm();">🔄 Clear Form</button>
+          </div>
 
-<div class="header-actions">
-  <div class="notification-container">
-    <button class="notification-bell" onclick="toggleNotifications()">
-      🔔
-      <span class="notification-badge" id="notificationBadge" style="display:none;">0</span>
-    </button>
-    
-    <div class="notification-dropdown" id="notificationDropdown">
-      <div class="notification-header">
-        Notifications
-        <button class="notification-mark-read-btn" onclick="markAllAsRead()">Mark all read</button>
-      </div>
-      <div id="notificationList">
-        <div class="notification-empty">
-          Loading notifications...
-        </div>
+          <!-- Alert Box — matches registration -->
+          <div style="background:#e8f5e9; border-left:4px solid #165a28; padding:14px 16px; border-radius:8px; margin-bottom:20px; display:flex; align-items:flex-start; gap:12px;">
+            <span style="font-size:18px; margin-top:1px;">📋</span>
+            <div>
+              <div style="font-size:13px; font-weight:700; color:#165a28; margin-bottom:3px;">Application Guidelines</div>
+              <div style="font-size:12px; color:#555;">All fields marked with <span style="color:#dc2626; font-weight:700;">*</span> are required. Please ensure all information is accurate before submission.</div>
+            </div>
+          </div>
+
+          <!-- Progress Bar — matches registration -->
+          <div id="enrollProgressIndicator" style="display:none; margin-bottom:20px;">
+            <div style="display:flex; justify-content:space-between; font-size:12px; color:#555; margin-bottom:6px;">
+              <span>Application Progress</span>
+              <span id="enrollProgressPercent">0%</span>
+            </div>
+            <div style="background:#e0e0e0; border-radius:99px; height:8px; overflow:hidden;">
+              <div id="enrollProgressFill" style="background:linear-gradient(90deg,#165a28,#40916c); height:100%; border-radius:99px; width:0%; transition:width 0.4s ease;"></div>
+            </div>
+          </div>
+
+          <div id="enrollmentMessage" style="margin-bottom:16px;"></div>
+
+          <form id="enrollmentForm" onsubmit="submitEnrollment(event)">
+
+            <!-- ══════════ PERSONAL INFORMATION ══════════ -->
+           <div style="background:#f9f9f9; border:1px solid #e8e8e8; border-radius:10px; padding:24px; margin-bottom:20px;">
+  <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px; padding-bottom:14px; border-bottom:2px solid #e8e8e8;">
+    <div style="width:38px; height:38px; background:linear-gradient(135deg,#165a28,#40916c); border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">👤</div>
+    <h3 style="margin:0; font-size:16px; font-weight:700; color:#165a28;">Personal Information</h3>
+  </div>
+
+  <!-- ✅ Student ID Number (half width, read-only) -->
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+    <div>
+      <label style="display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:6px;">Student ID Number <span style="color:#dc2626;">*</span></label>
+      <div style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:7px; font-size:13px; background:#f0f0f0; color:#555; font-weight:700; box-sizing:border-box; min-height:44px; display:flex; align-items:center; justify-content:space-between;">
+        <span id="enroll_student_id_display">—</span>
+        <span style="font-size:10px; color:#aaa; white-space:nowrap;">🔒 Auto-filled</span>
       </div>
     </div>
   </div>
-</div>
+
+    <!-- First / Middle / Last Name -->
+  <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:16px;">
+    <div>
+      <label style="display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:6px;">First Name <span style="color:#dc2626;">*</span></label>
+      <input type="text" id="enroll_first_name" placeholder="First name"
+        style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:7px; font-size:13px; font-family:inherit; box-sizing:border-box;"
+        oninput="updateEnrollProgress()" required>
+    </div>
+    <div>
+      <label style="display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:6px;">Middle Name</label>
+      <input type="text" id="enroll_middle_name" placeholder="Middle name (optional)"
+        style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:7px; font-size:13px; font-family:inherit; box-sizing:border-box;">
+    </div>
+    <div>
+      <label style="display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:6px;">Last Name <span style="color:#dc2626;">*</span></label>
+      <input type="text" id="enroll_last_name" placeholder="Last name"
+        style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:7px; font-size:13px; font-family:inherit; box-sizing:border-box;"
+        oninput="updateEnrollProgress()" required>
+    </div>
+  </div>
+
+              <!-- Age / Contact / Email -->
+              <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:16px;">
+                <div>
+                  <label style="display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:6px;">Age <span style="color:#dc2626;">*</span></label>
+                  <input type="number" id="enroll_age" placeholder="Age" min="15" max="100"
+                    style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:7px; font-size:13px; font-family:inherit; box-sizing:border-box;"
+                    oninput="updateEnrollProgress()" required>
+                </div>
+                <div>
+                  <label style="display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:6px;">Contact Number <span style="color:#dc2626;">*</span></label>
+                  <input type="tel" id="enroll_contact" placeholder="09XX XXX XXXX"
+                    style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:7px; font-size:13px; font-family:inherit; box-sizing:border-box;"
+                    oninput="updateEnrollProgress()" required>
+                </div>
+                <div>
+                  <label style="display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:6px;">Email Address <span style="color:#dc2626;">*</span></label>
+                  <input type="email" id="enroll_email" placeholder="student@email.com"
+                    style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:7px; font-size:13px; font-family:inherit; box-sizing:border-box;"
+                    oninput="updateEnrollProgress()" required>
+                </div>
+              </div>
+
+              <!-- Complete Address -->
+              <div>
+                <label style="display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:6px;">Complete Address <span style="color:#dc2626;">*</span></label>
+                <textarea id="enroll_address" placeholder="House/Unit No., Street, Barangay, City/Municipality, Province"
+                  style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:7px; font-size:13px; font-family:inherit; min-height:70px; resize:vertical; box-sizing:border-box;"
+                  oninput="updateEnrollProgress()" required></textarea>
+              </div>
+            </div>
+
+            <!-- ══════════ FATHER'S INFORMATION ══════════ -->
+            <div style="background:#f9f9f9; border:1px solid #e8e8e8; border-radius:10px; padding:24px; margin-bottom:20px;">
+              <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px; padding-bottom:14px; border-bottom:2px solid #e8e8e8;">
+                <div style="width:38px; height:38px; background:linear-gradient(135deg,#165a28,#40916c); border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">👨</div>
+                <h3 style="margin:0; font-size:16px; font-weight:700; color:#165a28;">Father's Information</h3>
+              </div>
+
+              <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:16px;">
+                <div>
+                  <label style="display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:6px;">First Name</label>
+                  <input type="text" id="enroll_father_first_name" placeholder="First name"
+                    style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:7px; font-size:13px; font-family:inherit; box-sizing:border-box;">
+                </div>
+                <div>
+                  <label style="display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:6px;">Middle Name</label>
+                  <input type="text" id="enroll_father_middle_name" placeholder="Middle name"
+                    style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:7px; font-size:13px; font-family:inherit; box-sizing:border-box;">
+                </div>
+                <div>
+                  <label style="display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:6px;">Last Name</label>
+                  <input type="text" id="enroll_father_last_name" placeholder="Last name"
+                    style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:7px; font-size:13px; font-family:inherit; box-sizing:border-box;">
+                </div>
+              </div>
+
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+                <div>
+                  <label style="display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:6px;">Occupation</label>
+                  <input type="text" id="enroll_father_occupation" placeholder="Occupation"
+                    style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:7px; font-size:13px; font-family:inherit; box-sizing:border-box;">
+                </div>
+                <div>
+                  <label style="display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:6px;">Contact Number</label>
+                  <input type="tel" id="enroll_father_contact" placeholder="Contact number"
+                    style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:7px; font-size:13px; font-family:inherit; box-sizing:border-box;">
+                </div>
+              </div>
+
+              <div>
+                <label style="display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:6px;">Address</label>
+                <textarea id="enroll_father_address" placeholder="Complete address"
+                  style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:7px; font-size:13px; font-family:inherit; min-height:70px; resize:vertical; box-sizing:border-box;"></textarea>
+              </div>
+            </div>
+
+            <!-- ══════════ MOTHER'S INFORMATION ══════════ -->
+            <div style="background:#f9f9f9; border:1px solid #e8e8e8; border-radius:10px; padding:24px; margin-bottom:20px;">
+              <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px; padding-bottom:14px; border-bottom:2px solid #e8e8e8;">
+                <div style="width:38px; height:38px; background:linear-gradient(135deg,#165a28,#40916c); border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">👩</div>
+                <h3 style="margin:0; font-size:16px; font-weight:700; color:#165a28;">Mother's Information</h3>
+              </div>
+
+              <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:16px;">
+                <div>
+                  <label style="display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:6px;">First Name</label>
+                  <input type="text" id="enroll_mother_first_name" placeholder="First name"
+                    style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:7px; font-size:13px; font-family:inherit; box-sizing:border-box;">
+                </div>
+                <div>
+                  <label style="display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:6px;">Middle Name</label>
+                  <input type="text" id="enroll_mother_middle_name" placeholder="Middle name"
+                    style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:7px; font-size:13px; font-family:inherit; box-sizing:border-box;">
+                </div>
+                <div>
+                  <label style="display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:6px;">Last Name</label>
+                  <input type="text" id="enroll_mother_last_name" placeholder="Last name"
+                    style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:7px; font-size:13px; font-family:inherit; box-sizing:border-box;">
+                </div>
+              </div>
+
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+                <div>
+                  <label style="display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:6px;">Occupation</label>
+                  <input type="text" id="enroll_mother_occupation" placeholder="Occupation"
+                    style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:7px; font-size:13px; font-family:inherit; box-sizing:border-box;">
+                </div>
+                <div>
+                  <label style="display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:6px;">Contact Number</label>
+                  <input type="tel" id="enroll_mother_contact" placeholder="Contact number"
+                    style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:7px; font-size:13px; font-family:inherit; box-sizing:border-box;">
+                </div>
+              </div>
+
+              <div>
+                <label style="display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:6px;">Address</label>
+                <textarea id="enroll_mother_address" placeholder="Complete address"
+                  style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:7px; font-size:13px; font-family:inherit; min-height:70px; resize:vertical; box-sizing:border-box;"></textarea>
+              </div>
+            </div>
+
+            <!-- ══════════ ACADEMIC INFORMATION ══════════ -->
+            <div style="background:#f9f9f9; border:1px solid #e8e8e8; border-radius:10px; padding:24px; margin-bottom:20px;">
+              <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px; padding-bottom:14px; border-bottom:2px solid #e8e8e8;">
+                <div style="width:38px; height:38px; background:linear-gradient(135deg,#165a28,#40916c); border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">🎓</div>
+                <h3 style="margin:0; font-size:16px; font-weight:700; color:#165a28;">Academic Information</h3>
+              </div>
+
+              <!-- Last School + School Year -->
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+                <div>
+                  <label style="display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:6px;">Last School Attended <span style="color:#dc2626;">*</span></label>
+                  <input type="text" id="enroll_last_school" placeholder="Name of previous school"
+                    style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:7px; font-size:13px; font-family:inherit; box-sizing:border-box;"
+                    oninput="updateEnrollProgress()" required>
+                </div>
+                <div>
+                  <label style="display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:6px;">School Year <span style="color:#dc2626;">*</span></label>
+                  <input type="text" id="enroll_last_school_year" placeholder="e.g., 2023-2024"
+                    style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:7px; font-size:13px; font-family:inherit; box-sizing:border-box;"
+                    oninput="updateEnrollProgress()" required>
+                </div>
+              </div>
+
+              <!-- Course + Year Level -->
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+                <div>
+                  <label style="display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:6px;">Course/Program <span style="color:#dc2626;">*</span></label>
+                  <select id="enroll_course"
+                    style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:7px; font-size:13px; font-family:inherit; background:white; cursor:pointer; box-sizing:border-box;"
+                    onchange="updateEnrollProgress(); loadEnrollmentSubjects();" required>
+                    <option value="">Select a course</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:6px;">Year Level <span style="color:#dc2626;">*</span></label>
+                  <select id="enroll_year_level"
+                    style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:7px; font-size:13px; font-family:inherit; background:white; cursor:pointer; box-sizing:border-box;"
+                    onchange="updateEnrollProgress(); loadEnrollmentSubjects();" required>
+                    <option value="">Select year level</option>
+                    <option value="1">First Year</option>
+                    <option value="2">Second Year</option>
+                    <option value="3">Third Year</option>
+                    <option value="4">Fourth Year</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Scholarship Status -->
+              <div style="margin-bottom:16px;">
+                <label style="display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:6px;">Scholarship Status <span style="color:#dc2626;">*</span></label>
+                <select id="enroll_scholarship"
+                  style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:7px; font-size:13px; font-family:inherit; background:white; cursor:pointer; box-sizing:border-box;"
+                  onchange="updateEnrollProgress()" required>
+                  <option value="">Select scholarship status</option>
+                  <option value="scholar">Scholar</option>
+                  <option value="non-scholar">Non-Scholar</option>
+                </select>
+                <div style="font-size:12px; color:#888; margin-top:5px;">💡 Select if you are a scholar or non-scholar student.</div>
+              </div>
+
+              <!-- Academic Year -->
+              <div style="margin-bottom:16px;">
+                <label style="display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:6px;">Academic Year <span style="color:#dc2626;">*</span></label>
+                <select id="enroll_academic_year"
+                  style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:7px; font-size:13px; font-family:inherit; background:white; cursor:pointer; box-sizing:border-box;"
+                  onchange="updateEnrollProgress()" required>
+                  <option value="">Select academic year</option>
+                  <option value="2024-2025">2024-2025</option>
+                  <option value="2025-2026">2025-2026</option>
+                  <option value="2026-2027">2026-2027</option>
+                </select>
+              </div>
+
+              <!-- Semester -->
+              <div style="margin-bottom:20px;">
+                <label style="display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:6px;">Semester <span style="color:#dc2626;">*</span></label>
+                <select id="enroll_semester"
+                  style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:7px; font-size:13px; font-family:inherit; background:white; cursor:pointer; box-sizing:border-box;"
+                  onchange="updateEnrollProgress(); loadEnrollmentSubjects();" required>
+                  <option value="">Select semester</option>
+                  <option value="1st">1st Semester</option>
+                  <option value="2nd">2nd Semester</option>
+                  <option value="summer">Summer</option>
+                </select>
+                <div style="font-size:12px; color:#888; margin-top:5px;">📅 Subjects below will update based on your selected semester.</div>
+              </div>
+
+              <!-- Subjects -->
+              <div style="margin-bottom:8px;">
+                <label style="display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:6px;">Select Subjects <span style="color:#dc2626;">*</span></label>
+
+                <!-- Prompt (before selections made) -->
+                <div id="enroll_subjects_prompt"
+                  style="text-align:center; padding:28px 20px; border:2px dashed #ccc; border-radius:8px; color:#999; background:#fafafa; font-size:13px; margin-bottom:8px;">
+                  <div style="font-size:28px; margin-bottom:8px;">📚</div>
+                  <div>Please select your <strong>Course</strong>, <strong>Year Level</strong>, and <strong>Semester</strong> first to load available subjects.</div>
+                </div>
+
+                <!-- Multi-select (shown after loading) -->
+                <select id="enroll_subjects"
+                  style="display:none; width:100%; padding:8px; border:1.5px solid #ddd; border-radius:7px; font-size:13px; font-family:inherit; min-height:180px; box-sizing:border-box;"
+                  multiple onchange="updateEnrollSelectedSubjects(); updateEnrollProgress();"></select>
+
+                <div style="font-size:12px; color:#888; margin-top:6px;">
+                  💡 Click to select/deselect. You can choose multiple subjects.
+                </div>
+              </div>
+
+              <!-- Selected Subject Tags -->
+              <div id="enroll_selected_display"
+                style="display:none; background:#e8f5e9; padding:12px 14px; border-radius:8px; margin-top:10px; border:1px solid #a5d6a7;">
+                <div style="font-size:13px; font-weight:700; color:#2e7d32; margin-bottom:8px;">
+                  ✅ Selected Subjects (<span id="enroll_selected_count">0</span>):
+                </div>
+                <div id="enroll_selected_list" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+              </div>
+            </div>
+
+            <!-- Submit Button — matches registration -->
+            <button type="submit"
+              style="width:100%; padding:14px; background:linear-gradient(135deg,#165a28,#0d3d1a); color:white; border:none; border-radius:8px; font-size:15px; font-weight:700; cursor:pointer; font-family:inherit; letter-spacing:0.3px; transition:opacity 0.2s;"
+              onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
+              Submit Application
+            </button>
+
+          </form>
+        </div>
+
+        <!-- Enrollment History -->
+        <div class="announcements-section">
+          <div class="section-header">
+            <h2>📋 My Enrollment Applications</h2>
+            <button class="view-all-btn" onclick="loadEnrollmentHistory()">🔄 Refresh</button>
+          </div>
+          <div id="enrollmentHistoryContainer">
+            <div style="text-align:center; padding:40px; color:#999;">Loading...</div>
+          </div>
+        </div>
+
+      </div>
+      <!-- ✅ END ENROLLMENT VIEW -->
+
+    </div><!-- end content-wrapper -->
+  </div><!-- end main-content -->
+</div><!-- end main-container -->
+
 
 <!-- University Footer -->
 <div class="university-footer">
@@ -3410,7 +3906,6 @@
         <strong>Email:</strong> info@um.edu.ph
       </p>
     </div>
-    
     <div class="footer-section">
       <h3>Quick Links</h3>
       <ul>
@@ -3421,7 +3916,6 @@
         <li><a href="#">Student Handbook</a></li>
       </ul>
     </div>
-    
     <div class="footer-section">
       <h3>Support</h3>
       <ul>
@@ -3433,7 +3927,6 @@
       </ul>
     </div>
   </div>
-  
   <div class="footer-bottom">
     <p>&copy; 2026 University of Manila. All rights reserved. | <a href="#" style="color:#d4af37;">Privacy Policy</a> | <a href="#" style="color:#d4af37;">Terms of Service</a></p>
   </div>
@@ -3481,6 +3974,8 @@ let currentView = 'calendar';
 let userData = null;
 let announcementsData = [];
 let currentProfilePicture = null;
+let _allGradesData   = null;
+let _activeSemFilter = 'all';
 
 
 // Load user profile
@@ -3588,6 +4083,175 @@ async function loadUserProfile() {
     }
   }
 }
+
+// Global variable to store current filter
+let currentAnnouncementFilter = 'all';
+
+// Toggle dropdown visibility
+function toggleAnnouncementFilter(event) {
+  event.stopPropagation();
+  const menu = document.getElementById('announcementFilterMenu');
+  menu.classList.toggle('show');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+  const container = document.querySelector('.filter-dropdown-container');
+  const menu = document.getElementById('announcementFilterMenu');
+  
+  if (container && !container.contains(event.target)) {
+    menu.classList.remove('show');
+  }
+});
+
+// Filter announcements by source
+function filterAnnouncements(source) {
+  currentAnnouncementFilter = source;
+  
+  // Update active state in dropdown
+  document.querySelectorAll('.filter-dropdown-item').forEach(item => {
+    item.classList.remove('active');
+    if (item.getAttribute('data-filter') === source) {
+      item.classList.add('active');
+    }
+  });
+  
+  // Update button label
+  const labels = {
+    'all': 'All Announcements',
+    'teacher': 'Teacher',
+    'registrar': 'Registrar',
+    'records': 'Records'
+  };
+  document.getElementById('currentFilterLabel').textContent = labels[source];
+  
+  // Close dropdown
+  document.getElementById('announcementFilterMenu').classList.remove('show');
+  
+  // Filter and display
+  displayFilteredAnnouncements(source);
+}
+
+// Display filtered announcements
+function displayFilteredAnnouncements(source) {
+  const container = document.getElementById("announcementsContainer");
+  
+  if (!Array.isArray(announcementsData) || announcementsData.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:40px; color:#999;">
+        No announcements available.
+      </div>
+    `;
+    return;
+  }
+  
+  // Filter based on source
+  const filtered = source === 'all' 
+    ? announcementsData 
+    : announcementsData.filter(a => a.source === source);
+  
+  if (filtered.length === 0) {
+    const sourceLabels = {
+      'teacher': 'Teacher',
+      'registrar': 'Registrar',
+      'records': 'Records'
+    };
+    
+    container.innerHTML = `
+      <div style="text-align:center; padding:40px; color:#999;">
+        <div style="font-size: 48px; margin-bottom: 15px;">📭</div>
+        <h3 style="color: #165a28; margin-bottom: 10px;">No ${sourceLabels[source]} Announcements</h3>
+        <p>There are currently no announcements from ${sourceLabels[source]}.</p>
+      </div>
+    `;
+    return;
+  }
+  
+  // Display filtered announcements (same code as loadAnnouncements)
+  let html = '';
+  filtered.forEach((announcement, index) => {
+    // Find original index for modal
+    const originalIndex = announcementsData.indexOf(announcement);
+    
+    const formattedDate = announcement.created_at 
+      ? new Date(announcement.created_at).toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'short', 
+          day: 'numeric' 
+        })
+      : 'N/A';
+    
+    let authorBadge = '';
+    let borderColor = '';
+    
+    if (announcement.source === 'registrar') {
+      authorBadge = `<span style="background:#dc3545; color:white; padding:3px 8px; border-radius:10px; font-size:10px; font-weight:700;">📢 REGISTRAR</span>`;
+      borderColor = 'border-left-color:#dc3545;';
+    } else if (announcement.source === 'records') {
+      authorBadge = `<span style="background:#17a2b8; color:white; padding:3px 8px; border-radius:10px; font-size:10px; font-weight:700;">📋 RECORDS</span>`;
+      borderColor = 'border-left-color:#17a2b8;';
+      
+      if (announcement.priority) {
+        const priorityColors = {
+          'urgent': 'background:#dc3545; color:white;',
+          'high': 'background:#ffc107; color:#333;',
+          'normal': 'background:#28a745; color:white;',
+          'low': 'background:#6c757d; color:white;'
+        };
+        const priorityStyle = priorityColors[announcement.priority] || priorityColors['normal'];
+        authorBadge += ` <span style="${priorityStyle} padding:3px 8px; border-radius:10px; font-size:9px; font-weight:700; margin-left:5px;">
+          ${announcement.priority.toUpperCase()}
+        </span>`;
+      }
+    } else {
+      authorBadge = `<span style="background:#165a28; color:white; padding:3px 8px; border-radius:10px; font-size:10px; font-weight:700;">👨‍🏫 TEACHER</span>`;
+      borderColor = 'border-left-color:#165a28;';
+    }
+    
+    const previewContent = announcement.content && announcement.content.length > 150 
+      ? announcement.content.substring(0, 150) + '...' 
+      : announcement.content || 'No details available.';
+    
+    html += `
+      <div class="announcement-card" style="${borderColor} cursor: pointer;" onclick="openAnnouncementModal(${originalIndex})">
+        <div class="announcement-header">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px;">
+              <div class="announcement-title">${announcement.title || 'Untitled Announcement'}</div>
+              ${authorBadge}
+            </div>
+            <div class="announcement-meta">
+              <span>📅 ${formattedDate}</span>
+              <span>📝 ${announcement.author || 'University Administration'}</span>
+              ${announcement.source === 'teacher' && announcement.subject ? 
+                `<span>📚 ${announcement.subject} ${announcement.subject_code ? '(' + announcement.subject_code + ')' : ''}</span>` 
+                : ''
+              }
+              ${announcement.source === 'registrar' && announcement.target_audience ? 
+                `<span>🎯 ${formatTargetAudience(announcement.target_audience)}</span>` 
+                : ''
+              }
+              ${announcement.source === 'records' && announcement.target_audience ? 
+                `<span>🎯 ${formatRecordsTargetAudience(announcement.target_audience)}</span>` 
+                : ''
+              }
+            </div>
+          </div>
+        </div>
+        <div class="announcement-body">
+          ${previewContent}
+        </div>
+        ${announcement.content && announcement.content.length > 150 ? `
+          <div style="margin-top: 8px; color: #165a28; font-weight: 600; font-size: 12px;">
+            Click to read more →
+          </div>
+        ` : ''}
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html;
+}
 // Load announcements from API
 async function loadAnnouncements() {
   const container = document.getElementById("announcementsContainer");
@@ -3619,90 +4283,8 @@ async function loadAnnouncements() {
 
     announcementsData = data.announcements;
     
-    let html = '';
-    announcementsData.forEach((announcement, index) => {
-      // Format the date
-      const formattedDate = announcement.created_at 
-        ? new Date(announcement.created_at).toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'short', 
-            day: 'numeric' 
-          })
-        : 'N/A';
-      
-      // ✅ UPDATED: Show different badge/icon based on source (teacher, registrar, records)
-      let authorBadge = '';
-      let borderColor = '';
-      
-      if (announcement.source === 'registrar') {
-        authorBadge = `<span style="background:#dc3545; color:white; padding:3px 8px; border-radius:10px; font-size:10px; font-weight:700;">📢 REGISTRAR</span>`;
-        borderColor = 'border-left-color:#dc3545;';
-      } else if (announcement.source === 'records') {
-        authorBadge = `<span style="background:#17a2b8; color:white; padding:3px 8px; border-radius:10px; font-size:10px; font-weight:700;">📋 RECORDS</span>`;
-        borderColor = 'border-left-color:#17a2b8;';
-        
-        // Add priority badge for records announcements
-        if (announcement.priority) {
-          const priorityColors = {
-            'urgent': 'background:#dc3545; color:white;',
-            'high': 'background:#ffc107; color:#333;',
-            'normal': 'background:#28a745; color:white;',
-            'low': 'background:#6c757d; color:white;'
-          };
-          const priorityStyle = priorityColors[announcement.priority] || priorityColors['normal'];
-          authorBadge += ` <span style="${priorityStyle} padding:3px 8px; border-radius:10px; font-size:9px; font-weight:700; margin-left:5px;">
-            ${announcement.priority.toUpperCase()}
-          </span>`;
-        }
-      } else {
-        authorBadge = `<span style="background:#165a28; color:white; padding:3px 8px; border-radius:10px; font-size:10px; font-weight:700;">👨‍🏫 TEACHER</span>`;
-        borderColor = 'border-left-color:#165a28;';
-      }
-      
-      // Truncate content for preview
-      const previewContent = announcement.content && announcement.content.length > 150 
-        ? announcement.content.substring(0, 150) + '...' 
-        : announcement.content || 'No details available.';
-      
-      html += `
-        <div class="announcement-card" style="${borderColor} cursor: pointer;" onclick="openAnnouncementModal(${index})">
-          <div class="announcement-header">
-            <div>
-              <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px;">
-                <div class="announcement-title">${announcement.title || 'Untitled Announcement'}</div>
-                ${authorBadge}
-              </div>
-              <div class="announcement-meta">
-                <span>📅 ${formattedDate}</span>
-                <span>📝 ${announcement.author || 'University Administration'}</span>
-                ${announcement.source === 'teacher' && announcement.subject ? 
-                  `<span>📚 ${announcement.subject} ${announcement.subject_code ? '(' + announcement.subject_code + ')' : ''}</span>` 
-                  : ''
-                }
-                ${announcement.source === 'registrar' && announcement.target_audience ? 
-                  `<span>🎯 ${formatTargetAudience(announcement.target_audience)}</span>` 
-                  : ''
-                }
-                ${announcement.source === 'records' && announcement.target_audience ? 
-                  `<span>🎯 ${formatRecordsTargetAudience(announcement.target_audience)}</span>` 
-                  : ''
-                }
-              </div>
-            </div>
-          </div>
-          <div class="announcement-body">
-            ${previewContent}
-          </div>
-          ${announcement.content && announcement.content.length > 150 ? `
-            <div style="margin-top: 8px; color: #165a28; font-weight: 600; font-size: 12px;">
-              Click to read more →
-            </div>
-          ` : ''}
-        </div>
-      `;
-    });
-    
-    container.innerHTML = html;
+    // ✅ USE THE NEW FILTER FUNCTION
+    displayFilteredAnnouncements(currentAnnouncementFilter);
 
   } catch (err) {
     console.error("Error loading announcements:", err);
@@ -3859,7 +4441,8 @@ function showDashboard(event) {
   document.getElementById("documentsView").style.display = "none";
   document.getElementById("gradesView").style.display = "none";
   document.getElementById("materialsView").style.display = "none"; // ⬅️ ADD THIS
-  
+  document.getElementById("enrollmentView").style.display = "none";
+
   document.getElementById("pageTitle").textContent = "Dashboard";
   document.getElementById("breadcrumbCurrent").textContent = "Dashboard";
   
@@ -3877,7 +4460,8 @@ function showBilling(event) {
   document.getElementById("documentsView").style.display = "none";
   document.getElementById("gradesView").style.display = "none";
   document.getElementById("materialsView").style.display = "none"; // ⬅️ ADD THIS
-  
+  document.getElementById("enrollmentView").style.display = "none";
+
   document.getElementById("pageTitle").textContent = "Student Billing Statement";
   document.getElementById("breadcrumbCurrent").textContent = "Billing";
   
@@ -3894,7 +4478,8 @@ function showSchedule(event) {
   document.getElementById("documentsView").style.display = "none";
   document.getElementById("gradesView").style.display = "none";
   document.getElementById("materialsView").style.display = "none"; // ⬅️ ADD THIS
-  
+  document.getElementById("enrollmentView").style.display = "none";
+
   document.getElementById("pageTitle").textContent = "My Class Schedule";
   document.getElementById("breadcrumbCurrent").textContent = "Schedule";
   
@@ -3904,23 +4489,7 @@ function showSchedule(event) {
 
 
 
-function showGrades(event) {
-  if (event) event.preventDefault();
-  
-  console.log("🎓 showGrades called");
-  
-  document.getElementById("dashboardView").style.display = "none";
-  document.getElementById("billingView").style.display = "none";
-  document.getElementById("scheduleView").style.display = "none";
-  document.getElementById("documentsView").style.display = "none";
-  document.getElementById("gradesView").style.display = "block";
-  
-  document.getElementById("pageTitle").textContent = "My Grades";
-  document.getElementById("breadcrumbCurrent").textContent = "Grades";
-  
-  updateActiveNav(4);
-  loadStudentGrades();
-}
+
 
 function updateActiveNav(index) {
   const links = document.querySelectorAll('.sidebar a');
@@ -4909,9 +5478,11 @@ async function viewBreakdown(paymentId) {
 
     data.installments.forEach(inst => {
       const isPaid = inst.status === "paid";
+      const installmentAmount = Number(inst.amount);
 
       html += `
-        <div class="installment-card ${isPaid ? "paid" : "pending"}">
+        <div class="installment-card ${isPaid ? "paid" : "pending"}" 
+             ${!isPaid ? `onclick="fillPaymentAmount(${paymentId}, ${installmentAmount}, '${inst.term}')" style="cursor: pointer;"` : ''}>
           <div>
             <div class="term-label">
               ${termIcons[inst.term] || "📌"} ${termLabels[inst.term] || inst.term}
@@ -4919,17 +5490,20 @@ async function viewBreakdown(paymentId) {
             <div style="font-size:12px; color:#666; margin-top:5px;">
               ${termDueDates[inst.term] || ""}
             </div>
-            ${
-              inst.paid_at
-                ? `<div style="font-size:11px; color:#28a745; margin-top:3px;">
-                     Paid: ${new Date(inst.paid_at).toLocaleDateString()}
-                   </div>`
-                : ""
-            }
+            ${!isPaid ? `
+              <div style="font-size:11px; color:#165a28; margin-top:3px; font-weight:600;">
+                💡 Click to pay this installment
+              </div>
+            ` : ''}
+            ${inst.paid_at ? `
+              <div style="font-size:11px; color:#28a745; margin-top:3px;">
+                Paid: ${new Date(inst.paid_at).toLocaleDateString()}
+              </div>
+            ` : ''}
           </div>
           <div style="text-align:right;">
             <div class="term-amount">
-              ₱${Number(inst.amount).toLocaleString(undefined, {
+              ₱${installmentAmount.toLocaleString(undefined, {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
               })}
@@ -4961,6 +5535,56 @@ async function viewBreakdown(paymentId) {
   }
 }
 
+// Fill payment amount when clicking on installment
+function fillPaymentAmount(paymentId, amount, term) {
+  // Close the breakdown modal
+  closeModal();
+  
+  // Scroll to payment section
+  const billingView = document.getElementById('billingView');
+  if (billingView) {
+    billingView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  
+  // Wait for scroll to complete
+  setTimeout(() => {
+    // Find and fill the amount input
+    const amountInput = document.getElementById(`amount-${paymentId}`);
+    if (amountInput) {
+      amountInput.value = Math.round(amount);
+      amountInput.focus();
+      
+      // Highlight the input briefly
+      amountInput.style.border = '3px solid #28a745';
+      amountInput.style.background = '#e8f5e9';
+      
+      setTimeout(() => {
+        amountInput.style.border = '';
+        amountInput.style.background = '';
+      }, 2000);
+      
+      // Show confirmation message
+      const msgDiv = document.getElementById("message");
+      msgDiv.innerHTML = `
+        <div class="info-box success" style="animation: slideIn 0.3s ease;">
+          <strong>✅ ${term.charAt(0).toUpperCase() + term.slice(1)} Payment Amount Loaded</strong><br>
+          Amount: ₱${Math.round(amount).toLocaleString()}<br>
+          <br>
+          Please select your payment method and click "Submit Payment" to proceed.
+        </div>
+      `;
+      
+      msgDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      // Auto-hide after 5 seconds
+      setTimeout(() => {
+        msgDiv.innerHTML = '';
+      }, 5000);
+    } else {
+      alert('⚠️ Please ensure you are on the billing page to make a payment.');
+    }
+  }, 500);
+}
 function closeModal() {
   document.getElementById("breakdownModal").style.display = "none";
 }
@@ -4986,13 +5610,83 @@ function showDocuments(event) {
   document.getElementById("documentsView").style.display = "block";
   document.getElementById("gradesView").style.display = "none";
   document.getElementById("materialsView").style.display = "none"; // ⬅️ ADD THIS
-  
+  document.getElementById("enrollmentView").style.display = "none";
+
   document.getElementById("pageTitle").textContent = "Document Request";
   document.getElementById("breadcrumbCurrent").textContent = "Document Request";
   
   updateActiveNav(4); // Adjust based on position
   loadDocumentRequests();
 }
+// Purpose options for each document type
+const documentPurposes = {
+  'Certificate of Enrollment': [
+    'Scholarship Application',
+    'Student Discount/Privilege',
+    'Bank Account Opening',
+    'Loan Application',
+    'Employment Requirement',
+    'Visa Application',
+    'Government Transaction',
+    'Insurance Purposes',
+    'Travel Purposes',
+    'Other'
+  ],
+  'Certificate of Grades': [
+    'Scholarship Application',
+    'Transfer to Another School',
+    'Employment Requirement',
+    'Graduate School Application',
+    'Internship/OJT Requirement',
+    'Board Exam Application',
+    'Licensure Examination',
+    'Other'
+  ],
+  'Transcript of Records': [
+    'Transfer to Another School',
+    'Graduate School Application',
+    'Employment Abroad',
+    'Employment (Local)',
+    'Board Exam Application',
+    'Professional License Application',
+    'Scholarship Application',
+    'Visa Application',
+    'Immigration Purposes',
+    'Other'
+  ],
+  'Certificate of Good Moral': [
+    'Employment Requirement',
+    'Scholarship Application',
+    'Transfer to Another School',
+    'Visa Application',
+    'Government Clearance',
+    'Character Reference',
+    'Volunteer Work',
+    'Organization Membership',
+    'Other'
+  ],
+  'Honorable Dismissal': [
+    'Transfer to Another School',
+    'Shift to Another Course',
+    'Shift to Another Campus',
+    'Personal Reasons',
+    'Work Abroad',
+    'Family Relocation',
+    'Financial Constraints',
+    'Other'
+  ],
+  'CAV (Certification, Authentication, Verification)': [
+    'Employment Abroad',
+    'Immigration',
+    'Foreign University Application',
+    'Embassy Requirement',
+    'Visa Processing',
+    'Professional License (Abroad)',
+    'Authentication by DFA',
+    'Other'
+  ]
+};
+
 // Document type selection
 function selectDocumentType(type) {
   const options = document.querySelectorAll('.document-type-option');
@@ -5001,7 +5695,57 @@ function selectDocumentType(type) {
   event.currentTarget.classList.add('selected');
   selectedDocument = type;
   document.getElementById('selectedDocumentType').value = type;
+  
+  // Update purpose dropdown
+  updatePurposeDropdown(type);
+  
+  // Show purpose group
+  document.getElementById('purposeGroup').style.display = 'block';
+  
+  // Hide other purpose by default
+  document.getElementById('otherPurposeGroup').style.display = 'none';
+  document.getElementById('otherPurposeInput').value = '';
 }
+
+// Update purpose dropdown based on document type
+function updatePurposeDropdown(documentType) {
+  const dropdown = document.getElementById('purposeDropdown');
+  const purposes = documentPurposes[documentType] || [];
+  
+  // Clear existing options
+  dropdown.innerHTML = '<option value="">-- Select Purpose --</option>';
+  
+  // Add new options
+  purposes.forEach(purpose => {
+    const option = document.createElement('option');
+    option.value = purpose;
+    option.textContent = purpose;
+    dropdown.appendChild(option);
+  });
+  
+  // Reset selection
+  dropdown.value = '';
+}
+
+// Handle purpose dropdown change
+document.addEventListener('DOMContentLoaded', function() {
+  const purposeDropdown = document.getElementById('purposeDropdown');
+  if (purposeDropdown) {
+    purposeDropdown.addEventListener('change', function() {
+      const otherPurposeGroup = document.getElementById('otherPurposeGroup');
+      const otherPurposeInput = document.getElementById('otherPurposeInput');
+      
+      if (this.value === 'Other') {
+        otherPurposeGroup.style.display = 'block';
+        otherPurposeInput.required = true;
+      } else {
+        otherPurposeGroup.style.display = 'none';
+        otherPurposeInput.required = false;
+        otherPurposeInput.value = '';
+      }
+    });
+  }
+});
 
 // Copies management
 function incrementCopies() {
@@ -5023,11 +5767,15 @@ function resetDocumentForm() {
   selectedDocument = '';
   copiesCount = 1;
   document.getElementById('copiesDisplay').textContent = '1';
-  document.getElementById('purposeInput').value = '';
   document.getElementById('selectedDocumentType').value = '';
+  document.getElementById('purposeDropdown').value = '';
+  document.getElementById('otherPurposeInput').value = '';
   
   const options = document.querySelectorAll('.document-type-option');
   options.forEach(opt => opt.classList.remove('selected'));
+  
+  document.getElementById('purposeGroup').style.display = 'none';
+  document.getElementById('otherPurposeGroup').style.display = 'none';
 }
 
 // Submit request
@@ -5038,7 +5786,8 @@ document.addEventListener('DOMContentLoaded', function() {
       e.preventDefault();
       
       const documentType = selectedDocument;
-      const purpose = document.getElementById('purposeInput').value.trim();
+      const purposeDropdown = document.getElementById('purposeDropdown').value;
+      const otherPurpose = document.getElementById('otherPurposeInput').value.trim();
       const copies = copiesCount;
       
       if (!documentType) {
@@ -5046,12 +5795,22 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
       
-      if (!purpose) {
-        alert('⚠️ Please specify the purpose of your request');
+      if (!purposeDropdown) {
+        alert('⚠️ Please select the purpose of your request');
         return;
       }
       
-      if (!confirm(`Submit request for ${copies} cop${copies > 1 ? 'ies' : 'y'} of ${documentType}?`)) {
+      // Determine final purpose
+      let finalPurpose = purposeDropdown;
+      if (purposeDropdown === 'Other') {
+        if (!otherPurpose) {
+          alert('⚠️ Please specify your purpose');
+          return;
+        }
+        finalPurpose = `Other: ${otherPurpose}`;
+      }
+      
+      if (!confirm(`Submit request for ${copies} cop${copies > 1 ? 'ies' : 'y'} of ${documentType}?\n\nPurpose: ${finalPurpose}`)) {
         return;
       }
       
@@ -5062,7 +5821,7 @@ document.addEventListener('DOMContentLoaded', function() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             document_type: documentType,
-            purpose: purpose,
+            purpose: finalPurpose,
             copies: copies
           })
         });
@@ -5095,7 +5854,6 @@ function viewDocument(documentUrl, documentType) {
   
   if (!modal) {
     console.log('🔨 Creating modal...');
-    // Create modal HTML
     const modalHTML = `
       <div id="documentViewerModal" class="document-viewer-modal" onclick="handleModalClick(event)">
         <div class="document-viewer-content" onclick="event.stopPropagation()">
@@ -5105,22 +5863,18 @@ function viewDocument(documentUrl, documentType) {
           </div>
           <div class="document-viewer-body">
             <div class="document-image-container" id="documentImageContainer">
-              <img id="documentImage" class="document-image" alt="Document Preview" />
+              <!-- Content will be loaded here -->
             </div>
           </div>
           <div class="document-actions">
             <a id="downloadDocumentBtn" class="download-btn" target="_blank">
               <span>📥</span> Download Document
             </a>
-            
-             
-            </button>
           </div>
         </div>
       </div>
     `;
     
-    // Insert modal into body
     document.body.insertAdjacentHTML('beforeend', modalHTML);
     modal = document.getElementById('documentViewerModal');
     console.log('✅ Modal created');
@@ -5130,19 +5884,53 @@ function viewDocument(documentUrl, documentType) {
   console.log('📝 Updating modal content...');
   document.getElementById('documentViewerTitle').textContent = `📄 ${documentType}`;
   
-  const imgElement = document.getElementById('documentImage');
-  imgElement.src = documentUrl;
-  imgElement.onerror = function() {
-    console.error('❌ Failed to load image:', documentUrl);
-    alert('Failed to load document image. Please check if the file exists.');
-  };
-  imgElement.onload = function() {
-    console.log('✅ Image loaded successfully');
-  };
+  const container = document.getElementById('documentImageContainer');
+  
+  // Check if it's a PDF
+  if (documentUrl.toLowerCase().endsWith('.pdf')) {
+  console.log('📕 Loading PDF...');
+  container.innerHTML = `
+    <embed 
+      src="${documentUrl}#toolbar=0&navpanes=0&scrollbar=0" 
+      type="application/pdf" 
+      width="100%" 
+      height="100%"
+      style="border: none; box-shadow: 0 4px 20px rgba(0,0,0,0.15); border-radius: 8px;"
+    />
+    <div style="text-align: center; margin-top: 15px; color: #666; font-size: 13px;">
+      💡 Can't see the PDF? <a href="${documentUrl}" target="_blank" style="color: #165a28; font-weight: 600;">Open in new tab</a>
+    </div>
+  `;
+  } else {
+    // It's an image
+    console.log('🖼️ Loading image...');
+    container.innerHTML = `<img id="documentImage" class="document-image" alt="Document Preview" />`;
+    
+    const imgElement = document.getElementById('documentImage');
+    imgElement.src = documentUrl;
+    imgElement.onerror = function() {
+      console.error('❌ Failed to load image:', documentUrl);
+      container.innerHTML = `
+        <div style="text-align: center; padding: 60px; color: #999;">
+          <div style="font-size: 64px; margin-bottom: 15px;">❌</div>
+          <h3 style="color: #dc3545; margin-bottom: 10px;">Failed to Load Document</h3>
+          <p>The document file could not be loaded.</p>
+          <p style="margin-top: 15px;">
+            <a href="${documentUrl}" target="_blank" style="color: #165a28; font-weight: 600;">
+              Try opening directly
+            </a>
+          </p>
+        </div>
+      `;
+    };
+    imgElement.onload = function() {
+      console.log('✅ Image loaded successfully');
+    };
+  }
   
   const downloadBtn = document.getElementById('downloadDocumentBtn');
   downloadBtn.href = documentUrl;
-  downloadBtn.download = `${documentType.replace(/\s+/g, '_')}.jpg`;
+  downloadBtn.download = `${documentType.replace(/\s+/g, '_')}.pdf`;
   
   // Show modal
   modal.style.display = 'block';
@@ -5213,15 +6001,21 @@ async function loadDocumentRequests() {
       const statusClass = 'request-status-badge status-' + req.status;
       const statusText = req.status.charAt(0).toUpperCase() + req.status.slice(1);
       
-      // Check if document is available (approved requests with uploaded document)
+      // Check if document is available
       const hasDocument = req.document_path && req.document_path.trim() !== '';
       const documentUrl = hasDocument ? `http://localhost:8080/${req.document_path}` : '';
+      
+      // Determine file type
+      const isPDF = documentUrl.toLowerCase().endsWith('.pdf');
+      const viewButtonText = isPDF ? 'View PDF' : 'View Document';
+      const downloadFileName = req.document_type.replace(/\s+/g, '_') + (isPDF ? '.pdf' : '');
       
       console.log(`Request #${req.request_id}:`, {
         status: req.status,
         hasDocument,
         documentPath: req.document_path,
-        documentUrl
+        documentUrl,
+        isPDF
       });
       
       html += `
@@ -5245,7 +6039,7 @@ async function loadDocumentRequests() {
               <br><br>
               <div style="background: #e8f5e9; padding: 12px; border-radius: 8px; border-left: 4px solid #28a745; margin-top: 10px;">
                 <div style="color: #2e7d32; font-weight: 600; margin-bottom: 8px;">
-                  ✅ Your document is ready!
+                  ✅ Your ${isPDF ? 'PDF document' : 'document'} is ready!
                 </div>
                 <button 
                   type="button"
@@ -5253,23 +6047,33 @@ async function loadDocumentRequests() {
                   style="padding: 10px 18px; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; margin-right: 10px;"
                   onclick="event.preventDefault(); event.stopPropagation(); viewDocument('${documentUrl}', '${req.document_type.replace(/'/g, "\\'")}'); return false;"
                 >
-                  <span>👁️</span> View Document
+                  <span>${isPDF ? '📕' : '👁️'}</span> ${viewButtonText}
                 </button>
                 <a 
                   href="${documentUrl}" 
                   target="_blank"
-                  download="${req.document_type.replace(/\s+/g, '_')}"
+                  download="${downloadFileName}"
                   class="action-btn secondary" 
                   style="padding: 10px 18px; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;"
                 >
-                  <span>📥</span> Download
+                  <span>📥</span> Download ${isPDF ? 'PDF' : 'File'}
                 </a>
+                ${isPDF ? `
+                  <a 
+                    href="${documentUrl}" 
+                    target="_blank"
+                    class="action-btn secondary" 
+                    style="padding: 10px 18px; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; margin-top: 8px;"
+                  >
+                    <span>🔗</span> Open in New Tab
+                  </a>
+                ` : ''}
               </div>
             ` : req.status === 'approved' ? `
               <br><br>
               <div style="background: #fff3e0; padding: 12px; border-radius: 8px; border-left: 4px solid #ffc107; margin-top: 10px;">
                 <div style="color: #e65100; font-weight: 600;">
-                  ⏳ Document approved - Processing upload...
+                  ⏳ Document approved - Generating...
                 </div>
               </div>
             ` : ''}
@@ -5301,6 +6105,9 @@ document.addEventListener('keydown', function(event) {
     }
   }
 });
+// === PATCH: apply this fix to your student portal HTML ===
+// Find the showGrades function and replace it with this:
+
 function showGrades(event) {
   if (event) event.preventDefault();
   
@@ -5309,12 +6116,13 @@ function showGrades(event) {
   document.getElementById("scheduleView").style.display = "none";
   document.getElementById("documentsView").style.display = "none";
   document.getElementById("gradesView").style.display = "block";
-  document.getElementById("materialsView").style.display = "none"; // ⬅️ ADD THIS
+  document.getElementById("materialsView").style.display = "none";
+  document.getElementById("enrollmentView").style.display = "none"; // ← THIS LINE FIXES THE BUG
   
   document.getElementById("pageTitle").textContent = "My Grades";
   document.getElementById("breadcrumbCurrent").textContent = "Grades";
   
-  updateActiveNav(5); // Adjust based on position
+  updateActiveNav(5);
   loadStudentGrades();
 }
 
@@ -5352,216 +6160,554 @@ async function loadStudentGrades() {
     `;
   }
 }
-
 function displayGrades(data) {
+  _allGradesData = data;
+  _activeSemFilter = 'all';
   const resultDiv = document.getElementById("gradesResult");
-  
+
   if (!data.grades || data.grades.length === 0) {
     resultDiv.innerHTML = `
       <div class="grades-container">
         <div class="no-grades-message">
           <h3>📋 No Grades Available Yet</h3>
           <p>Your grades will appear here once they have been released by the Records Office.</p>
-          <p style="margin-top:15px; color:#666;">
-            Grades are typically released at the end of each grading period.<br>
-            Check back here regularly for updates.
-          </p>
         </div>
-      </div>
-    `;
+      </div>`;
     return;
   }
-  
-  const student = data.student || {};
-  const grades = data.grades || [];
-  const gpa = data.gpa || 0;
-  const totalGrades = data.total_grades || 0;
-  
+
+  const student     = data.student || {};
+  const grades      = data.grades  || [];
+  const gwa         = recalcGWA(grades);
+  const semKeys     = buildSemesterKeys(grades);
+
+  function gwaLabel(g) {
+    if (g === null) return '';
+    const v = parseFloat(g);
+    if (v <= 1.50) return '🏆 Excellent';
+    if (v <= 2.00) return '⭐ Very Good';
+    if (v <= 2.50) return '👍 Good';
+    if (v <= 3.00) return '✅ Satisfactory (Passing)';
+    if (v <= 4.00) return '⚠️ Conditional';
+    return '❌ Failed';
+  }
+
+  // Filter buttons
+  let filterHtml = `<div class="semester-filter-bar">
+    <span style="font-size:12px;font-weight:700;color:#666;margin-right:4px;">Filter:</span>
+    <button class="sem-filter-btn active" onclick="filterGradesBySemester('all', this)">All</button>`;
+  semKeys.forEach(k => {
+    const { sem, sy } = parseSemKey(k);
+    filterHtml += `<button class="sem-filter-btn" onclick="filterGradesBySemester('${k}', this)">${sem} — ${sy}</button>`;
+  });
+  filterHtml += '</div>';
+
   let html = `
     <div class="grades-header-card">
       <h2>📊 Academic Performance Report</h2>
       <div class="grades-student-info">
-        <div class="grades-info-item">
-          <span class="grades-info-label">Student Name</span>
-          <span class="grades-info-value">${student.name || 'N/A'}</span>
-        </div>
-        <div class="grades-info-item">
-          <span class="grades-info-label">Student ID</span>
-          <span class="grades-info-value">${student.student_id || 'N/A'}</span>
-        </div>
-        <div class="grades-info-item">
-          <span class="grades-info-label">Course</span>
-          <span class="grades-info-value">${student.course || 'N/A'} (${student.course_code || 'N/A'})</span>
-        </div>
-        <div class="grades-info-item">
-          <span class="grades-info-label">Year Level</span>
-          <span class="grades-info-value">Year ${student.year_level || 'N/A'}</span>
-        </div>
-        <div class="grades-info-item">
-          <span class="grades-info-label">Email</span>
-          <span class="grades-info-value" style="font-size:14px;">${student.email || 'N/A'}</span>
-        </div>
+        <div class="grades-info-item"><span class="grades-info-label">Student Name</span><span class="grades-info-value">${student.name||'N/A'}</span></div>
+        <div class="grades-info-item"><span class="grades-info-label">Student ID</span><span class="grades-info-value">${student.student_id||'N/A'}</span></div>
+        <div class="grades-info-item"><span class="grades-info-label">Course</span><span class="grades-info-value">${student.course||'N/A'} (${student.course_code||'N/A'})</span></div>
+        <div class="grades-info-item"><span class="grades-info-label">Year Level</span><span class="grades-info-value">Year ${student.year_level||'N/A'}</span></div>
       </div>
     </div>
-    
-    ${gpa > 0 ? `
+
+    ${gwa !== null ? `
     <div class="gpa-card">
-      <div class="gpa-label">Current Grade Point Average</div>
-      <div class="gpa-value">${gpa.toFixed(2)}</div>
-      <div class="gpa-total">Based on ${totalGrades} subject${totalGrades > 1 ? 's' : ''}</div>
-    </div>
-    ` : ''}
-    
+      <div class="gpa-label">Overall General Weighted Average (GWA)</div>
+      <div class="gpa-value">${gwa}</div>
+      <div class="gpa-total">${gwaLabel(gwa)} &nbsp;·&nbsp; Based on ${grades.length} subject${grades.length!==1?'s':''}</div>
+    </div>` : ''}
+
     <div class="grades-container">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h3 style="font-family: 'Crimson Text', serif; font-size:22px; color:#165a28; margin:0;">
-          📚 Released Grades
-        </h3>
-        <button class="download-grades-btn" onclick="downloadGradesReport()">
-          <span>📥</span> Download Report
-        </button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h3 style="font-family:'Crimson Text',serif;font-size:22px;color:#165a28;margin:0;">📚 Released Grades</h3>
+        <button class="download-grades-btn" onclick="downloadGradesReport()"><span>📥</span> Download Report</button>
       </div>
-      
-      <div class="info-box" style="margin-bottom:20px;">
-        <strong>ℹ️ Note:</strong> Only grades that have been officially released by the Records Office are displayed below.
-        Unreleased grades are not yet available for viewing.
-      </div>
-      
-      <div class="grades-table-container">
-        <table class="grades-table">
-         <thead>
-          <tr>
-            <th>Subject Code</th>
-            <th>Subject Name</th>
-            <th>Professor</th>
+      ${filterHtml}
+      <div id="semesterGroupsContainer">${buildGroupedGradesHTML(grades, 'all')}</div>
+    </div>`;
 
-            <th>Prelim</th>
-            <th>Midterm</th>
-            <th>Finals</th>
-            <th>Average</th>
-            <th>Status</th>
-            <th>Released Date</th>
-          </tr>
-        </thead>
-
-          <tbody>
-  `;
-  
-  grades.forEach(grade => {
-    const prelim = grade.prelim !== null ? grade.prelim.toFixed(2) : '--';
-    const midterm = grade.midterm !== null ? grade.midterm.toFixed(2) : '--';
-    const finals = grade.finals !== null ? grade.finals.toFixed(2) : '--';
-    const average = grade.average !== null ? grade.average.toFixed(2) : '--';
-    
-    const gradeClass = getGradeClass(grade.average);
-    const gradeLabel = getGradeLabel(grade.average);
-    
-    const releasedDate = grade.released_at 
-      ? new Date(grade.released_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
-      : 'N/A';
-    
-   html += `
-<tr>
-  <td><strong>${grade.subject_code}</strong></td>
-  <td>${grade.subject}</td>
-  <td style="font-size:12px;">👨‍🏫 ${grade.teacher_name || 'N/A'}</td>
-
-  <td class="grade-value">${prelim}</td>
-  <td class="grade-value">${midterm}</td>
-  <td class="grade-value">${finals}</td>
-
-  <td>
-    <span class="grade-badge ${gradeClass}">${average}</span>
-  </td>
-  <td>${gradeLabel}</td>
-
-  <td style="font-size:12px; color:#666;">${releasedDate}</td>
-</tr>
-`;
-
-  });
-  
-  html += `
-          </tbody>
-        </table>
-      </div>
-      
-      ${grades.length > 0 && grades[0].remarks ? `
-        <div class="info-box success" style="margin-top:20px;">
-          <strong>📝 Remarks:</strong> ${grades[0].remarks}
-        </div>
-      ` : ''}
-    </div>
-  `;
-  
   resultDiv.innerHTML = html;
 }
 
+function filterGradesBySemester(semKey, btn) {
+  _activeSemFilter = semKey;
+  document.querySelectorAll('.sem-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('semesterGroupsContainer').innerHTML =
+    buildGroupedGradesHTML(_allGradesData.grades, semKey);
+}
+
+function buildSemesterKeys(grades) {
+  const seen = new Set();
+  grades.forEach(g => {
+    const k = `${g.semester||'N/A'}|||${g.school_year||'N/A'}`;
+    seen.add(k);
+  });
+  return Array.from(seen);
+}
+
+function parseSemKey(key) {
+  const [sem, sy] = key.split('|||');
+  return { sem, sy };
+}
+
+function buildGroupedGradesHTML(grades, semKey) {
+  // Filter by selected semester
+  const filtered = semKey === 'all'
+    ? grades
+    : grades.filter(g => `${g.semester||'N/A'}|||${g.school_year||'N/A'}` === semKey);
+
+  // Group by semester key
+  const groups = {};
+  filtered.forEach(g => {
+    const k = `${g.semester||'N/A'}|||${g.school_year||'N/A'}`;
+    if (!groups[k]) groups[k] = [];
+    groups[k].push(g);
+  });
+
+  if (Object.keys(groups).length === 0) {
+    return '<div style="text-align:center;padding:40px;color:#999;">No grades found.</div>';
+  }
+
+  let html = '';
+  Object.entries(groups).forEach(([key, gradeList]) => {
+    const { sem, sy } = parseSemKey(key);
+    const semGwa = recalcGWA(gradeList);
+
+    html += `
+      <div class="semester-group">
+        <div class="semester-group-header">
+          <span class="semester-group-title">📅 ${sem} Semester — A.Y. ${sy}</span>
+          ${semGwa !== null ? `<span class="semester-gwa-badge">Semester GWA: ${semGwa}</span>` : ''}
+        </div>
+        <div class="grades-table-container" style="border:1px solid #e0e0e0;border-top:none;border-radius:0 0 8px 8px;">
+          <table class="grades-table">
+            <thead>
+              <tr>
+                <th>Subject Code</th>
+                <th>Subject Name</th>
+                <th>Professor</th>
+                <th>Prelim</th>
+                <th>Midterm</th>
+                <th>Finals</th>
+                <th>GWA</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${gradeList.map(g => buildGradeRow(g)).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  });
+
+  return html;
+}
+
+function buildGradeRow(grade) {
+  const fmt = v => (v !== null && v !== undefined) ? parseFloat(v).toFixed(2) : '--';
+  const prelim  = fmt(grade.prelim);
+  const midterm = fmt(grade.midterm);
+  const finals  = fmt(grade.finals);
+  const average = fmt(grade.average);
+  const badgeClass  = getGradeClass(grade.average);
+  const statusBadge = getGradeLabel(grade.average);
+
+  return `
+    <tr>
+      <td><strong>${grade.subject_code}</strong></td>
+      <td>${grade.subject}</td>
+      <td style="font-size:12px;">👨‍🏫 ${grade.teacher_name||'N/A'}</td>
+      <td class="grade-value">${prelim}</td>
+      <td class="grade-value">${midterm}</td>
+      <td class="grade-value">${finals}</td>
+      <td><span class="grade-badge ${badgeClass}">${average}</span></td>
+      <td>${statusBadge}</td>
+    </tr>`;
+}
+
+
 function getGradeClass(average) {
-  if (average === null) return 'grade-incomplete';
-  if (average >= 90) return 'grade-excellent';
-  if (average >= 80) return 'grade-good';
-  if (average >= 75) return 'grade-fair';
-  return 'grade-poor';
+  if (average === null || average === undefined) return 'grade-incomplete';
+  const g = parseFloat(average);
+  if (isNaN(g))   return 'grade-incomplete';
+  if (g <= 1.50)  return 'grade-excellent';  // 1.0 = Excellent
+  if (g <= 2.50)  return 'grade-good';        // 1.25–2.50 = Very Good / Good
+  if (g <= 3.00)  return 'grade-fair';        // 2.75–3.0  = Satisfactory (PASSING)
+  return 'grade-poor';                         // 4.0 / 5.0 = Conditional / Failed
 }
 
 function getGradeLabel(average) {
-  if (average === null) return '<span style="color:#999;">Incomplete</span>';
-  if (average >= 90) return '<span style="color:#28a745; font-weight:600;">Excellent</span>';
-  if (average >= 80) return '<span style="color:#17a2b8; font-weight:600;">Good</span>';
-  if (average >= 75) return '<span style="color:#856404; font-weight:600;">Satisfactory</span>';
-  return '<span style="color:#dc3545; font-weight:600;">Needs Improvement</span>';
+  if (average === null || average === undefined)
+    return '<span style="color:#999;">Incomplete</span>';
+  const g = parseFloat(average);
+  if (isNaN(g))
+    return '<span style="color:#999;">Incomplete</span>';
+  if (g <= 3.0)
+    return '<span style="background:#28a745;color:white;padding:4px 12px;border-radius:12px;font-weight:700;font-size:12px;">PASSED</span>';
+  return '<span style="background:#dc3545;color:white;padding:4px 12px;border-radius:12px;font-weight:700;font-size:12px;">FAILED</span>';
 }
 
-function downloadGradesReport() {
-  // Simple download as text - you can enhance this to generate PDF
-  const gradesTable = document.querySelector('.grades-table');
-  if (!gradesTable) {
-    alert('No grades available to download');
-    return;
-  }
-  
-  let text = 'ACADEMIC PERFORMANCE REPORT\n';
-  text += '=' .repeat(80) + '\n\n';
-  
-  const student = document.querySelector('.grades-header-card');
-  if (student) {
-    const infoItems = student.querySelectorAll('.grades-info-value');
-    const labels = student.querySelectorAll('.grades-info-label');
-    labels.forEach((label, i) => {
-      text += label.textContent + ': ' + (infoItems[i]?.textContent || '') + '\n';
+function recalcGWA(grades) {
+  const valid = grades.filter(g => g.average !== null && g.average !== undefined);
+  if (valid.length === 0) return null;
+  const sum = valid.reduce((acc, g) => acc + parseFloat(g.average), 0);
+  return (sum / valid.length).toFixed(2);
+}
+
+async function downloadGradesReport() {
+  try {
+    const res = await fetch('http://localhost:8080/student/grades', {
+      credentials: 'include'
     });
-  }
-  
-  text += '\n' + '='.repeat(80) + '\n\n';
-  text += 'GRADES:\n\n';
-  
-  const headers = Array.from(gradesTable.querySelectorAll('th')).map(th => th.textContent);
-  text += headers.join('\t') + '\n';
-  text += '-'.repeat(120) + '\n';
-  
-  const rows = gradesTable.querySelectorAll('tbody tr');
-  rows.forEach(row => {
-    const cells = Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim());
-    text += cells.join('\t') + '\n';
-  });
-  
-  text += '\n' + '='.repeat(80) + '\n';
-  text += 'Generated on: ' + new Date().toLocaleString() + '\n';
-  
-  const blob = new Blob([text], { type: 'text/plain' });
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'grades_report_' + new Date().toISOString().split('T')[0] + '.txt';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  window.URL.revokeObjectURL(url);
-  
-  alert('✅ Grades report downloaded successfully!');
-}
+    
+    if (!res.ok) {
+      alert('❌ Failed to fetch grades data');
+      return;
+    }
+    
+    const data = await res.json();
+    
+    if (!data.grades || data.grades.length === 0) {
+      alert('❌ No grades available to download');
+      return;
+    }
+    
+    // ✅ Filter grades based on active semester filter
+    let gradesToPrint = data.grades;
+    let filterLabel   = 'All Semesters';
 
+    if (_activeSemFilter && _activeSemFilter !== 'all') {
+      gradesToPrint = data.grades.filter(g =>
+        `${g.semester||'N/A'}|||${g.school_year||'N/A'}` === _activeSemFilter
+      );
+      const { sem, sy } = parseSemKey(_activeSemFilter);
+      filterLabel = `${sem} Semester — A.Y. ${sy}`;
+    }
+
+    if (gradesToPrint.length === 0) {
+      alert('❌ No grades found for the selected semester');
+      return;
+    }
+
+    // Pass filtered data
+    const filteredData = { ...data, grades: gradesToPrint };
+    generatePDFReport(filteredData, filterLabel);
+    
+  } catch (err) {
+    console.error('Error downloading report:', err);
+    alert('❌ Failed to generate report card');
+  }
+}
+async function generatePDFReport(gradesData) {
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF('p', 'mm', 'a4');
+
+  const student = gradesData.student || {};
+  const grades  = gradesData.grades  || [];
+  const gwa     = recalcGWA(grades);
+
+  function gwaDesc(g) {
+    if (g === null) return 'N/A';
+    const v = parseFloat(g);
+    if (v <= 1.50) return 'Excellent';
+    if (v <= 2.00) return 'Very Good';
+    if (v <= 2.50) return 'Good';
+    if (v <= 3.00) return 'Satisfactory';
+    if (v <= 4.00) return 'Conditional';
+    return 'Failed';
+  }
+
+  // Group grades by semester
+  const groups = {};
+  grades.forEach(g => {
+    const k = `${g.semester||'N/A'}|||${g.school_year||'N/A'}`;
+    if (!groups[k]) groups[k] = [];
+    groups[k].push(g);
+  });
+
+  let yPos = 20;
+
+  // ── University header ──
+  pdf.setFontSize(20);
+  pdf.setFont(undefined, 'bold');
+  pdf.setTextColor(22, 90, 40);
+  pdf.text('THE UNIVERSITY OF MANILA', 105, yPos, { align: 'center' });
+
+  yPos += 6;
+  pdf.setFontSize(8);
+  pdf.setFont(undefined, 'normal');
+  pdf.setTextColor(100, 100, 100);
+  pdf.text('Mehan Garden, Ermita, Manila 1000, Philippines', 105, yPos, { align: 'center' });
+
+  yPos += 4;
+  pdf.text('Tel: (02) 8241-1234  |  Email: registrar@um.edu.ph', 105, yPos, { align: 'center' });
+
+  yPos += 8;
+  pdf.setFontSize(14);
+  pdf.setFont(undefined, 'bold');
+  pdf.setTextColor(22, 90, 40);
+  pdf.text('OFFICIAL REPORT CARD', 105, yPos, { align: 'center' });
+
+  yPos += 3;
+  pdf.setDrawColor(22, 90, 40);
+  pdf.setLineWidth(0.5);
+  pdf.line(20, yPos, 190, yPos);
+
+  yPos += 8;
+
+  // ── Student info box ──
+  pdf.setFillColor(248, 249, 250);
+  pdf.setDrawColor(22, 90, 40);
+  pdf.rect(20, yPos, 170, 35, 'FD');
+
+  yPos += 6;
+  pdf.setFontSize(9);
+  pdf.setTextColor(0, 0, 0);
+
+  const infoRows = [
+    ['Student Name:',   student.name        || 'N/A'],
+    ['Student ID:',     student.student_id  || 'N/A'],
+    ['Course:',         `${student.course || 'N/A'} (${student.course_code || 'N/A'})`],
+    ['Year Level:',     `Year ${student.year_level || 'N/A'}`],
+    ['Date Generated:', new Date().toLocaleDateString('en-US')],
+  ];
+
+  infoRows.forEach(([label, value]) => {
+    pdf.setFont(undefined, 'bold');
+    pdf.text(label, 25, yPos);
+    pdf.setFont(undefined, 'normal');
+    pdf.text(String(value), 140, yPos, { align: 'right' });
+    yPos += 5;
+  });
+
+  yPos += 5;
+
+  // ── Overall GWA box ──
+  if (gwa !== null) {
+    pdf.setFillColor(212, 175, 55);
+    pdf.setDrawColor(180, 140, 20);
+    pdf.rect(20, yPos, 170, 14, 'FD');
+
+    pdf.setFontSize(10);
+    pdf.setFont(undefined, 'bold');
+    pdf.setTextColor(50, 30, 0);
+    pdf.text('Overall General Weighted Average (GWA):', 25, yPos + 5);
+    pdf.setFontSize(12);
+    pdf.text(`${gwa}  —  ${gwaDesc(gwa)}`, 188, yPos + 5, { align: 'right' });
+
+    pdf.setFontSize(7.5);
+    pdf.setFont(undefined, 'normal');
+    pdf.text('Scale: 1.0 = Excellent  |  3.0 = Passing threshold  |  5.0 = Failed', 105, yPos + 11, { align: 'center' });
+
+    yPos += 20;
+  }
+
+  // ── Per-semester sections ──
+  Object.entries(groups).forEach(([key, gradeList], groupIndex) => {
+    const [sem, sy] = key.split('|||');
+    const semGwa    = recalcGWA(gradeList);
+
+    // Check if we need a new page (leave room for header + at least 2 rows)
+    if (yPos > 220) {
+      pdf.addPage();
+      yPos = 20;
+    }
+
+    // Semester header bar (green)
+    pdf.setFillColor(22, 90, 40);
+    pdf.setDrawColor(13, 61, 26);
+    pdf.rect(20, yPos, 170, 10, 'FD');
+
+    pdf.setFontSize(10);
+    pdf.setFont(undefined, 'bold');
+    pdf.setTextColor(255, 255, 255);
+    pdf.text(`${sem} Semester  —  A.Y. ${sy}`, 25, yPos + 7);
+
+    if (semGwa !== null) {
+      pdf.setFontSize(9);
+      pdf.text(`Semester GWA: ${semGwa}  (${gwaDesc(semGwa)})`, 188, yPos + 7, { align: 'right' });
+    }
+
+    yPos += 10;
+
+    // Column header row
+    pdf.setFillColor(230, 244, 234);
+    pdf.setDrawColor(200, 220, 200);
+    pdf.rect(20, yPos, 170, 7, 'FD');
+
+    pdf.setFontSize(7.5);
+    pdf.setFont(undefined, 'bold');
+    pdf.setTextColor(22, 90, 40);
+    pdf.text('Subject Code', 22,  yPos + 5);
+    pdf.text('Subject Name', 50,  yPos + 5);
+    pdf.text('Professor',    98,  yPos + 5);
+    pdf.text('Pre',          131, yPos + 5);
+    pdf.text('Mid',          142, yPos + 5);
+    pdf.text('Fin',          153, yPos + 5);
+    pdf.text('GWA',          163, yPos + 5);
+    pdf.text('Result',       176, yPos + 5);
+
+    yPos += 7;
+
+    // Grade rows
+    gradeList.forEach((grade, index) => {
+      // New page if needed
+      if (yPos > 270) {
+        pdf.addPage();
+        yPos = 20;
+      }
+
+      const fmt = v => (v !== null && v !== undefined) ? parseFloat(v).toFixed(2) : '--';
+      const prelim  = fmt(grade.prelim);
+      const midterm = fmt(grade.midterm);
+      const finals  = fmt(grade.finals);
+      const average = fmt(grade.average);
+      const remarks = average !== '--'
+        ? (parseFloat(average) <= 3.0 ? 'PASSED' : 'FAILED')
+        : 'INC';
+
+      if (index % 2 === 0) {
+        pdf.setFillColor(248, 249, 250);
+        pdf.rect(20, yPos, 170, 6, 'F');
+      }
+
+      pdf.setFontSize(7);
+      pdf.setFont(undefined, 'bold');
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(grade.subject_code || '', 22, yPos + 4);
+
+      pdf.setFont(undefined, 'normal');
+      const subName = (grade.subject || '').length > 24
+        ? grade.subject.substring(0, 24) + '…'
+        : (grade.subject || '');
+      pdf.text(subName, 50, yPos + 4);
+
+      const profName = (grade.teacher_name || 'N/A').length > 18
+        ? grade.teacher_name.substring(0, 18) + '…'
+        : (grade.teacher_name || 'N/A');
+      pdf.text(profName, 98, yPos + 4);
+
+      pdf.setFont(undefined, 'bold');
+      pdf.setTextColor(22, 90, 40);
+      pdf.text(prelim,  134, yPos + 4, { align: 'center' });
+      pdf.text(midterm, 145, yPos + 4, { align: 'center' });
+      pdf.text(finals,  156, yPos + 4, { align: 'center' });
+      pdf.text(average, 166, yPos + 4, { align: 'center' });
+
+      if (remarks === 'PASSED')      pdf.setTextColor(34, 139, 34);
+      else if (remarks === 'FAILED') pdf.setTextColor(180, 0, 0);
+      else                           pdf.setTextColor(100, 100, 100);
+      pdf.text(remarks, 182, yPos + 4, { align: 'center' });
+      pdf.setTextColor(0, 0, 0);
+
+      pdf.setDrawColor(220, 220, 220);
+      pdf.setLineWidth(0.1);
+      pdf.line(20, yPos + 6, 190, yPos + 6);
+
+      yPos += 6;
+    });
+
+    // Semester GWA summary row
+    if (semGwa !== null) {
+      pdf.setFillColor(232, 245, 233);
+      pdf.rect(20, yPos, 170, 6, 'F');
+      pdf.setFontSize(7.5);
+      pdf.setFont(undefined, 'bold');
+      pdf.setTextColor(22, 90, 40);
+      pdf.text(`Semester GWA: ${semGwa}  (${gwaDesc(semGwa)})`, 188, yPos + 4, { align: 'right' });
+      yPos += 6;
+    }
+
+    yPos += 6; // spacing between groups
+  });
+
+  // New page if too close to bottom for legend + signatures
+  if (yPos > 220) {
+    pdf.addPage();
+    yPos = 20;
+  }
+
+  // ── Grading scale legend ──
+  pdf.setFillColor(248, 249, 250);
+  pdf.setDrawColor(220, 220, 220);
+  pdf.rect(20, yPos, 170, 24, 'FD');
+
+  yPos += 5;
+  pdf.setFontSize(8);
+  pdf.setFont(undefined, 'bold');
+  pdf.setTextColor(22, 90, 40);
+  pdf.text('Filipino GWA Grading System:', 25, yPos);
+
+  yPos += 5;
+  pdf.setFontSize(7.5);
+  pdf.setFont(undefined, 'normal');
+  pdf.setTextColor(0, 0, 0);
+  pdf.text('1.0 = Excellent    1.25 = Very Good    1.5 = Very Good    1.75 = Very Good', 25, yPos);
+
+  yPos += 4;
+  pdf.text('2.0 = Good    2.25 = Good    2.5 = Good    2.75 = Satisfactory    3.0 = Satisfactory', 25, yPos);
+
+  yPos += 4;
+  pdf.setFont(undefined, 'bold');
+  pdf.setTextColor(180, 0, 0);
+  pdf.text('4.0 = Conditional  |  5.0 = Failed  |  Passing threshold: 3.0 and below', 25, yPos);
+  pdf.setTextColor(0, 0, 0);
+
+  yPos += 10;
+
+  // ── Signature lines ──
+  pdf.setDrawColor(0, 0, 0);
+  pdf.setLineWidth(0.3);
+  pdf.line(30, yPos, 85, yPos);
+  pdf.line(110, yPos, 165, yPos);
+
+  yPos += 4;
+  pdf.setFontSize(8);
+  pdf.setFont(undefined, 'normal');
+  pdf.text('Records Officer', 57, yPos, { align: 'center' });
+  pdf.text('Registrar', 137, yPos, { align: 'center' });
+
+  yPos += 10;
+
+  // ── Footer ──
+  pdf.setDrawColor(22, 90, 40);
+  pdf.setLineWidth(0.5);
+  pdf.line(20, yPos, 190, yPos);
+
+  yPos += 4;
+  pdf.setFontSize(7.5);
+  pdf.setFont(undefined, 'bold');
+  pdf.setTextColor(0, 0, 0);
+  pdf.text('This is an official document of The University of Manila', 105, yPos, { align: 'center' });
+
+  yPos += 3;
+  pdf.setFontSize(6.5);
+  pdf.setFont(undefined, 'normal');
+  pdf.setTextColor(100, 100, 100);
+  const docId = `RC-${student.student_id}-${new Date().getFullYear()}${String(new Date().getMonth()+1).padStart(2,'0')}${String(new Date().getDate()).padStart(2,'0')}`;
+  pdf.text(`Document ID: ${docId}`, 105, yPos, { align: 'center' });
+
+  yPos += 3;
+  pdf.text('Generated electronically. No signature required for digital records.', 105, yPos, { align: 'center' });
+
+  // ── Save ──
+  const filename = `Report_Card_${student.student_id}_${new Date().getFullYear()}.pdf`;
+  pdf.save(filename);
+
+  setTimeout(() => {
+    alert(
+      '✅ PDF downloaded!\n\n' +
+      '📁 File: ' + filename + '\n' +
+      '📋 Includes per-semester grouping with individual GWA per semester.\n' +
+      '💡 Passing threshold: 3.0 and below (Filipino GWA scale).'
+    );
+  }, 500);
+}
 // Update loadUserProfile function to include profile picture
 async function loadUserProfile() {
   try {
@@ -6253,7 +7399,8 @@ function showMaterials(event) {
   document.getElementById("documentsView").style.display = "none";
   document.getElementById("gradesView").style.display = "none";
   document.getElementById("materialsView").style.display = "block";
-  
+    document.getElementById("enrollmentView").style.display = "none";
+
   document.getElementById("pageTitle").textContent = "Lesson Materials";
   document.getElementById("breadcrumbCurrent").textContent = "Lesson Materials";
   
@@ -6942,6 +8089,414 @@ window.addEventListener('beforeunload', function() {
   // This doesn't fully prevent caching but helps
   document.body.style.display = 'none';
 });
+
+// ===== SHOW ENROLLMENT VIEW =====
+function showEnrollment(event) {
+  if (event) event.preventDefault();
+
+  ['dashboardView','billingView','scheduleView','documentsView',
+   'gradesView','materialsView'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  document.getElementById('enrollmentView').style.display = 'block';
+  document.getElementById('pageTitle').textContent = 'Re-Enrollment';
+  document.getElementById('breadcrumbCurrent').textContent = 'Re-Enrollment';
+     
+  document.querySelector('.content-wrapper').scrollTop = 0;
+
+ updateActiveNav(6);
+loadEnrollmentCourses();
+loadEnrollmentHistory();
+  
+  // ✅ Autofill after a short delay to ensure userData is loaded
+  setTimeout(() => {
+    prefillEnrollmentFromProfile();
+  }, 300);
+}
+
+// ===== LOAD COURSES INTO ENROLLMENT DROPDOWN =====
+async function loadEnrollmentCourses() {
+  try {
+    const res     = await fetch('http://localhost:8080/public/courses');
+    const courses = await res.json();
+    const sel     = document.getElementById('enroll_course');
+    sel.innerHTML = '<option value="">Select a course</option>';
+    courses.forEach(c => {
+      const opt       = document.createElement('option');
+      opt.value       = c.id;
+      opt.textContent = c.course_name;
+      sel.appendChild(opt);
+    });
+    
+    // ✅ Autofill after courses are loaded
+    prefillEnrollmentFromProfile();
+    
+  } catch (err) { console.error('Failed to load courses:', err); }
+}
+function prefillEnrollmentFromProfile() {
+  if (typeof userData === 'undefined' || !userData) return;
+
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if (el && val) el.value = val;
+  };
+
+  // Read-only display boxes
+  const idEl   = document.getElementById('enroll_student_id_display');
+  const nameEl = document.getElementById('enroll_fullname_display');
+  if (idEl   && userData.student_id)   idEl.textContent   = userData.student_id;
+  if (nameEl && userData.student_name) nameEl.textContent = userData.student_name;
+
+  // Editable name fields
+  if (userData.first_name) set('enroll_first_name', userData.first_name);
+  if (userData.last_name)  set('enroll_last_name',  userData.last_name);
+  if (!userData.first_name && !userData.last_name && userData.student_name) {
+    const parts = userData.student_name.trim().split(' ');
+    set('enroll_first_name', parts[0] || '');
+    set('enroll_last_name',  parts[parts.length - 1] || '');
+    if (parts.length > 2) set('enroll_middle_name', parts.slice(1, -1).join(' '));
+  }
+
+  // Contact info
+  set('enroll_email',   userData.email);
+  set('enroll_contact', userData.contact_number);
+  set('enroll_address', userData.address);
+
+  // Scholarship
+  if (userData.scholarship_status) {
+    const map = {
+      'Scholar': 'scholar', 'Non-Scholar': 'non-scholar',
+      'scholar': 'scholar', 'non-scholar': 'non-scholar', 'None': 'non-scholar'
+    };
+    set('enroll_scholarship', map[userData.scholarship_status] || '');
+  }
+
+  updateEnrollProgress();
+}
+
+
+// ===== LOAD SUBJECTS BASED ON COURSE + YEAR + SEMESTER =====
+async function loadEnrollmentSubjects() {
+  const course   = document.getElementById('enroll_course').value;
+  const year     = document.getElementById('enroll_year_level').value;
+  const semester = document.getElementById('enroll_semester').value;
+  const prompt   = document.getElementById('enroll_subjects_prompt');
+  const sel      = document.getElementById('enroll_subjects');
+
+  if (!course || !year || !semester) {
+    prompt.style.display = 'block';
+    prompt.innerHTML = `<div style="font-size:28px;margin-bottom:8px;">📚</div>
+      <div>Please select your <strong>Course</strong>, <strong>Year Level</strong>,
+      and <strong>Semester</strong> first to load available subjects.</div>`;
+    sel.style.display = 'none';
+    document.getElementById('enroll_selected_display').style.display = 'none';
+    return;
+  }
+
+  prompt.style.display = 'block';
+  prompt.innerHTML = '<div style="font-size:24px;margin-bottom:8px;">⏳</div><div>Loading subjects...</div>';
+  sel.style.display  = 'none';
+
+  try {
+    const res      = await fetch(`http://localhost:8080/public/subjects?course_id=${course}&year_level=${year}&semester=${encodeURIComponent(semester)}`);
+    const subjects = await res.json();
+
+    if (!subjects || !subjects.length) {
+      prompt.innerHTML = '<div style="font-size:28px;margin-bottom:8px;">😕</div><div>No subjects found for the selected combination.</div>';
+      return;
+    }
+
+    sel.innerHTML = '';
+    subjects.forEach(s => {
+      const opt       = document.createElement('option');
+      opt.value       = s.id;
+      opt.textContent = `${s.code ? s.code + ' — ' : ''}${s.subject_name || s.name || ''}`;
+      sel.appendChild(opt);
+    });
+
+    prompt.style.display = 'none';
+    sel.style.display    = 'block';
+    document.getElementById('enroll_selected_display').style.display = 'none';
+    updateEnrollProgress();
+
+  } catch (err) {
+    prompt.innerHTML = '<div style="font-size:28px;margin-bottom:8px;">⚠️</div><div>Error loading subjects. Please try again.</div>';
+    console.error(err);
+  }
+}
+
+// ===== UPDATE SELECTED SUBJECTS DISPLAY =====
+function updateEnrollSelectedSubjects() {
+  const sel      = document.getElementById('enroll_subjects');
+  const selected = Array.from(sel.selectedOptions);
+  const display  = document.getElementById('enroll_selected_display');
+  const list     = document.getElementById('enroll_selected_list');
+  const count    = document.getElementById('enroll_selected_count');
+
+  if (selected.length > 0) {
+    display.style.display = 'block';
+    count.textContent     = selected.length;
+    list.innerHTML        = '';
+    selected.forEach(opt => {
+      const tag = document.createElement('span');
+      tag.style.cssText = 'background:#165a28; color:white; padding:4px 10px; border-radius:20px; font-size:12px; display:inline-flex; align-items:center; gap:6px;';
+      tag.innerHTML = `${opt.textContent}
+        <span style="cursor:pointer; font-size:10px; opacity:0.8;"
+              onclick="enrollRemoveSubject('${opt.value}')">✕</span>`;
+      list.appendChild(tag);
+    });
+  } else {
+    display.style.display = 'none';
+  }
+}
+
+function enrollRemoveSubject(id) {
+  const opt = Array.from(document.getElementById('enroll_subjects').options).find(o => o.value === id);
+  if (opt) { opt.selected = false; updateEnrollSelectedSubjects(); updateEnrollProgress(); }
+}
+
+
+// ===== SUBMIT ENROLLMENT =====
+async function submitEnrollment(event) {
+  event.preventDefault();
+  const g  = id => (document.getElementById(id)?.value || '').trim();
+  const selectedSubjects = Array.from(
+    document.getElementById('enroll_subjects').selectedOptions
+  ).map(o => o.value);
+
+  const msgEl = document.getElementById('enrollmentMessage');
+  msgEl.innerHTML = '';
+
+  const showMsg = (type, text) => {
+    const colors = {
+      error:   { bg:'#ffebee', border:'#f44336', color:'#c62828' },
+      success: { bg:'#e8f5e9', border:'#4caf50', color:'#2e7d32' },
+    };
+    const c = colors[type];
+    msgEl.style.cssText = `background:${c.bg}; border-left:4px solid ${c.border}; color:${c.color};
+      padding:12px 16px; border-radius:6px; font-size:13px; font-weight:600; margin-bottom:16px;`;
+    msgEl.innerHTML = text;
+    msgEl.scrollIntoView({ behavior:'smooth', block:'center' });
+  };
+
+  if (!g('enroll_first_name') || !g('enroll_last_name'))
+    return showMsg('error', '⚠️ Please enter your first and last name.');
+  if (!g('enroll_contact') || !g('enroll_email') || !g('enroll_address'))
+    return showMsg('error', '⚠️ Please fill in contact number, email, and address.');
+  if (!g('enroll_last_school') || !g('enroll_last_school_year'))
+    return showMsg('error', '⚠️ Please fill in last school attended and school year.');
+  if (!g('enroll_academic_year') || !g('enroll_semester') || !g('enroll_year_level') || !g('enroll_course') || !g('enroll_scholarship'))
+    return showMsg('error', '⚠️ Please complete all required academic fields.');
+  if (!selectedSubjects.length)
+    return showMsg('error', '⚠️ Please select at least one subject.');
+
+  const btn  = document.querySelector('#enrollmentForm button[type="submit"]');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '⏳ Submitting Application...';
+  btn.disabled  = true;
+
+  try {
+    const res = await fetch('http://localhost:8080/student/enroll', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        academic_year:          g('enroll_academic_year'),
+        year_level:             parseInt(g('enroll_year_level')),
+        semester:               g('enroll_semester'),
+        course_id:              parseInt(g('enroll_course')),
+        subjects:               selectedSubjects,
+        scholarship_status:     g('enroll_scholarship'),
+        first_name:             g('enroll_first_name'),
+        middle_name:            g('enroll_middle_name'),
+        last_name:              g('enroll_last_name'),
+        age:                    parseInt(g('enroll_age')) || 18,
+        contact_number:         g('enroll_contact'),
+        email:                  g('enroll_email'),
+        address:                g('enroll_address'),
+        father_first_name:      g('enroll_father_first_name'),
+        father_middle_name:     g('enroll_father_middle_name'),
+        father_last_name:       g('enroll_father_last_name'),
+        father_occupation:      g('enroll_father_occupation'),
+        father_contact_number:  g('enroll_father_contact'),
+        father_address:         g('enroll_father_address'),
+        mother_first_name:      g('enroll_mother_first_name'),
+        mother_middle_name:     g('enroll_mother_middle_name'),
+        mother_last_name:       g('enroll_mother_last_name'),
+        mother_occupation:      g('enroll_mother_occupation'),
+        mother_contact_number:  g('enroll_mother_contact'),
+        mother_address:         g('enroll_mother_address'),
+        last_school_attended:   g('enroll_last_school'),
+        last_school_year:       g('enroll_last_school_year'),
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      showMsg('error', '✗ ' + (data.error || 'Submission failed. Please try again.'));
+    } else {
+      showMsg('success', '✓ Application submitted successfully! Your re-enrollment is now pending review.');
+      setTimeout(() => {
+        document.getElementById('enrollmentForm').reset();
+        resetEnrollForm();
+        if (typeof loadEnrollmentHistory === 'function') loadEnrollmentHistory();
+        if (typeof getPayments === 'function') getPayments();
+          refreshStudentData();
+      }, 3000);
+    }
+
+  } catch (err) {
+    showMsg('error', '⚠️ Unable to submit application. Please check your connection and try again.');
+  } finally {
+    btn.innerHTML = orig;
+    btn.disabled  = false;
+  }
+}
+
+// ===== LOAD ENROLLMENT HISTORY =====
+async function loadEnrollmentHistory() {
+  const container = document.getElementById('enrollmentHistoryContainer');
+  if (!container) return;
+  container.innerHTML = '<div style="text-align:center;padding:40px;color:#999;">Loading...</div>';
+
+  try {
+    const res  = await fetch('http://localhost:8080/student/enrollments', { credentials:'include' });
+    const data = await res.json();
+
+    if (!data.enrollments || !data.enrollments.length) {
+      container.innerHTML = '<div style="text-align:center;padding:40px;color:#999;">No enrollment applications yet.</div>';
+      return;
+    }
+
+    const sc = {
+      pending:  { bg:'#fff3e0', border:'#fb8c00', color:'#e65100', label:'⏳ Pending'  },
+      approved: { bg:'#e8f5e9', border:'#43a047', color:'#2e7d32', label:'✅ Approved' },
+      rejected: { bg:'#ffebee', border:'#e53935', color:'#c62828', label:'❌ Rejected' },
+    };
+
+    container.innerHTML = data.enrollments.map(e => {
+      const s = sc[e.status] || sc.pending;
+      return `
+        <div style="padding:16px; border-left:4px solid ${s.border}; background:${s.bg};
+                    border-radius:8px; margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+            <div>
+              <div style="font-size:15px; font-weight:700; color:#165a28;">
+                ${e.semester} Semester — A.Y. ${e.academic_year}
+              </div>
+              <div style="font-size:12px; color:#666; margin-top:3px;">
+                🎓 ${e.course} &nbsp;|&nbsp; Year ${e.year_level}
+                ${e.total_units ? '&nbsp;|&nbsp; ' + e.total_units + ' units' : ''}
+                &nbsp;|&nbsp; ${e.scholarship_status}
+              </div>
+            </div>
+            <span style="background:${s.color}; color:white; padding:4px 12px;
+                         border-radius:12px; font-size:11px; font-weight:700; white-space:nowrap;">
+              ${s.label}
+            </span>
+          </div>
+          <div style="font-size:12px; color:#555;">
+            <strong>Subjects:</strong> ${(e.subjects || []).join(', ') || 'N/A'}
+          </div>
+          ${e.remarks ? `<div style="margin-top:8px; font-size:12px; color:#555;
+            background:rgba(255,255,255,0.7); padding:8px 10px; border-radius:5px;">
+            <strong>📋 Registrar's Note:</strong> ${e.remarks}
+          </div>` : ''}
+          <div style="margin-top:6px; font-size:11px; color:#999;">
+            Applied: ${new Date(e.applied_at).toLocaleString()}
+            ${e.processed_at ? ' &nbsp;|&nbsp; Processed: ' + new Date(e.processed_at).toLocaleString() : ''}
+          </div>
+        </div>`;
+    }).join('');
+
+  } catch (err) {
+    container.innerHTML = '<div style="background:#fff3e0;border-left:4px solid #fb8c00;padding:12px 16px;border-radius:6px;font-size:13px;color:#e65100;">⚠️ Unable to load enrollment history.</div>';
+  }
+}
+
+function resetEnrollForm() {
+  const sel    = document.getElementById('enroll_subjects');
+  const prompt = document.getElementById('enroll_subjects_prompt');
+  sel.style.display     = 'none';
+  sel.innerHTML         = '';
+  prompt.style.display  = 'block';
+  prompt.innerHTML      = `<div style="font-size:28px;margin-bottom:8px;">📚</div>
+    <div>Please select your <strong>Course</strong>, <strong>Year Level</strong>,
+    and <strong>Semester</strong> first to load available subjects.</div>`;
+  document.getElementById('enroll_selected_display').style.display  = 'none';
+  document.getElementById('enrollProgressIndicator').style.display  = 'none';
+  const msg = document.getElementById('enrollmentMessage');
+  if (msg) { msg.style.cssText = ''; msg.innerHTML = ''; }
+}
+
+
+function updateEnrollProgress() {
+  const required = [
+    'enroll_first_name','enroll_last_name','enroll_age',
+    'enroll_contact','enroll_email','enroll_address',
+    'enroll_last_school','enroll_last_school_year',
+    'enroll_course','enroll_year_level',
+    'enroll_scholarship','enroll_academic_year','enroll_semester'
+  ];
+  let filled = required.filter(id => {
+    const el = document.getElementById(id);
+    return el && el.value.trim();
+  }).length;
+  const subSel = document.getElementById('enroll_subjects');
+  if (subSel && Array.from(subSel.selectedOptions).length > 0) filled++;
+
+  const total = required.length + 1;
+  const pct   = Math.round((filled / total) * 100);
+  const ind   = document.getElementById('enrollProgressIndicator');
+  if (filled > 0) {
+    ind.style.display = 'block';
+    document.getElementById('enrollProgressFill').style.width    = pct + '%';
+    document.getElementById('enrollProgressPercent').textContent = pct + '%';
+  }
+
+  async function refreshStudentData() {
+  console.log('🔄 Refreshing student data after enrollment...');
+  
+  try {
+    // Reload schedule data in background
+    const schedRes = await fetch('http://localhost:8080/student/schedule', { credentials: 'include' });
+    if (schedRes.ok) {
+      const schedData = await schedRes.json();
+      if (schedData.schedule) {
+        scheduleData = schedData.schedule;
+        console.log('✅ Schedule data refreshed');
+      }
+    }
+  } catch (err) { console.log('Schedule refresh skipped:', err); }
+
+  try {
+    // Reload lesson materials in background
+    const lessonRes = await fetch('http://localhost:8080/student/lessons', { credentials: 'include' });
+    if (lessonRes.ok) {
+      const lessonData = await lessonRes.json();
+      if (lessonData.lessons) {
+        currentLessons = lessonData.lessons;
+        console.log('✅ Lessons data refreshed');
+      }
+    }
+  } catch (err) { console.log('Lessons refresh skipped:', err); }
+
+  try {
+    // Reload grades in background
+    const gradesRes = await fetch('http://localhost:8080/student/grades', { credentials: 'include' });
+    if (gradesRes.ok) {
+      console.log('✅ Grades data refreshed');
+    }
+  } catch (err) { console.log('Grades refresh skipped:', err); }
+
+  // Refresh notifications
+  if (typeof loadNotifications === 'function') loadNotifications();
+
+  console.log('✅ All student data refreshed after enrollment');
+}
+}
+
 </script>
 
 </body>

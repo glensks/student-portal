@@ -581,26 +581,24 @@ tr:hover td { background: #f0f7f4; }
 <div class="modal-box" id="processModal">
     <h3>Process Document Request <button class="modal-close" onclick="closeModal('processModal')">✕</button></h3>
     <div id="requestDetails" class="request-context"></div>
-    <form id="processForm" enctype="multipart/form-data">
+    <form id="processForm">
         <input type="hidden" id="requestId" name="request_id">
         <div class="form-group">
             <label>Action <span style="color:var(--red-light)">*</span></label>
             <select id="status" name="status" required>
                 <option value="">-- Select Action --</option>
-                <option value="approved">Approve</option>
-                <option value="rejected">Reject</option>
+                <option value="approved">✅ Approve & Auto-Generate Document</option>
+                <option value="rejected">❌ Reject Request</option>
             </select>
-        </div>
-        <div class="form-group" id="documentGroup" style="display:none;">
-            <label>Upload Document (Image/PDF) <span style="color:var(--red-light)">*</span></label>
-            <input type="file" id="document" name="document" accept=".jpg,.jpeg,.png,.pdf">
-            <div class="file-info">Allowed: JPG, JPEG, PNG, PDF (Max 5MB)</div>
+            <div class="file-info" style="background:var(--cream);padding:8px 10px;border-radius:6px;margin-top:8px;font-size:12.5px;color:var(--text-mid);">
+                💡 <strong>Note:</strong> When approved, the system will automatically generate the requested document (TOR, COE, Good Moral, etc.) based on student records.
+            </div>
         </div>
         <div class="form-group">
             <label>Notes (Optional)</label>
             <textarea id="notes" name="notes" placeholder="Add any notes or comments..."></textarea>
         </div>
-        <button type="submit" class="submit-btn" id="submitBtn">Submit</button>
+        <button type="submit" class="submit-btn" id="submitBtn">Process Request</button>
     </form>
 </div>
 
@@ -773,53 +771,90 @@ function viewRequest(requestId) {
 }
 
 function openProcessModal(requestId) {
-    fetch(`/records/document-requests/${requestId}`, { headers: { "Authorization": "Bearer " + token } })
-        .then(res => res.json())
-        .then(data => {
-            document.getElementById("requestId").value = data.request_id;
-            document.getElementById("requestDetails").innerHTML = `
-                <strong>Student:</strong> ${data.student_name} (${data.student_number})<br>
-                <strong>Course:</strong> ${data.course || 'N/A'} &nbsp;·&nbsp; <strong>Year:</strong> ${data.year || 'N/A'}<br>
-                <strong>Document Type:</strong> ${data.document_type}<br>
-                <strong>Purpose:</strong> ${data.purpose} &nbsp;·&nbsp; <strong>Copies:</strong> ${data.copies}
-            `;
-            document.getElementById("processForm").reset();
-            document.getElementById("requestId").value = requestId;
-            document.getElementById("documentGroup").style.display = 'none';
-            openModal('processModal');
-        })
-        .catch(() => alert("Failed to load request details"));
+    console.log("📝 Opening process modal for request ID:", requestId);
+    console.log("🔑 Token:", token ? "exists" : "MISSING");
+    
+    fetch(`/records/document-requests/${requestId}`, { 
+        headers: { 
+            "Authorization": "Bearer " + token 
+        } 
+    })
+    .then(res => {
+        console.log("📡 Response status:", res.status);
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        return res.json();
+    })
+    .then(data => {
+        console.log("✅ Received data:", data);
+        
+        if (data.error) {
+            alert("Error: " + data.error);
+            return;
+        }
+        
+        document.getElementById("requestId").value = data.request_id;
+        document.getElementById("requestDetails").innerHTML = `
+            <strong>Student:</strong> ${data.student_name} (${data.student_number})<br>
+            <strong>Course:</strong> ${data.course || 'N/A'} &nbsp;·&nbsp; <strong>Year:</strong> ${data.year || 'N/A'}<br>
+            <strong>Document Type:</strong> ${data.document_type}<br>
+            <strong>Purpose:</strong> ${data.purpose} &nbsp;·&nbsp; <strong>Copies:</strong> ${data.copies}
+        `;
+        
+        // Reset form and set request ID
+        document.getElementById("processForm").reset();
+        document.getElementById("requestId").value = requestId;
+        
+        openModal('processModal');
+    })
+    .catch(err => {
+        console.error("❌ Error details:", err);
+        alert("Failed to load request details: " + err.message);
+    });
 }
 
-document.getElementById("status").addEventListener("change", function() {
-    const dg = document.getElementById("documentGroup");
-    const di = document.getElementById("document");
-    if(this.value === "approved") { dg.style.display = "block"; di.required = true; }
-    else { dg.style.display = "none"; di.required = false; }
-});
+
 
 document.getElementById("processForm").addEventListener("submit", function(e) {
     e.preventDefault();
     const requestId = document.getElementById("requestId").value;
-    const formData = new FormData();
-    formData.append("status", document.getElementById("status").value);
-    formData.append("notes", document.getElementById("notes").value);
-    const documentFile = document.getElementById("document").files[0];
-    if(documentFile) formData.append("document", documentFile);
+    
+    // NEW: Changed from FormData to JSON
+    const requestData = {
+        status: document.getElementById("status").value,
+        notes: document.getElementById("notes").value
+    };
+    
     const submitBtn = document.getElementById("submitBtn");
-    submitBtn.disabled = true; submitBtn.textContent = "Processing...";
+    submitBtn.disabled = true; 
+    submitBtn.textContent = "Processing...";
+    
     fetch(`/records/document-requests/${requestId}`, {
-        method: "POST", headers: { "Authorization": "Bearer " + token }, body: formData
+        method: "POST", 
+        headers: { 
+            "Authorization": "Bearer " + token,
+            "Content-Type": "application/json"  // NEW: Changed to JSON
+        }, 
+        body: JSON.stringify(requestData)  // NEW: Send as JSON instead of FormData
     })
     .then(res => res.json())
     .then(data => {
-        if(data.error) { alert("Error: " + data.error); }
-        else { alert(data.message || "Request processed!"); closeModal('processModal'); loadDocumentRequests(document.getElementById("statusFilter").value); }
+        if(data.error) { 
+            alert("Error: " + data.error); 
+        } else { 
+            // NEW: Updated success message
+            alert(data.message || "Request processed! Document auto-generated."); 
+            closeModal('processModal'); 
+            loadDocumentRequests(document.getElementById("statusFilter").value); 
+        }
     })
     .catch(() => alert("Failed to process request"))
-    .finally(() => { submitBtn.disabled = false; submitBtn.textContent = "Submit"; });
+    .finally(() => { 
+        submitBtn.disabled = false; 
+        submitBtn.textContent = "Process Request"; 
+    });
 });
-
 /* ===================== GRADES ===================== */
 function loadAllGrades() {
     fetch('/records/grades', { headers: { "Authorization": "Bearer " + token } })

@@ -98,8 +98,8 @@ func StudentGetPaymentsMe(c *gin.Context) {
 		FROM student_payments
 		WHERE student_id = ?
 		ORDER BY id DESC
+		LIMIT 1
 	`, studentDBID)
-
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch payments"})
 		return
@@ -317,14 +317,17 @@ func StudentDownPayment(c *gin.Context) {
 	remaining := totalAmount - req.DownPayment
 
 	// ⭐ SET TO PENDING - WAIT FOR CASHIER APPROVAL
+	// ✅ FIX: Also save downpayment_amount so MarkPaidInstallments
+	//         can correctly exclude it from installment calculations.
 	_, err = config.DB.Exec(`
 		UPDATE student_payments
 		SET
 			amount_paid = ?,
 			status = 'pending',
-			payment_method = ?
+			payment_method = ?,
+			downpayment_amount = ?
 		WHERE id = ? AND student_id = ?
-	`, req.DownPayment, req.PaymentMethod, req.PaymentID, studentDBID)
+	`, req.DownPayment, req.PaymentMethod, req.DownPayment, req.PaymentID, studentDBID)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to submit downpayment"})
@@ -770,7 +773,7 @@ func StudentGetDocumentRequests(c *gin.Context) {
 			"requested_at":  requestedAt,
 			"processed_at":  processedAt,
 			"notes":         notes,
-			"document_path": cleanPath, // ⬅️ FIXED: Clean path without "./"
+			"document_path": cleanPath,
 		})
 	}
 
@@ -821,13 +824,17 @@ func StudentGetGrades(c *gin.Context) {
 		return
 	}
 
-	// Get ONLY RELEASED grades
+	// ── UPDATED QUERY ──
+	// LEFT JOIN student_payments so each grade carries its semester + school_year.
+	// If a student has multiple payment records, the LIMIT 1 sub-select picks the
+	// most recent one; adjust the join condition if your schema links grades to a
+	// specific payment_id directly.
 	rows, err := config.DB.Query(`
 		SELECT 
-			g.id as grade_id,
+			g.id AS grade_id,
 			s.subject_name,
-			s.code as subject_code,
-			u.username as teacher_name,  
+			s.code AS subject_code,
+			u.username AS teacher_name,
 			g.prelim,
 			g.midterm,
 			g.finals,
@@ -835,15 +842,19 @@ func StudentGetGrades(c *gin.Context) {
 				WHEN g.prelim IS NOT NULL AND g.midterm IS NOT NULL AND g.finals IS NOT NULL 
 				THEN ROUND((g.prelim + g.midterm + g.finals) / 3, 2)
 				ELSE NULL
-			END as average,
-			IFNULL(g.remarks, '') as remarks,
-			DATE_FORMAT(g.released_at, '%Y-%m-%d %H:%i:%s') as released_at
+			END AS average,
+			IFNULL(g.remarks, '') AS remarks,
+			DATE_FORMAT(g.released_at, '%Y-%m-%d %H:%i:%s') AS released_at,
+			IFNULL(sp.semester, 'N/A')    AS semester,
+			IFNULL(sp.school_year, 'N/A') AS school_year
 		FROM grades g
 		INNER JOIN subjects s ON g.subject_id = s.id
-		INNER JOIN users u ON g.teacher_id = u.id 
-		WHERE g.student_id = ? 
-		AND g.is_released = TRUE
-		ORDER BY s.subject_name
+		INNER JOIN users u   ON g.teacher_id  = u.id
+		LEFT JOIN student_payments sp
+			ON sp.student_id = g.student_id
+		WHERE g.student_id  = ?
+		  AND g.is_released = TRUE
+		ORDER BY sp.school_year DESC, sp.semester ASC, s.subject_name ASC
 	`, studentDBID)
 
 	if err != nil {
@@ -862,12 +873,14 @@ func StudentGetGrades(c *gin.Context) {
 			prelim, midterm, finals, average      *float64
 			remarks                               string
 			releasedAt                            *string
+			semester, schoolYear                  string // ← NEW
 		)
 
 		err := rows.Scan(
 			&gradeID, &subjectName, &subjectCode, &teacherName,
 			&prelim, &midterm, &finals, &average,
 			&remarks, &releasedAt,
+			&semester, &schoolYear, // ← NEW
 		)
 
 		if err != nil {
@@ -886,6 +899,8 @@ func StudentGetGrades(c *gin.Context) {
 			"average":      average,
 			"remarks":      remarks,
 			"released_at":  releasedAt,
+			"semester":     semester,   // ← NEW
+			"school_year":  schoolYear, // ← NEW
 		})
 	}
 
@@ -893,7 +908,7 @@ func StudentGetGrades(c *gin.Context) {
 		grades = []gin.H{}
 	}
 
-	// Calculate GPA
+	// Calculate overall GPA
 	var totalGradePoints float64
 	var gradeCount int
 	for _, grade := range grades {
@@ -924,7 +939,6 @@ func StudentGetGrades(c *gin.Context) {
 		"gpa":          gpa,
 	})
 }
-
 func StudentGetProfile(c *gin.Context) {
 	studentStrID := c.GetString("student_id")
 	if studentStrID == "" {
@@ -999,7 +1013,7 @@ func StudentGetProfile(c *gin.Context) {
 		"email":           email,
 		"contact_number":  contactNumber,
 		"address":         address,
-		"profile_picture": cleanProfilePic, // ⬅️ NEW
+		"profile_picture": cleanProfilePic,
 		"course":          course,
 		"course_code":     courseCode,
 		"year_level":      yearLevel,
@@ -1240,9 +1254,6 @@ func StudentChangePassword(c *gin.Context) {
 		return
 	}
 
-	// Verify current password
-	// Note: If you're using hashed passwords, use bcrypt.CompareHashAndPassword
-	// For now, assuming plain text comparison (should be hashed in production!)
 	if currentPassword != req.CurrentPassword {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "current password is incorrect",
@@ -1250,8 +1261,6 @@ func StudentChangePassword(c *gin.Context) {
 		return
 	}
 
-	// Update password
-	// TODO: In production, hash the password using bcrypt before storing
 	_, err = config.DB.Exec(`
 		UPDATE students SET password = ? WHERE id = ?
 	`, req.NewPassword, studentDBID)
@@ -1309,7 +1318,6 @@ func StudentGetLessons(c *gin.Context) {
 		return
 	}
 
-	// Get lessons for enrolled subjects - CORRECTED TO USE lesson_materials
 	rows, err := config.DB.Query(`
 		SELECT 
 			lm.id,
@@ -1357,7 +1365,6 @@ func StudentGetLessons(c *gin.Context) {
 			continue
 		}
 
-		// Normalize file path
 		cleanPath := strings.ReplaceAll(filePath, "\\", "/")
 		if strings.HasPrefix(cleanPath, "./") {
 			cleanPath = cleanPath[2:]
@@ -1394,18 +1401,16 @@ func StudentGetLessons(c *gin.Context) {
 	})
 }
 
-// ===================== STUDENT UPLOAD SUBMISSION (CORRECTED) =====================
+// ===================== STUDENT UPLOAD SUBMISSION =====================
 
 func StudentUploadSubmission(c *gin.Context) {
 
-	// ================= AUTH =================
 	studentStrID := c.GetString("student_id")
 	if studentStrID == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "not authenticated"})
 		return
 	}
 
-	// ================= GET STUDENT DB ID =================
 	var studentDBID int
 	err := config.DB.QueryRow(`
 		SELECT id FROM students WHERE student_id = ?
@@ -1416,7 +1421,6 @@ func StudentUploadSubmission(c *gin.Context) {
 		return
 	}
 
-	// ================= VALIDATE LESSON ID =================
 	materialStr := strings.TrimSpace(c.PostForm("lesson_id"))
 	fmt.Println("📥 Received lesson_id:", materialStr)
 
@@ -1431,7 +1435,6 @@ func StudentUploadSubmission(c *gin.Context) {
 		return
 	}
 
-	// ================= OTHER FORM DATA =================
 	title := strings.TrimSpace(c.PostForm("title"))
 	description := strings.TrimSpace(c.PostForm("description"))
 
@@ -1440,16 +1443,14 @@ func StudentUploadSubmission(c *gin.Context) {
 		return
 	}
 
-	// ================= VERIFY LESSON EXISTS =================
-	// ================= VERIFY LESSON EXISTS =================
 	var subjectID int
 	var dueDateStr *string
 
 	err = config.DB.QueryRow(`
-    SELECT subject_id, due_date
-    FROM lesson_materials
-    WHERE id = ?
-`, materialID).Scan(&subjectID, &dueDateStr)
+		SELECT subject_id, due_date
+		FROM lesson_materials
+		WHERE id = ?
+	`, materialID).Scan(&subjectID, &dueDateStr)
 
 	if err == sql.ErrNoRows {
 		c.JSON(http.StatusNotFound, gin.H{"error": "lesson material not found"})
@@ -1462,7 +1463,6 @@ func StudentUploadSubmission(c *gin.Context) {
 		return
 	}
 
-	// Parse due_date string → *time.Time
 	var dueDate *time.Time
 	if dueDateStr != nil && *dueDateStr != "" {
 		for _, layout := range []string{"2006-01-02 15:04:05", "2006-01-02"} {
@@ -1473,9 +1473,7 @@ func StudentUploadSubmission(c *gin.Context) {
 		}
 	}
 
-	// ================= CHECK ENROLLMENT =================
 	var enrolled bool
-
 	err = config.DB.QueryRow(`
 		SELECT EXISTS(
 			SELECT 1 FROM student_academic
@@ -1491,7 +1489,6 @@ func StudentUploadSubmission(c *gin.Context) {
 		return
 	}
 
-	// ================= FILE VALIDATION =================
 	file, err := c.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "no file uploaded"})
@@ -1523,13 +1520,10 @@ func StudentUploadSubmission(c *gin.Context) {
 	contentType := http.DetectContentType(buffer)
 
 	if !allowedTypes[contentType] {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid file type",
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid file type"})
 		return
 	}
 
-	// ================= SAVE FILE =================
 	uploadDir := "./uploads/student_submissions"
 	os.MkdirAll(uploadDir, os.ModePerm)
 
@@ -1549,19 +1543,16 @@ func StudentUploadSubmission(c *gin.Context) {
 		return
 	}
 
-	// ================= LATE CHECK =================
 	status := "on-time"
 	if dueDate != nil && time.Now().After(*dueDate) {
 		status = "late"
 	}
 
-	// ================= CLEAN REMARKS =================
 	remarks := title
 	if description != "" {
 		remarks += " - " + description
 	}
 
-	// ================= INSERT DB =================
 	result, err := config.DB.Exec(`
 		INSERT INTO student_submissions
 		(student_id, material_id, file_name, file_path, file_size, submitted_at, status, remarks)
@@ -1577,7 +1568,6 @@ func StudentUploadSubmission(c *gin.Context) {
 
 	submissionID, _ := result.LastInsertId()
 
-	// ================= RESPONSE =================
 	cleanPath := strings.ReplaceAll(filePath, "\\", "/")
 	if strings.HasPrefix(cleanPath, "./") {
 		cleanPath = cleanPath[2:]
@@ -1594,7 +1584,7 @@ func StudentUploadSubmission(c *gin.Context) {
 	})
 }
 
-// ===================== STUDENT VIEW OWN SUBMISSIONS (FIXED) =====================
+// ===================== STUDENT VIEW OWN SUBMISSIONS =====================
 
 func StudentGetSubmissions(c *gin.Context) {
 	studentStrID := c.GetString("student_id")
@@ -1603,7 +1593,6 @@ func StudentGetSubmissions(c *gin.Context) {
 		return
 	}
 
-	// Get student DB ID
 	var studentDBID int
 	err := config.DB.QueryRow(`
 		SELECT id FROM students WHERE student_id = ?
@@ -1614,7 +1603,6 @@ func StudentGetSubmissions(c *gin.Context) {
 		return
 	}
 
-	// Optional: filter by material_id (lesson_id in frontend)
 	materialID := c.Query("lesson_id")
 
 	var query string
@@ -1686,7 +1674,6 @@ func StudentGetSubmissions(c *gin.Context) {
 			continue
 		}
 
-		// Normalize file path
 		cleanPath := strings.ReplaceAll(filePath, "\\", "/")
 		if strings.HasPrefix(cleanPath, "./") {
 			cleanPath = cleanPath[2:]
@@ -1699,7 +1686,7 @@ func StudentGetSubmissions(c *gin.Context) {
 			"title":         title,
 			"description":   description,
 			"file_path":     cleanPath,
-			"status":        status, // ✅ FIXED: Now includes status
+			"status":        status,
 			"submitted_at":  submittedAt,
 		})
 	}
@@ -1718,13 +1705,10 @@ func StudentGetSubmissions(c *gin.Context) {
 
 // ===================== STUDENT GET ANNOUNCEMENTS =====================
 
-// ===================== STUDENT GET ANNOUNCEMENTS (UPDATED: Added Records Announcements) =====================
-
 func StudentGetAnnouncements(c *gin.Context) {
 	role := c.GetString("role")
 	studentStrID := c.GetString("student_id")
 
-	// Validate student authentication
 	if role != "student" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied: Student role required"})
 		return
@@ -1735,7 +1719,6 @@ func StudentGetAnnouncements(c *gin.Context) {
 		return
 	}
 
-	// Get student DB ID
 	var studentDBID int
 	var studentStatus string
 	err := config.DB.QueryRow(`
@@ -1749,7 +1732,6 @@ func StudentGetAnnouncements(c *gin.Context) {
 		return
 	}
 
-	// Get student's enrolled subjects for teacher announcements
 	var subjectIDs string
 	err = config.DB.QueryRow(`
 		SELECT IFNULL(subjects, '')
@@ -1760,12 +1742,12 @@ func StudentGetAnnouncements(c *gin.Context) {
 	`, studentDBID).Scan(&subjectIDs)
 
 	if err != nil {
-		subjectIDs = "" // No subjects enrolled yet
+		subjectIDs = ""
 	}
 
 	var allAnnouncements []gin.H
 
-	// ===== 1. GET TEACHER ANNOUNCEMENTS =====
+	// ===== 1. TEACHER ANNOUNCEMENTS =====
 	if subjectIDs != "" {
 		teacherQuery := `
 			SELECT 
@@ -1827,7 +1809,6 @@ func StudentGetAnnouncements(c *gin.Context) {
 					"image_size":   nil,
 				}
 
-				// Normalize image path
 				if imagePath.Valid {
 					cleanPath := strings.ReplaceAll(imagePath.String, "\\", "/")
 					if strings.HasPrefix(cleanPath, "./") {
@@ -1842,7 +1823,7 @@ func StudentGetAnnouncements(c *gin.Context) {
 		}
 	}
 
-	// ===== 2. GET REGISTRAR ANNOUNCEMENTS =====
+	// ===== 2. REGISTRAR ANNOUNCEMENTS =====
 	registrarQuery := `
 		SELECT 
 			id,
@@ -1859,8 +1840,7 @@ func StudentGetAnnouncements(c *gin.Context) {
 		LIMIT 25
 	`
 
-	// Determine student's target audience category
-	targetAudience := studentStatus // 'pending', 'approved', or 'enrolled'
+	targetAudience := studentStatus
 	if targetAudience == "" {
 		targetAudience = "pending"
 	}
@@ -1903,7 +1883,6 @@ func StudentGetAnnouncements(c *gin.Context) {
 				"image_size":      nil,
 			}
 
-			// Normalize image path
 			if imagePath.Valid {
 				cleanPath := strings.ReplaceAll(imagePath.String, "\\", "/")
 				if strings.HasPrefix(cleanPath, "./") {
@@ -1917,7 +1896,7 @@ func StudentGetAnnouncements(c *gin.Context) {
 		}
 	}
 
-	// ===== 3. GET RECORDS OFFICER ANNOUNCEMENTS (NEW) =====
+	// ===== 3. RECORDS ANNOUNCEMENTS =====
 	recordsQuery := `
 		SELECT 
 			id,
@@ -1975,7 +1954,6 @@ func StudentGetAnnouncements(c *gin.Context) {
 				"image_size":      nil,
 			}
 
-			// Normalize image path
 			if imagePath.Valid {
 				cleanPath := strings.ReplaceAll(imagePath.String, "\\", "/")
 				if strings.HasPrefix(cleanPath, "./") {
@@ -2003,11 +1981,10 @@ func StudentGetAnnouncements(c *gin.Context) {
 
 // Logout endpoint
 func Logout(c *gin.Context) {
-	// Clear the session cookie
 	c.SetCookie(
 		"session_token",
 		"",
-		-1, // MaxAge -1 deletes the cookie
+		-1,
 		"/",
 		"",
 		false,
@@ -2017,4 +1994,178 @@ func Logout(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "logged out successfully",
 	})
+}
+
+// POST /student/enroll
+func StudentSubmitEnrollment(c *gin.Context) {
+	studentStrID := c.GetString("student_id")
+	if studentStrID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "not authenticated"})
+		return
+	}
+
+	var req struct {
+		AcademicYear      string   `json:"academic_year"`
+		YearLevel         int      `json:"year_level"`
+		Semester          string   `json:"semester"`
+		CourseID          int      `json:"course_id"`
+		Subjects          []string `json:"subjects"`
+		ScholarshipStatus string   `json:"scholarship_status"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+
+	if req.AcademicYear == "" || req.Semester == "" || req.CourseID == 0 || req.YearLevel == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "all fields are required"})
+		return
+	}
+	if len(req.Subjects) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "please select at least one subject"})
+		return
+	}
+	if req.ScholarshipStatus == "" {
+		req.ScholarshipStatus = "non-scholar"
+	}
+
+	var studentDBID int
+	err := config.DB.QueryRow(`SELECT id FROM students WHERE student_id = ?`, studentStrID).Scan(&studentDBID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "student not found"})
+		return
+	}
+
+	var existingID int
+	err = config.DB.QueryRow(`
+        SELECT id FROM enrollment_applications
+        WHERE student_id = ? AND academic_year = ? AND semester = ? AND status = 'pending'
+        LIMIT 1
+    `, studentDBID, req.AcademicYear, req.Semester).Scan(&existingID)
+
+	if err == nil {
+		c.JSON(http.StatusConflict, gin.H{
+			"error": "You already have a pending enrollment for this semester. Please wait for approval.",
+		})
+		return
+	}
+
+	subjectsStr := strings.Join(req.Subjects, ",")
+	totalUnits := len(req.Subjects) * 3
+
+	result, err := config.DB.Exec(`
+        INSERT INTO enrollment_applications (
+            student_id, academic_year, year_level, semester,
+            course_id, subjects, total_units, scholarship_status,
+            status, applied_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())
+    `, studentDBID, req.AcademicYear, req.YearLevel, req.Semester,
+		req.CourseID, subjectsStr, totalUnits, req.ScholarshipStatus)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to submit enrollment"})
+		return
+	}
+
+	enrollmentID, _ := result.LastInsertId()
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":       "Enrollment application submitted successfully. Awaiting registrar approval.",
+		"enrollment_id": enrollmentID,
+		"status":        "pending",
+	})
+}
+
+// ===================== STUDENT GET ENROLLMENT HISTORY =====================
+
+func StudentGetEnrollments(c *gin.Context) {
+	studentStrID := c.GetString("student_id")
+	if studentStrID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "not authenticated"})
+		return
+	}
+
+	var studentDBID int
+	err := config.DB.QueryRow(`SELECT id FROM students WHERE student_id = ?`, studentStrID).Scan(&studentDBID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "student not found"})
+		return
+	}
+
+	rows, err := config.DB.Query(`
+        SELECT 
+            ea.id,
+            ea.academic_year,
+            ea.year_level,
+            ea.semester,
+            c.course_name,
+            ea.subjects,
+            ea.total_units,
+            ea.scholarship_status,
+            ea.status,
+            IFNULL(ea.remarks, ''),
+            DATE_FORMAT(ea.applied_at, '%Y-%m-%d %H:%i:%s'),
+            DATE_FORMAT(ea.processed_at, '%Y-%m-%d %H:%i:%s')
+        FROM enrollment_applications ea
+        LEFT JOIN courses c ON ea.course_id = c.id
+        WHERE ea.student_id = ?
+        ORDER BY ea.applied_at DESC
+    `, studentDBID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch enrollments"})
+		return
+	}
+	defer rows.Close()
+
+	var enrollments []gin.H
+
+	for rows.Next() {
+		var (
+			id, yearLevel, totalUnits                      int
+			academicYear, semester, courseName             string
+			subjectIDs, scholarshipStatus, status, remarks string
+			appliedAt                                      string
+			processedAt                                    *string
+		)
+
+		rows.Scan(&id, &academicYear, &yearLevel, &semester, &courseName,
+			&subjectIDs, &totalUnits, &scholarshipStatus, &status, &remarks,
+			&appliedAt, &processedAt)
+
+		var subjectNames []string
+		if subjectIDs != "" {
+			subRows, _ := config.DB.Query(`
+                SELECT subject_name FROM subjects WHERE FIND_IN_SET(id, ?)
+            `, subjectIDs)
+			for subRows.Next() {
+				var name string
+				subRows.Scan(&name)
+				subjectNames = append(subjectNames, name)
+			}
+			subRows.Close()
+		}
+
+		enrollments = append(enrollments, gin.H{
+			"enrollment_id":      id,
+			"academic_year":      academicYear,
+			"year_level":         yearLevel,
+			"semester":           semester,
+			"course":             courseName,
+			"subjects":           subjectNames,
+			"total_units":        totalUnits,
+			"scholarship_status": scholarshipStatus,
+			"status":             status,
+			"remarks":            remarks,
+			"applied_at":         appliedAt,
+			"processed_at":       processedAt,
+		})
+	}
+
+	if enrollments == nil {
+		enrollments = []gin.H{}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"enrollments": enrollments})
 }

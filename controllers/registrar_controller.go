@@ -265,25 +265,212 @@ func RegistrarApproveWithAssessment(c *gin.Context) {
 	tx.Commit()
 
 	// ===== EMAIL =====
+
+	// Build other fees rows for the billing table
+	otherFeesRows := ""
+	for _, fee := range req.OtherFees {
+		if fee.Amount > 0 {
+			otherFeesRows += fmt.Sprintf(`
+				<tr>
+					<td style="padding:8px 12px; color:#555; border-top:1px solid #f0f0f0;">%s</td>
+					<td style="padding:8px 12px; text-align:right; color:#555; border-top:1px solid #f0f0f0;">&#8369;%d</td>
+				</tr>`, fee.FeeName, fee.Amount)
+		}
+	}
+
 	emailBody := fmt.Sprintf(`
-	<h2>Enrollment Approved</h2>
-	<p><b>Semester:</b> %s</p>
-	<p><b>Total Units:</b> %d</p>
-	<p><b>Tuition:</b> ₱%d</p>
-	<p><b>Other Fees:</b> ₱%d</p>
-	<p><b>Total Amount Payable:</b> ₱%d</p>
-	<p>Status: UNPAID</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Enrollment Approved</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f0f4f8; font-family:'Segoe UI', Arial, sans-serif;">
+	<table width="100%%" cellpadding="0" cellspacing="0" style="background-color:#f0f4f8; padding:40px 20px;">
+		<tr>
+			<td align="center">
+				<table width="600" cellpadding="0" cellspacing="0"
+					style="background:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,0.08); max-width:600px; width:100%%;">
+
+					<!-- HEADER -->
+					<tr>
+						<td style="background:linear-gradient(135deg, #1565c0, #1e88e5); padding:36px 40px; text-align:center;">
+							<div style="background:rgba(255,255,255,0.15); display:inline-block; border-radius:50%%; width:60px; height:60px; line-height:60px; font-size:28px; margin-bottom:16px;">
+								&#10003;
+							</div>
+							<h1 style="margin:0; color:#ffffff; font-size:26px; font-weight:700; letter-spacing:0.3px;">
+								Enrollment Approved
+							</h1>
+							<p style="margin:10px 0 0; color:#bbdefb; font-size:14px; line-height:1.5;">
+								Your enrollment application has been reviewed and approved by the Registrar's Office.
+							</p>
+						</td>
+					</tr>
+
+					<!-- GREETING -->
+					<tr>
+						<td style="padding:32px 40px 0;">
+							<p style="margin:0; font-size:15px; color:#333; line-height:1.7;">
+								Congratulations! Your enrollment for <strong>%s</strong> has been
+								successfully processed. Please review your billing statement below and
+								settle your balance before the payment deadline to finalize your enrollment.
+							</p>
+						</td>
+					</tr>
+
+					<!-- ENROLLMENT DETAILS CARD -->
+					<tr>
+						<td style="padding:24px 40px 0;">
+							<table width="100%%" cellpadding="0" cellspacing="0"
+								style="background:#f5f9ff; border:1px solid #dce8fb; border-radius:10px; overflow:hidden;">
+								<tr>
+									<td style="padding:12px 18px; background:#e3eefb; font-size:12px; font-weight:700;
+										color:#1565c0; text-transform:uppercase; letter-spacing:0.8px;">
+										Enrollment Information
+									</td>
+								</tr>
+								<tr>
+									<td>
+										<table width="100%%" cellpadding="0" cellspacing="0">
+											<tr>
+												<td style="padding:12px 18px; font-size:14px; color:#444; border-bottom:1px solid #e8f0fb; width:45%%;">
+													<span style="color:#888; font-size:12px; display:block; margin-bottom:2px;">SEMESTER</span>
+													<strong>%s</strong>
+												</td>
+												<td style="padding:12px 18px; font-size:14px; color:#444; border-bottom:1px solid #e8f0fb;">
+													<span style="color:#888; font-size:12px; display:block; margin-bottom:2px;">SCHOOL YEAR</span>
+													<strong>%s</strong>
+												</td>
+											</tr>
+											<tr>
+												<td style="padding:12px 18px; font-size:14px; color:#444;" colspan="2">
+													<span style="color:#888; font-size:12px; display:block; margin-bottom:2px;">TOTAL UNITS ENROLLED</span>
+													<strong>%d units</strong>
+												</td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+
+					<!-- BILLING BREAKDOWN -->
+					<tr>
+						<td style="padding:24px 40px 0;">
+							<p style="margin:0 0 10px; font-size:12px; font-weight:700; color:#888;
+								text-transform:uppercase; letter-spacing:0.8px;">
+								Billing Statement
+							</p>
+							<table width="100%%" cellpadding="0" cellspacing="0"
+								style="border:1px solid #e0e0e0; border-radius:10px; overflow:hidden;">
+								<!-- Table Header -->
+								<tr style="background:#f9f9f9;">
+									<td style="padding:11px 12px; font-size:12px; font-weight:700;
+										color:#777; border-bottom:1px solid #e8e8e8; text-transform:uppercase; letter-spacing:0.5px;">
+										Description
+									</td>
+									<td style="padding:11px 12px; font-size:12px; font-weight:700;
+										color:#777; border-bottom:1px solid #e8e8e8; text-align:right; text-transform:uppercase; letter-spacing:0.5px;">
+										Amount
+									</td>
+								</tr>
+								<!-- Tuition Row -->
+								<tr>
+									<td style="padding:12px; color:#444; font-size:14px;">
+										Tuition Fee
+										<span style="font-size:12px; color:#999; display:block;">%d units</span>
+									</td>
+									<td style="padding:12px; text-align:right; color:#444; font-size:14px;">
+										&#8369;%d
+									</td>
+								</tr>
+								<!-- Dynamic Other Fees Rows -->
+								%s
+								<!-- Divider -->
+								<tr>
+									<td colspan="2" style="padding:0; border-top:2px solid #e3eefb;"></td>
+								</tr>
+								<!-- Total Row -->
+								<tr style="background:#f0f7ff;">
+									<td style="padding:14px 12px; font-size:16px; font-weight:700; color:#1565c0;">
+										Total Amount Due
+									</td>
+									<td style="padding:14px 12px; font-size:16px; font-weight:700;
+										color:#1565c0; text-align:right;">
+										&#8369;%d
+									</td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+
+					<!-- PAYMENT STATUS BADGE -->
+					<tr>
+						<td style="padding:20px 40px 0; text-align:center;">
+							<table cellpadding="0" cellspacing="0" style="display:inline-table; margin:auto;">
+								<tr>
+									<td style="background:#fff8e1; border:1px solid #ffe082; border-radius:25px;
+										padding:10px 28px; font-size:13px; font-weight:700; color:#f57f17;
+										text-transform:uppercase; letter-spacing:0.8px;">
+										&#9201; Payment Status: Unpaid
+									</td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+
+					<!-- CTA / NOTE -->
+					<tr>
+						<td style="padding:24px 40px;">
+							<table width="100%%" cellpadding="0" cellspacing="0"
+								style="background:#fff3e0; border-left:4px solid #fb8c00; border-radius:0 8px 8px 0; padding:14px 18px;">
+								<tr>
+									<td style="font-size:13px; color:#555; line-height:1.7; padding:14px 18px;">
+										&#128276; <strong>Reminder:</strong> Please settle your balance at the Cashier's Office
+										or through the Student Portal before the payment deadline. Failure to pay on time
+										may result in your enrollment being placed on hold.
+									</td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+
+					<!-- FOOTER -->
+					<tr>
+						<td style="background:#f5f7fa; padding:20px 40px; text-align:center;
+							border-top:1px solid #e8e8e8;">
+							<p style="margin:0 0 4px; font-size:12px; color:#aaa;">
+								This is an automated notification from the <strong>Student Portal</strong>.
+								Please do not reply to this email.
+							</p>
+							<p style="margin:0; font-size:12px; color:#aaa;">
+								For concerns or inquiries, please visit or contact the Registrar's Office.
+							</p>
+						</td>
+					</tr>
+
+				</table>
+			</td>
+		</tr>
+	</table>
+</body>
+</html>
 	`,
-		req.Semester,
-		totalUnits,
-		tuition,
-		otherTotal,
-		totalAmount,
+		req.Semester,   // greeting paragraph
+		req.Semester,   // enrollment card: semester
+		req.SchoolYear, // enrollment card: school year
+		totalUnits,     // enrollment card: units
+		totalUnits,     // billing row: units label
+		tuition,        // billing row: tuition amount
+		otherFeesRows,  // dynamic other fees rows
+		totalAmount,    // total amount due
 	)
 
 	go utils.SendEmail(
 		studentEmail,
-		"Student Billing Statement",
+		"Enrollment Approved – Billing Statement",
 		emailBody,
 	)
 
@@ -533,4 +720,284 @@ func RegistrarDeleteAnnouncement(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Announcement deleted successfully"})
+}
+
+// GET /registrar/enrollment-applications?status=pending
+func RegistrarGetEnrollmentApplications(c *gin.Context) {
+	status := strings.ToLower(strings.TrimSpace(c.Query("status")))
+	if status == "" {
+		status = "pending"
+	}
+
+	rows, err := config.DB.Query(`
+        SELECT 
+            ea.id,
+            ea.student_id,
+            st.student_id as student_str_id,
+            st.first_name,
+            st.last_name,
+            IFNULL(c.course_name, ''),
+            IFNULL(c.id, 0),
+            ea.year_level,
+            ea.semester,
+            ea.academic_year,
+            IFNULL(ea.scholarship_status, ''),
+            ea.total_units,
+            ea.subjects,
+            ea.status,
+            IFNULL(ea.remarks, ''),
+            DATE_FORMAT(ea.applied_at, '%Y-%m-%d %H:%i:%s')
+        FROM enrollment_applications ea
+        JOIN students st ON st.id = ea.student_id
+        LEFT JOIN courses c ON c.id = ea.course_id
+        WHERE ea.status = ?
+        ORDER BY ea.applied_at DESC
+    `, status)
+
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	defer rows.Close()
+
+	type EnrollApp struct {
+		EnrollmentID      int              `json:"enrollment_id"`
+		StudentDBID       int              `json:"-"`
+		StudentID         string           `json:"student_id"`
+		FirstName         string           `json:"first_name"`
+		LastName          string           `json:"last_name"`
+		FullName          string           `json:"full_name"`
+		Course            string           `json:"course"`
+		CourseID          int              `json:"course_id"`
+		YearLevel         int              `json:"year_level"`
+		Semester          string           `json:"semester"`
+		AcademicYear      string           `json:"academic_year"`
+		ScholarshipStatus string           `json:"scholarship_status"`
+		TotalUnits        int              `json:"total_units"`
+		Subjects          []StudentSubject `json:"subjects"`
+		Status            string           `json:"status"`
+		Remarks           string           `json:"remarks"`
+		AppliedAt         string           `json:"applied_at"`
+	}
+
+	var apps []EnrollApp
+
+	for rows.Next() {
+		var app EnrollApp
+		var subjectsStr string
+
+		err := rows.Scan(
+			&app.EnrollmentID,
+			&app.StudentDBID,
+			&app.StudentID,
+			&app.FirstName,
+			&app.LastName,
+			&app.Course,
+			&app.CourseID,
+			&app.YearLevel,
+			&app.Semester,
+			&app.AcademicYear,
+			&app.ScholarshipStatus,
+			&app.TotalUnits,
+			&subjectsStr,
+			&app.Status,
+			&app.Remarks,
+			&app.AppliedAt,
+		)
+		if err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+
+		app.FullName = app.FirstName + " " + app.LastName
+		app.Subjects = []StudentSubject{}
+
+		if strings.TrimSpace(subjectsStr) != "" {
+			ids := strings.Split(subjectsStr, ",")
+			for _, id := range ids {
+				var subj StudentSubject
+				config.DB.QueryRow(
+					`SELECT IFNULL(code,''), subject_name FROM subjects WHERE id=?`,
+					strings.TrimSpace(id),
+				).Scan(&subj.SubjectCode, &subj.SubjectName)
+				app.Subjects = append(app.Subjects, subj)
+			}
+		}
+
+		apps = append(apps, app)
+	}
+
+	if apps == nil {
+		apps = []EnrollApp{}
+	}
+
+	c.JSON(200, gin.H{"applications": apps, "total": len(apps)})
+}
+
+// POST /registrar/enrollment-applications/approve
+func RegistrarApproveEnrollmentApplication(c *gin.Context) {
+	var req struct {
+		EnrollmentID int          `json:"enrollment_id"`
+		Semester     string       `json:"semester"`
+		SchoolYear   string       `json:"school_year"`
+		OtherFees    []PaymentFee `json:"other_fees"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	tx, err := config.DB.Begin()
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Get enrollment application details
+	var studentDBID, totalUnits, courseID int
+	var scholarshipStatus, semester, academicYear, subjectsStr string
+	var studentEmail, studentID string
+
+	err = tx.QueryRow(`
+        SELECT 
+            ea.student_id,
+            ea.total_units,
+            ea.scholarship_status,
+            ea.semester,
+            ea.academic_year,
+            ea.subjects,
+            ea.course_id,
+            st.email,
+            st.student_id as student_str_id
+        FROM enrollment_applications ea
+        JOIN students st ON st.id = ea.student_id
+        WHERE ea.id = ? AND ea.status = 'pending'
+    `, req.EnrollmentID).Scan(
+		&studentDBID,
+		&totalUnits,
+		&scholarshipStatus,
+		&semester,
+		&academicYear,
+		&subjectsStr,
+		&courseID,
+		&studentEmail,
+		&studentID,
+	)
+
+	if err != nil {
+		tx.Rollback()
+		c.JSON(404, gin.H{"error": "Enrollment application not found or already processed"})
+		return
+	}
+
+	// Compute tuition
+	tuition := 800 * totalUnits
+	if strings.ToLower(scholarshipStatus) == "scholar" {
+		tuition = 500 * totalUnits
+	}
+
+	// Create payment
+	res, err := tx.Exec(`
+        INSERT INTO student_payments
+            (student_id, total_amount, amount_paid, status, semester, school_year)
+        VALUES (?, 0, 0, 'unpaid', ?, ?)
+    `, studentDBID, semester, academicYear)
+
+	if err != nil {
+		tx.Rollback()
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	paymentID, _ := res.LastInsertId()
+
+	// Insert other fees
+	otherTotal := 0
+	for _, fee := range req.OtherFees {
+		if fee.Amount <= 0 {
+			continue
+		}
+		_, err := tx.Exec(`
+            INSERT INTO payment_fees (payment_id, fee_name, amount)
+            VALUES (?, ?, ?)
+        `, paymentID, fee.FeeName, fee.Amount)
+		if err != nil {
+			tx.Rollback()
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+		otherTotal += fee.Amount
+	}
+
+	totalAmount := tuition + otherTotal
+
+	// Update payment total
+	tx.Exec(`UPDATE student_payments SET total_amount = ? WHERE id = ?`, totalAmount, paymentID)
+
+	// Update student_academic record with new semester data
+	_, err = tx.Exec(`
+        UPDATE student_academic 
+        SET semester = ?, subjects = ?, total_units = ?, scholarship_status = ?, course = ?
+        WHERE student_id = ?
+    `, semester, subjectsStr, totalUnits, scholarshipStatus, courseID, studentDBID)
+
+	if err != nil {
+		// If no existing record, insert one
+		tx.Exec(`
+            INSERT INTO student_academic (student_id, semester, subjects, total_units, scholarship_status, course)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `, studentDBID, semester, subjectsStr, totalUnits, scholarshipStatus, courseID)
+	}
+
+	// Mark enrollment application as approved
+	tx.Exec(`
+        UPDATE enrollment_applications 
+        SET status = 'approved', processed_at = NOW() 
+        WHERE id = ?
+    `, req.EnrollmentID)
+
+	// Keep student status as approved
+	tx.Exec(`UPDATE students SET status = 'approved' WHERE id = ?`, studentDBID)
+
+	tx.Commit()
+
+	c.JSON(200, gin.H{
+		"message":       "Re-enrollment approved successfully",
+		"payment_id":    paymentID,
+		"enrollment_id": req.EnrollmentID,
+		"student_id":    studentID,
+		"semester":      semester,
+		"school_year":   academicYear,
+		"tuition":       tuition,
+		"other_fees":    otherTotal,
+		"total_amount":  totalAmount,
+		"status":        "unpaid",
+	})
+}
+
+// POST /registrar/enrollment-applications/reject
+func RegistrarRejectEnrollmentApplication(c *gin.Context) {
+	var req struct {
+		EnrollmentID int    `json:"enrollment_id"`
+		Remarks      string `json:"remarks"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	_, err := config.DB.Exec(`
+        UPDATE enrollment_applications 
+        SET status = 'rejected', remarks = ?, processed_at = NOW()
+        WHERE id = ? AND status = 'pending'
+    `, req.Remarks, req.EnrollmentID)
+
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to reject application"})
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "Enrollment application rejected"})
 }

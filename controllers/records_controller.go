@@ -13,6 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/jung-kurt/gofpdf"
 )
 
 func RecordsDashboard(c *gin.Context) {
@@ -143,7 +144,363 @@ func RecordsGetDocumentRequests(c *gin.Context) {
 	})
 }
 
-// ===================== PROCESS DOCUMENT REQUEST (WITH FILE UPLOAD) =====================
+// ===================== AUTO-GENERATE DOCUMENT FUNCTIONS =====================
+
+type StudentDocumentData struct {
+	RequestID         int
+	StudentNumber     string
+	FirstName         string
+	MiddleName        string
+	LastName          string
+	Course            string
+	YearLevel         string
+	Email             string
+	Address           string
+	Semester          string
+	ScholarshipStatus string
+	Purpose           string
+	DateRequested     string
+}
+
+func generateTranscriptOfRecords(data StudentDocumentData, outputPath string) error {
+	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf.AddPage()
+
+	// Official Header with better formatting
+	pdf.SetFont("Arial", "B", 18)
+	pdf.Cell(0, 8, "THE UNIVERSITY OF MANILA")
+	pdf.Ln(7)
+	pdf.SetFont("Arial", "", 10)
+	pdf.Cell(0, 5, "Sampaloc District in Manila, Philippines.")
+	pdf.Ln(4)
+	pdf.SetFont("Arial", "", 9)
+	pdf.Cell(0, 4, "Tel: 287355085 | https://www.facebook.com/UMOFFICIAL1913/")
+	pdf.Ln(2)
+	pdf.SetDrawColor(40, 145, 108)
+	pdf.SetLineWidth(0.5)
+	pdf.Line(20, pdf.GetY(), 190, pdf.GetY())
+	pdf.Ln(8)
+
+	// Office designation
+	pdf.SetFont("Arial", "B", 12)
+	pdf.Cell(0, 6, "OFFICE OF THE UNIVERSITY REGISTRAR")
+	pdf.Ln(12)
+
+	// Document Title
+	pdf.SetFont("Arial", "B", 16)
+	pdf.Cell(0, 10, "TRANSCRIPT OF RECORDS")
+	pdf.Ln(15)
+
+	// Student Information Section
+	pdf.SetFont("Arial", "B", 10)
+	pdf.Cell(0, 6, "STUDENT INFORMATION")
+	pdf.Ln(1)
+	pdf.SetDrawColor(200, 200, 200)
+	pdf.SetLineWidth(0.3)
+	pdf.Line(20, pdf.GetY(), 190, pdf.GetY())
+	pdf.Ln(5)
+
+	pdf.SetFont("Arial", "", 10)
+	pdf.Cell(45, 6, "Student Number:")
+	pdf.SetFont("Arial", "B", 10)
+	pdf.Cell(0, 6, data.StudentNumber)
+	pdf.Ln(5)
+
+	pdf.SetFont("Arial", "", 10)
+	pdf.Cell(45, 6, "Name:")
+	pdf.SetFont("Arial", "B", 10)
+	pdf.Cell(0, 6, fmt.Sprintf("%s %s %s", data.FirstName, data.MiddleName, data.LastName))
+	pdf.Ln(5)
+
+	pdf.SetFont("Arial", "", 10)
+	pdf.Cell(45, 6, "Course/Program:")
+	pdf.SetFont("Arial", "B", 10)
+	pdf.Cell(0, 6, data.Course)
+	pdf.Ln(5)
+
+	pdf.SetFont("Arial", "", 10)
+	pdf.Cell(45, 6, "Year Level:")
+	pdf.SetFont("Arial", "B", 10)
+	pdf.Cell(0, 6, data.YearLevel)
+	pdf.Ln(10)
+
+	// Academic Record Section
+	pdf.SetFont("Arial", "B", 10)
+	pdf.Cell(0, 6, "ACADEMIC RECORD")
+	pdf.Ln(1)
+	pdf.Line(20, pdf.GetY(), 190, pdf.GetY())
+	pdf.Ln(4)
+
+	// Grades table header
+	pdf.SetFont("Arial", "B", 9)
+	pdf.SetFillColor(40, 145, 108)
+	pdf.SetTextColor(255, 255, 255)
+	pdf.CellFormat(85, 8, "SUBJECT/COURSE", "1", 0, "L", true, 0, "")
+	pdf.CellFormat(25, 8, "UNITS", "1", 0, "C", true, 0, "")
+	pdf.CellFormat(30, 8, "GRADE", "1", 0, "C", true, 0, "")
+	pdf.CellFormat(40, 8, "REMARKS", "1", 1, "C", true, 0, "")
+
+	// Reset text color
+	pdf.SetTextColor(0, 0, 0)
+
+	// Fetch grades from database
+	gradesQuery := `
+		SELECT 
+			s.subject_name,
+			s.code as subject_code,
+			CASE 
+				WHEN g.prelim IS NOT NULL AND g.midterm IS NOT NULL AND g.finals IS NOT NULL 
+				THEN ROUND((g.prelim + g.midterm + g.finals) / 3, 2)
+				ELSE NULL
+			END as average,
+			IFNULL(g.remarks, 'INC') as remarks
+		FROM grades g
+		INNER JOIN subjects s ON g.subject_id = s.id
+		INNER JOIN students st ON g.student_id = st.id
+		WHERE st.student_id = ? AND g.is_released = TRUE
+		ORDER BY s.subject_name
+	`
+
+	rows, err := config.DB.Query(gradesQuery, data.StudentNumber)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	pdf.SetFont("Arial", "", 9)
+	pdf.SetFillColor(245, 245, 245)
+	hasGrades := false
+	rowCount := 0
+
+	for rows.Next() {
+		var subjectName, subjectCode, remarks string
+		var average *float64
+
+		err := rows.Scan(&subjectName, &subjectCode, &average, &remarks)
+		if err != nil {
+			continue
+		}
+
+		hasGrades = true
+		gradeStr := "INC"
+		if average != nil {
+			gradeStr = fmt.Sprintf("%.2f", *average)
+		}
+
+		defaultUnits := "3.0"
+
+		// Alternate row colors
+		fill := rowCount%2 == 0
+		pdf.CellFormat(85, 7, subjectName, "1", 0, "L", fill, 0, "")
+		pdf.CellFormat(25, 7, defaultUnits, "1", 0, "C", fill, 0, "")
+		pdf.CellFormat(30, 7, gradeStr, "1", 0, "C", fill, 0, "")
+		pdf.CellFormat(40, 7, remarks, "1", 1, "C", fill, 0, "")
+		rowCount++
+	}
+
+	if !hasGrades {
+		pdf.SetFont("Arial", "I", 10)
+		pdf.Cell(0, 10, "No grades available or released at this time.")
+		pdf.Ln(10)
+	}
+
+	// Footer section
+	pdf.Ln(10)
+	pdf.SetFont("Arial", "I", 8)
+	pdf.SetTextColor(100, 100, 100)
+	pdf.Cell(0, 5, fmt.Sprintf("Document generated on: %s", time.Now().Format("January 02, 2006 at 3:04 PM")))
+	pdf.Ln(4)
+	pdf.Cell(0, 5, "*** This is an official computer-generated document. No signature required. ***")
+	pdf.Ln(12)
+
+	// Registrar signature line
+	pdf.SetTextColor(0, 0, 0)
+	pdf.SetFont("Arial", "", 9)
+	pdf.Cell(0, 5, "_________________________________________")
+	pdf.Ln(5)
+	pdf.SetFont("Arial", "B", 9)
+	pdf.Cell(0, 5, "University Registrar")
+	pdf.Ln(3)
+	pdf.SetFont("Arial", "", 8)
+	pdf.Cell(0, 4, "Office of the University Registrar")
+
+	return pdf.OutputFileAndClose(outputPath)
+}
+
+func generateCertificateOfEnrollment(data StudentDocumentData, outputPath string) error {
+	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf.AddPage()
+
+	pdf.SetFont("Arial", "B", 18)
+	pdf.Cell(0, 8, "THE UNIVERSITY OF MANILA")
+	pdf.Ln(7)
+	pdf.SetFont("Arial", "", 10)
+	pdf.Cell(0, 5, "Sampaloc District in Manila, Philippines.")
+	pdf.Ln(4)
+	pdf.SetFont("Arial", "", 9)
+	pdf.Cell(0, 4, "Tel: 287355085 | https://www.facebook.com/UMOFFICIAL1913/")
+	pdf.Ln(2)
+	pdf.SetDrawColor(40, 145, 108)
+	pdf.SetLineWidth(0.5)
+	pdf.Line(20, pdf.GetY(), 190, pdf.GetY())
+	pdf.Ln(8)
+
+	// Footer
+	pdf.SetFont("Arial", "I", 8)
+	pdf.SetTextColor(100, 100, 100)
+	pdf.Cell(0, 4, "*** This is an official computer-generated document. No signature required. ***")
+
+	return pdf.OutputFileAndClose(outputPath)
+}
+
+func generateGoodMoralCertificate(data StudentDocumentData, outputPath string) error {
+	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf.AddPage()
+
+	pdf.SetFont("Arial", "B", 18)
+	pdf.Cell(0, 8, "THE UNIVERSITY OF MANILA")
+	pdf.Ln(7)
+	pdf.SetFont("Arial", "", 10)
+	pdf.Cell(0, 5, "Sampaloc District in Manila, Philippines.")
+	pdf.Ln(4)
+	pdf.SetFont("Arial", "", 9)
+	pdf.Cell(0, 4, "Tel: 287355085 | https://www.facebook.com/UMOFFICIAL1913/")
+	pdf.Ln(2)
+	pdf.SetDrawColor(40, 145, 108)
+	pdf.SetLineWidth(0.5)
+	pdf.Line(20, pdf.GetY(), 190, pdf.GetY())
+	pdf.Ln(8)
+
+	pdf.SetFont("Arial", "B", 12)
+	pdf.Cell(0, 6, "OFFICE OF STUDENT AFFAIRS AND SERVICES")
+	pdf.Ln(15)
+
+	// Document Title
+	pdf.SetFont("Arial", "B", 16)
+	pdf.Cell(0, 10, "CERTIFICATE OF GOOD MORAL CHARACTER")
+	pdf.Ln(18)
+
+	// Body
+	pdf.SetFont("Arial", "B", 11)
+	pdf.MultiCell(0, 6, "TO WHOM IT MAY CONCERN:", "", "L", false)
+	pdf.Ln(8)
+
+	pdf.SetFont("Arial", "", 11)
+	certText := fmt.Sprintf("This is to certify that %s %s %s, Student Number %s, "+
+		"a %s Year student of the %s program, has demonstrated GOOD MORAL CHARACTER "+
+		"during their enrollment at The University of Manila.",
+		data.FirstName, data.MiddleName, data.LastName, data.StudentNumber,
+		data.YearLevel, data.Course)
+
+	pdf.MultiCell(0, 7, certText, "", "J", false)
+	pdf.Ln(8)
+
+	pdf.MultiCell(0, 7, "Based on our records, the above-named student has no pending disciplinary cases "+
+		"and has not violated any university rules, regulations, or policies.", "", "J", false)
+	pdf.Ln(8)
+
+	pdf.MultiCell(0, 7, fmt.Sprintf("This certification is being issued upon the request of the student for %s.",
+		strings.ToLower(data.Purpose)), "", "J", false)
+	pdf.Ln(15)
+
+	// Date issued
+	pdf.SetFont("Arial", "", 11)
+	pdf.Cell(0, 6, fmt.Sprintf("Issued this %s.", time.Now().Format("2nd day of January, 2006")))
+	pdf.Ln(20)
+
+	// Signature section
+	pdf.SetFont("Arial", "", 10)
+	pdf.Cell(0, 5, "_________________________________________")
+	pdf.Ln(6)
+	pdf.SetFont("Arial", "B", 10)
+	pdf.Cell(0, 5, "Director, Office of Student Affairs and Services")
+	pdf.Ln(4)
+	pdf.SetFont("Arial", "", 9)
+	pdf.Cell(0, 4, "The University of Manila")
+	pdf.Ln(15)
+
+	// Footer
+	pdf.SetFont("Arial", "I", 8)
+	pdf.SetTextColor(100, 100, 100)
+	pdf.Cell(0, 4, "*** This is an official computer-generated document. No signature required. ***")
+
+	return pdf.OutputFileAndClose(outputPath)
+}
+
+func generateHonorableDismissal(data StudentDocumentData, outputPath string) error {
+	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf.AddPage()
+
+	pdf.SetFont("Arial", "B", 18)
+	pdf.Cell(0, 8, "THE UNIVERSITY OF MANILA")
+	pdf.Ln(7)
+	pdf.SetFont("Arial", "", 10)
+	pdf.Cell(0, 5, "Sampaloc District in Manila, Philippines.")
+	pdf.Ln(4)
+	pdf.SetFont("Arial", "", 9)
+	pdf.Cell(0, 4, "Tel: 287355085 | https://www.facebook.com/UMOFFICIAL1913/")
+	pdf.Ln(2)
+	pdf.SetDrawColor(40, 145, 108)
+	pdf.SetLineWidth(0.5)
+	pdf.Line(20, pdf.GetY(), 190, pdf.GetY())
+	pdf.Ln(8)
+
+	pdf.SetFont("Arial", "B", 12)
+	pdf.Cell(0, 6, "OFFICE OF THE UNIVERSITY REGISTRAR")
+	pdf.Ln(15)
+
+	// Document Title
+	pdf.SetFont("Arial", "B", 16)
+	pdf.Cell(0, 10, "CERTIFICATE OF HONORABLE DISMISSAL")
+	pdf.Ln(18)
+
+	// Body
+	pdf.SetFont("Arial", "B", 11)
+	pdf.MultiCell(0, 6, "TO WHOM IT MAY CONCERN:", "", "L", false)
+	pdf.Ln(8)
+
+	pdf.SetFont("Arial", "", 11)
+	certText := fmt.Sprintf("This is to certify that %s %s %s, bearing Student Number %s, "+
+		"was a bona fide student of The University of Manila, enrolled in the %s program.",
+		data.FirstName, data.MiddleName, data.LastName, data.StudentNumber, data.Course)
+
+	pdf.MultiCell(0, 7, certText, "", "J", false)
+	pdf.Ln(8)
+
+	pdf.MultiCell(0, 7, "The above-named student is hereby granted HONORABLE DISMISSAL from The University of Manila. "+
+		"The student has settled all financial obligations, returned all university property, and has no pending "+
+		"accountabilities with the university. The student is eligible for transfer to another institution of higher learning.", "", "J", false)
+	pdf.Ln(8)
+
+	pdf.MultiCell(0, 7, fmt.Sprintf("This certificate is issued upon request for %s.",
+		strings.ToLower(data.Purpose)), "", "J", false)
+	pdf.Ln(15)
+
+	// Date issued
+	pdf.SetFont("Arial", "", 11)
+	pdf.Cell(0, 6, fmt.Sprintf("Issued this %s.", time.Now().Format("2nd day of January, 2006")))
+	pdf.Ln(20)
+
+	// Signature section
+	pdf.SetFont("Arial", "", 10)
+	pdf.Cell(0, 5, "_________________________________________")
+	pdf.Ln(6)
+	pdf.SetFont("Arial", "B", 10)
+	pdf.Cell(0, 5, "University Registrar")
+	pdf.Ln(4)
+	pdf.SetFont("Arial", "", 9)
+	pdf.Cell(0, 4, "Office of the University Registrar")
+	pdf.Ln(15)
+
+	// Footer
+	pdf.SetFont("Arial", "I", 8)
+	pdf.SetTextColor(100, 100, 100)
+	pdf.Cell(0, 4, "*** This is an official computer-generated document. No signature required. ***")
+
+	return pdf.OutputFileAndClose(outputPath)
+}
+
+// ===================== PROCESS DOCUMENT REQUEST (AUTO-GENERATE) =====================
 
 func RecordsProcessDocumentRequest(c *gin.Context) {
 	role := c.GetString("role")
@@ -152,7 +509,6 @@ func RecordsProcessDocumentRequest(c *gin.Context) {
 		return
 	}
 
-	// Get request ID from URL parameter
 	requestIDStr := c.Param("id")
 	requestID, err := strconv.Atoi(requestIDStr)
 	if err != nil {
@@ -160,25 +516,55 @@ func RecordsProcessDocumentRequest(c *gin.Context) {
 		return
 	}
 
-	// Get form data
-	status := c.PostForm("status") // approved or rejected
-	notes := c.PostForm("notes")   // optional notes
+	var req struct {
+		Status string `json:"status" binding:"required"` // approved or rejected
+		Notes  string `json:"notes"`                     // optional notes
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
 
 	// Validate status
-	if status != "approved" && status != "rejected" {
+	if req.Status != "approved" && req.Status != "rejected" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "status must be 'approved' or 'rejected'",
 		})
 		return
 	}
 
-	// Check if request exists
-	var currentStatus string
+	// Get request details
+	var (
+		currentStatus, documentType, purpose           string
+		studentID                                      int
+		studentNumber, firstName, middleName, lastName string
+		course, yearLevel, email, address, semester    string
+		scholarshipStatus                              string
+	)
+
 	err = config.DB.QueryRow(`
-		SELECT status FROM document_requests WHERE id = ?
-	`, requestID).Scan(&currentStatus)
+		SELECT 
+			dr.status, dr.document_type, dr.purpose, dr.student_id,
+			s.student_id, s.first_name, IFNULL(s.middle_name, ''), s.last_name,
+			s.email, s.address,
+			IFNULL(c.course_name, 'N/A'),
+			IFNULL(sa.year_level, '1'),
+			IFNULL(sa.semester, '1st'),
+			IFNULL(sa.scholarship_status, 'non-scholar')
+		FROM document_requests dr
+		INNER JOIN students s ON dr.student_id = s.id
+		LEFT JOIN student_academic sa ON s.id = sa.student_id
+		LEFT JOIN courses c ON sa.course = c.id
+		WHERE dr.id = ?
+	`, requestID).Scan(
+		&currentStatus, &documentType, &purpose, &studentID,
+		&studentNumber, &firstName, &middleName, &lastName,
+		&email, &address, &course, &yearLevel, &semester, &scholarshipStatus,
+	)
 
 	if err != nil {
+		fmt.Println("❌ Query error:", err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "request not found"})
 		return
 	}
@@ -192,40 +578,8 @@ func RecordsProcessDocumentRequest(c *gin.Context) {
 
 	var documentPath string
 
-	// If approved, require document upload
-	if status == "approved" {
-		file, err := c.FormFile("document")
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "document image is required for approval",
-			})
-			return
-		}
-
-		// Validate file type (images only)
-		ext := filepath.Ext(file.Filename)
-		allowedExts := map[string]bool{
-			".jpg":  true,
-			".jpeg": true,
-			".png":  true,
-			".pdf":  true,
-		}
-
-		if !allowedExts[ext] {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "only jpg, jpeg, png, and pdf files are allowed",
-			})
-			return
-		}
-
-		// Validate file size (max 5MB)
-		if file.Size > 5*1024*1024 {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "file size must not exceed 5MB",
-			})
-			return
-		}
-
+	// If approved, auto-generate document
+	if req.Status == "approved" {
 		// Create uploads directory if not exists
 		uploadsDir := "./uploads/documents"
 		if err := os.MkdirAll(uploadsDir, os.ModePerm); err != nil {
@@ -235,20 +589,55 @@ func RecordsProcessDocumentRequest(c *gin.Context) {
 			return
 		}
 
-		// Generate unique filename
-		timestamp := time.Now().Unix()
-		filename := fmt.Sprintf("doc_%d_%d%s", requestID, timestamp, ext)
-		filepath := filepath.Join(uploadsDir, filename)
+		// Prepare student data
+		studentData := StudentDocumentData{
+			RequestID:         requestID,
+			StudentNumber:     studentNumber,
+			FirstName:         firstName,
+			MiddleName:        middleName,
+			LastName:          lastName,
+			Course:            course,
+			YearLevel:         yearLevel,
+			Email:             email,
+			Address:           address,
+			Semester:          semester,
+			ScholarshipStatus: scholarshipStatus,
+			Purpose:           purpose,
+			DateRequested:     time.Now().Format("2006-01-02"),
+		}
 
-		// Save the file
-		if err := c.SaveUploadedFile(file, filepath); err != nil {
+		// Generate filename
+		timestamp := time.Now().Unix()
+		filename := fmt.Sprintf("%s_%s_%d.pdf",
+			strings.ReplaceAll(strings.ToLower(documentType), " ", "_"),
+			studentNumber,
+			timestamp,
+		)
+		documentPath = filepath.Join(uploadsDir, filename)
+
+		// Generate document based on type
+		var genErr error
+		switch strings.ToLower(documentType) {
+		case "transcript of records", "tor":
+			genErr = generateTranscriptOfRecords(studentData, documentPath)
+		case "certificate of enrollment", "coe":
+			genErr = generateCertificateOfEnrollment(studentData, documentPath)
+		case "good moral certificate", "good moral":
+			genErr = generateGoodMoralCertificate(studentData, documentPath)
+		case "honorable dismissal":
+			genErr = generateHonorableDismissal(studentData, documentPath)
+		default:
+			// For unknown document types, generate a generic certificate
+			genErr = generateCertificateOfEnrollment(studentData, documentPath)
+		}
+
+		if genErr != nil {
+			fmt.Println("❌ Document generation error:", genErr)
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "failed to save document",
+				"error": "failed to generate document",
 			})
 			return
 		}
-
-		documentPath = filepath
 	}
 
 	// Update request
@@ -260,10 +649,10 @@ func RecordsProcessDocumentRequest(c *gin.Context) {
 			notes = ?,
 			document_file = ?
 		WHERE id = ?
-	`, status, notes, documentPath, requestID)
+	`, req.Status, req.Notes, documentPath, requestID)
 
 	if err != nil {
-		fmt.Println("❌ Update error:", err) // Add debug logging
+		fmt.Println("❌ Update error:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "failed to process request",
 		})
@@ -273,13 +662,12 @@ func RecordsProcessDocumentRequest(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message":       "request processed successfully",
 		"request_id":    requestID,
-		"status":        status,
+		"status":        req.Status,
 		"document_path": documentPath,
 	})
 }
 
 // ===================== GET SINGLE DOCUMENT REQUEST DETAILS =====================
-
 func RecordsGetDocumentRequestDetails(c *gin.Context) {
 	role := c.GetString("role")
 	if role != "records" {
@@ -340,9 +728,6 @@ func RecordsGetDocumentRequestDetails(c *gin.Context) {
 	}
 
 	studentName := firstName + " " + lastName
-
-	fmt.Printf("✅ Found: ID=%d, Student=%s, Course=%s, Year=%s, Type=%s, Purpose=%s\n",
-		id, studentName, course, year, docType, purpose)
 
 	c.JSON(http.StatusOK, gin.H{
 		"request_id":     id,

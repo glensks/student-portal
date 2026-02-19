@@ -93,7 +93,7 @@ func main() {
 	teacher.GET("/dashboard", func(c *gin.Context) { c.File("./frontend/teacher.html") })
 	teacher.GET("/classes", controllers.TeacherGetClasses)
 	teacher.GET("/students", controllers.TeacherGetStudents)
-	teacher.POST("/grades/submit", controllers.TeacherSubmitGrade)
+	teacher.POST("/grades", controllers.TeacherSubmitGrade)
 	teacher.GET("/grades", controllers.TeacherGetGrades)
 	teacher.POST("/lessons", controllers.TeacherUploadLesson)
 	teacher.GET("/lessons", controllers.TeacherGetLessonMaterials)
@@ -138,6 +138,9 @@ func main() {
 	student.POST("/profile/upload-picture", controllers.StudentUploadProfilePicture)
 
 	student.GET("/announcements", controllers.StudentGetAnnouncements)
+
+	student.POST("/enroll", controllers.StudentSubmitEnrollment)
+	student.GET("/enrollments", controllers.StudentGetEnrollments)
 
 	// ---------------- REGISTRAR ROUTES ----------------
 	registrar := protected.Group("/registrar")
@@ -187,6 +190,9 @@ func main() {
 	records.POST("/announcements/:id/toggle", controllers.RecordsToggleAnnouncement)
 	records.DELETE("/announcements/:id", controllers.RecordsDeleteAnnouncement)
 
+	registrar.GET("/enrollment-applications", controllers.RegistrarGetEnrollmentApplications)
+	registrar.POST("/enrollment-applications/approve", controllers.RegistrarApproveEnrollmentApplication)
+	registrar.POST("/enrollment-applications/reject", controllers.RegistrarRejectEnrollmentApplication)
 	// ---------------- FACULTY ROUTES ----------------
 	faculty := protected.Group("/faculty")
 	faculty.Use(middleware.RoleOnly("faculty"))

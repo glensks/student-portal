@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 	"student-portal/config"
 
@@ -29,7 +30,7 @@ func CashierGetPendingPayments(c *gin.Context) {
 		return
 	}
 
-	// 2️⃣ get subjects (⭐ DITO MO IDADAGDAG)
+	// 2️⃣ get subjects
 	var subjectIDs string
 	_ = config.DB.QueryRow(`
         SELECT IFNULL(subjects,'')
@@ -79,7 +80,7 @@ func CashierGetPendingPayments(c *gin.Context) {
 			"remaining":      total - paid,
 			"payment_method": method,
 			"status":         status,
-			"subjects":       subjects, // ⭐ HERE
+			"subjects":       subjects,
 		})
 	}
 
@@ -134,9 +135,7 @@ func CashierApprovePayment(c *gin.Context) {
 		return
 	}
 
-	// ✅ DOWNPAYMENT
-	remaining := float64(totalAmount - amountPaid)
-
+	// ✅ PARTIAL PAYMENT — update status to partial
 	_, err = db.Exec(`
 		UPDATE student_payments
 		SET status = 'partial'
@@ -148,31 +147,91 @@ func CashierApprovePayment(c *gin.Context) {
 		return
 	}
 
+	remaining := float64(totalAmount - amountPaid)
+
+	// ✅ Check kung may existing installments na bago mag-create
+	// (ibig sabihin, nagbayad na ng isang term ang student bago i-approve ng cashier)
+	var existingInstallmentCount int
+	db.QueryRow(`
+		SELECT COUNT(*) FROM student_installments WHERE payment_id = ?
+	`, req.PaymentID).Scan(&existingInstallmentCount)
+
+	hadExistingInstallments := existingInstallmentCount > 0
+
+	// ✅ Create installment rows para sa missing terms
 	err = CreateInstallmentsAfterDownpayment(req.PaymentID, remaining)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create installments"})
 		return
 	}
 
+	// ✅ ONLY mark installments as paid kung may existing installment payment na ang student
+	// BAGO pa i-approve ng cashier ang downpayment.
+	//
+	// BAKIT? Kung bagong downpayment lang (walang installment payments pa),
+	// ang amountPaid ay ang downpayment amount — hindi dapat mag-trigger ng
+	// "prelim paid" kahit malaki ang downpayment kumpara sa per-term amount.
+	if hadExistingInstallments {
+		err = MarkPaidInstallments(req.PaymentID, float64(amountPaid))
+		if err != nil {
+			fmt.Println("⚠️ Warning: could not mark paid installments:", err)
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"message": "downpayment approved & installments created",
+		"message": "payment approved & installments updated",
 		"status":  "partial",
 	})
 }
 
+// CreateInstallmentsAfterDownpayment creates installment rows ONLY for terms
+// that do not already exist in student_installments for this payment.
+// This prevents duplicate entries when a student has already paid a term
+// (e.g. Prelim) before the cashier approves the downpayment.
 func CreateInstallmentsAfterDownpayment(paymentID int, remaining float64) error {
 	db := config.DB
 
-	terms := []string{"prelim", "midterm", "finals"}
-	baseAmount := remaining / 3
+	allTerms := []string{"prelim", "midterm", "finals"}
 
-	var totalInserted float64 = 0
+	// 1️⃣ Check which terms already exist for this payment
+	existingRows, err := db.Query(`
+		SELECT term FROM student_installments
+		WHERE payment_id = ?
+	`, paymentID)
+	if err != nil {
+		return err
+	}
+	defer existingRows.Close()
 
-	for i, term := range terms {
+	existingTerms := make(map[string]bool)
+	for existingRows.Next() {
+		var term string
+		existingRows.Scan(&term)
+		existingTerms[term] = true
+	}
+
+	// 2️⃣ Filter to only terms that are missing
+	var missingTerms []string
+	for _, t := range allTerms {
+		if !existingTerms[t] {
+			missingTerms = append(missingTerms, t)
+		}
+	}
+
+	// Nothing to create — all terms already recorded
+	if len(missingTerms) == 0 {
+		return nil
+	}
+
+	// 3️⃣ Split remaining balance equally across missing terms only
+	baseAmount := remaining / float64(len(missingTerms))
+	var totalInserted float64
+
+	for i, term := range missingTerms {
 		amount := baseAmount
 
-		// Adjust last term to fix floating point issue
-		if i == len(terms)-1 {
+		// Last term absorbs any floating-point rounding difference
+		if i == len(missingTerms)-1 {
 			amount = remaining - totalInserted
 		}
 
@@ -189,5 +248,119 @@ func CreateInstallmentsAfterDownpayment(paymentID int, remaining float64) error 
 		totalInserted += amount
 	}
 
+	return nil
+}
+
+func MarkPaidInstallments(paymentID int, amountPaid float64) error {
+	db := config.DB
+
+	// ✅ I-fetch ang downpayment amount para ma-exclude sa increment calculation
+	// Kung wala kang downpayment_amount column, gamitin ang amount ng unang
+	// payment na ginawa (amountPaid bago pa mag-installment).
+	// Pinakasimple: i-store ang downpayment_amount sa student_payments table.
+	var downpaymentAmount float64
+	err := db.QueryRow(`
+		SELECT downpayment_amount FROM student_payments WHERE id = ?
+	`, paymentID).Scan(&downpaymentAmount)
+	if err != nil {
+		// Kung walang column, fallback sa 0 (pero dapat idagdag ang column)
+		downpaymentAmount = 0
+		fmt.Println("⚠️ Warning: could not fetch downpayment_amount:", err)
+	}
+
+	// Fetch all installments in term order
+	rows, err := db.Query(`
+		SELECT id, term, amount, status
+		FROM student_installments
+		WHERE payment_id = ?
+		ORDER BY FIELD(term, 'prelim', 'midterm', 'finals')
+	`, paymentID)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	type installment struct {
+		id     int
+		term   string
+		amount float64
+		status string
+	}
+
+	var installments []installment
+	for rows.Next() {
+		var inst installment
+		if err := rows.Scan(&inst.id, &inst.term, &inst.amount, &inst.status); err != nil {
+			return err
+		}
+		installments = append(installments, inst)
+	}
+
+	if len(installments) == 0 {
+		return nil
+	}
+
+	// Sum ng installments na paid na
+	var alreadyPaidTotal float64
+	for _, inst := range installments {
+		if inst.status == "paid" {
+			alreadyPaidTotal += inst.amount
+		}
+	}
+
+	// ✅ FIXED: I-strip ang downpayment bago kalkulahin ang increment
+	// increment = (total paid) - (downpayment) - (already paid installments)
+	increment := amountPaid - downpaymentAmount - alreadyPaidTotal
+
+	if increment <= 0 {
+		fmt.Println("ℹ️ MarkPaidInstallments: no new increment to process")
+		return nil
+	}
+
+	fmt.Printf("💰 MarkPaidInstallments: amountPaid=%.2f, downpayment=%.2f, alreadyPaid=%.2f, increment=%.2f\n",
+		amountPaid, downpaymentAmount, alreadyPaidTotal, increment)
+
+	const tolerance = 1.0
+
+	// Exact match first
+	for _, inst := range installments {
+		if inst.status == "paid" {
+			continue
+		}
+		diff := increment - inst.amount
+		if diff >= -tolerance && diff <= tolerance {
+			_, err := db.Exec(`
+				UPDATE student_installments
+				SET status = 'paid', paid_at = NOW()
+				WHERE id = ?
+			`, inst.id)
+			if err != nil {
+				return fmt.Errorf("failed to mark %s as paid: %w", inst.term, err)
+			}
+			fmt.Printf("✅ Marked %s (id=%d, amount=%.2f) as paid\n", inst.term, inst.id, inst.amount)
+			return nil
+		}
+	}
+
+	// Fallback
+	for _, inst := range installments {
+		if inst.status == "paid" {
+			continue
+		}
+		if increment >= inst.amount-tolerance {
+			_, err := db.Exec(`
+				UPDATE student_installments
+				SET status = 'paid', paid_at = NOW()
+				WHERE id = ?
+			`, inst.id)
+			if err != nil {
+				return fmt.Errorf("failed to mark %s as paid (fallback): %w", inst.term, err)
+			}
+			fmt.Printf("✅ Marked %s (id=%d) as paid via fallback\n", inst.term, inst.id)
+			return nil
+		}
+	}
+
+	fmt.Printf("ℹ️ MarkPaidInstallments: no installment matched increment ₱%.2f\n", increment)
 	return nil
 }

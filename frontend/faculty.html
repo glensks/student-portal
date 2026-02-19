@@ -410,6 +410,20 @@ body {
 }
 .popup .add-btn:hover { background: #f0f7f4; }
 
+/* Filter hint banner */
+.filter-hint {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #92400e;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
 /* Schedule row */
 .schedule-row {
     display: flex;
@@ -443,6 +457,15 @@ body {
     margin-top: 0;
 }
 .schedule-row .remove-row-btn:hover { background: rgba(231,76,60,0.22); }
+
+/* No subjects state */
+.no-subjects-notice {
+    text-align: center;
+    padding: 10px;
+    color: var(--text-light);
+    font-size: 12.5px;
+    font-style: italic;
+}
 
 /* Course list */
 #courseList, #subjectList {
@@ -738,7 +761,7 @@ body {
     <button class="close-btn" onclick="closeForm('formViewSubjects')">Close</button>
 </div>
 
-<!-- Assign Teacher -->
+<!-- ===== ASSIGN TEACHER (UPDATED) ===== -->
 <div id="formAssignTeacher" class="popup" style="max-width: 750px;">
     <h3>👨‍🏫 Assign Teacher</h3>
 
@@ -753,14 +776,32 @@ body {
         </div>
     </div>
 
-    <label>Year Level</label>
-    <select id="assignYearLevel">
-        <option value="">Select Year</option>
-        <option value="1">1st Year</option>
-        <option value="2">2nd Year</option>
-        <option value="3">3rd Year</option>
-        <option value="4">4th Year</option>
-    </select>
+    <!-- Year Level + Semester side by side -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div>
+            <label>Year Level</label>
+            <select id="assignYearLevel">
+                <option value="">Select Year</option>
+                <option value="1">1st Year</option>
+                <option value="2">2nd Year</option>
+                <option value="3">3rd Year</option>
+                <option value="4">4th Year</option>
+            </select>
+        </div>
+        <div>
+            <label>Semester</label>
+            <select id="assignSemester">
+                <option value="">Select Semester</option>
+                <option value="1st">1st Semester</option>
+                <option value="2nd">2nd Semester</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Hint: shows only after course+year+sem are selected -->
+    <div id="assignFilterHint" class="filter-hint" style="display:none;">
+        💡 Subjects below are filtered by the selected Course, Year Level, and Semester.
+    </div>
 
     <h4>📅 Schedules</h4>
     <div id="scheduleContainer"></div>
@@ -894,23 +935,56 @@ async function populateSidebarData() {
 }
 populateSidebarData();
 
-/* ===== Load Subjects for Assign Teacher ===== */
+/* ===== Load Subjects for Assign Teacher (NOW INCLUDES SEMESTER) ===== */
 async function loadAssignSubjects(row = null) {
-    const course_id = parseInt(document.getElementById("assignCourse").value);
+    const course_id  = parseInt(document.getElementById("assignCourse").value);
     const year_level = parseInt(document.getElementById("assignYearLevel").value);
-    if(!course_id || !year_level) return;
+    const semester   = document.getElementById("assignSemester").value;
+
+    // Show/hide the filter hint
+    const hint = document.getElementById("assignFilterHint");
+    hint.style.display = (course_id && year_level && semester) ? "flex" : "none";
+
+    // Need all 3 to load subjects
+    if (!course_id || !year_level || !semester) {
+        // If filters are incomplete, reset all subject dropdowns to a prompt
+        const placeholder = '<option value="">— Select Course, Year & Semester first —</option>';
+        if (row) {
+            row.querySelector(".scheduleSubject").innerHTML = placeholder;
+        } else {
+            document.querySelectorAll(".scheduleSubject").forEach(s => s.innerHTML = placeholder);
+        }
+        return;
+    }
+
     try {
-        const subjects = await apiFetch(`/faculty/subjects?course_id=${course_id}&year_level=${year_level}`);
-        const html = '<option value="">Select Subject</option>' + subjects.map(s =>
-            `<option value="${s.id}">${s.code} - ${s.subject_name}${s.semester ? ' (' + s.semester + ' Sem)' : ''}</option>`
-        ).join('');
-        if(row) row.querySelector(".scheduleSubject").innerHTML = html;
-        else document.querySelectorAll(".scheduleSubject").forEach(s => s.innerHTML = html);
-    } catch(e) { console.error(e); }
+        const subjects = await apiFetch(
+            `/faculty/subjects?course_id=${course_id}&year_level=${year_level}&semester=${encodeURIComponent(semester)}`
+        );
+
+        let html;
+        if (!subjects || subjects.length === 0) {
+            html = '<option value="">No subjects found for this filter</option>';
+        } else {
+            html = '<option value="">Select Subject</option>' + subjects.map(s =>
+                `<option value="${s.id}">${s.code} – ${s.subject_name}</option>`
+            ).join('');
+        }
+
+        if (row) {
+            row.querySelector(".scheduleSubject").innerHTML = html;
+        } else {
+            document.querySelectorAll(".scheduleSubject").forEach(s => s.innerHTML = html);
+        }
+    } catch(e) {
+        console.error(e);
+    }
 }
 
+// Trigger subject reload whenever any of the 3 filters change
 document.getElementById("assignCourse").addEventListener("change", () => loadAssignSubjects());
 document.getElementById("assignYearLevel").addEventListener("change", () => loadAssignSubjects());
+document.getElementById("assignSemester").addEventListener("change", () => loadAssignSubjects());
 
 /* ===== Schedule Rows ===== */
 function addScheduleRow() {
@@ -918,7 +992,7 @@ function addScheduleRow() {
     const row = document.createElement("div");
     row.className = "schedule-row";
     row.innerHTML = `
-        <select class="scheduleSubject"><option value="">Select Subject</option></select>
+        <select class="scheduleSubject"><option value="">— Select filters first —</option></select>
         <input type="text" class="scheduleRoom" placeholder="Room (e.g. 101)">
         <select class="scheduleDay">
             <option value="">Day</option>
@@ -934,6 +1008,7 @@ function addScheduleRow() {
         <button type="button" class="remove-row-btn" onclick="this.parentElement.remove()">✕</button>
     `;
     container.appendChild(row);
+    // Populate subjects immediately if filters are already set
     loadAssignSubjects(row);
 }
 
@@ -986,18 +1061,18 @@ document.getElementById("submitCreateSubject").onclick = async () => {
 // Assign Teacher
 document.getElementById("submitAssignTeacher").onclick = async () => {
     const teacher_id = parseInt(document.getElementById("assignTeacher").value || "0");
-    const course_id = parseInt(document.getElementById("assignCourse").value || "0");
+    const course_id  = parseInt(document.getElementById("assignCourse").value || "0");
     if(!teacher_id) { alert("Select a teacher"); return; }
-    if(!course_id) { alert("Select a course"); return; }
+    if(!course_id)  { alert("Select a course");  return; }
 
     const rows = document.querySelectorAll("#scheduleContainer > .schedule-row");
     const schedules = [];
     rows.forEach(row => {
         const subject_id = parseInt(row.querySelector(".scheduleSubject").value || "0");
-        const room = row.querySelector(".scheduleRoom").value.trim();
-        const day = row.querySelector(".scheduleDay").value;
+        const room       = row.querySelector(".scheduleRoom").value.trim();
+        const day        = row.querySelector(".scheduleDay").value;
         const start_time = row.querySelector(".scheduleStart").value;
-        const end_time = row.querySelector(".scheduleEnd").value;
+        const end_time   = row.querySelector(".scheduleEnd").value;
         if(subject_id && room && day && start_time && end_time) {
             schedules.push({ subject_id, course_id, room, day, start_time, end_time });
         }
@@ -1011,9 +1086,11 @@ document.getElementById("submitAssignTeacher").onclick = async () => {
         });
         alert("Teacher assigned successfully!");
         closeForm("formAssignTeacher");
-        document.getElementById("assignTeacher").value = "";
-        document.getElementById("assignCourse").value = "";
+        document.getElementById("assignTeacher").value   = "";
+        document.getElementById("assignCourse").value    = "";
         document.getElementById("assignYearLevel").value = "";
+        document.getElementById("assignSemester").value  = "";
+        document.getElementById("assignFilterHint").style.display = "none";
         document.getElementById("scheduleContainer").innerHTML = "";
     } catch(e) { alert("Failed: " + e.message); }
 };
