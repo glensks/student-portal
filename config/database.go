@@ -18,17 +18,20 @@ func ConnectDB() {
 	password := os.Getenv("MYSQLPASSWORD")
 	dbname := os.Getenv("MYSQLDATABASE")
 
+	// Debug: tingnan kung may laman ang env vars
+	log.Printf("DEBUG - Host: '%s', Port: '%s', User: '%s', DB: '%s'", host, port, user, dbname)
+
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true", user, password, host, port, dbname)
 
 	var err error
 	DB, err = sql.Open("mysql", dsn)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("sql.Open error: ", err)
 	}
 
 	err = DB.Ping()
 	if err != nil {
-		log.Fatal("Database not connected: ", err)
+		log.Fatal("Ping error: ", err) // <-- makikita natin ang exact error dito
 	}
 
 	log.Println("✅ MySQL Connected")
