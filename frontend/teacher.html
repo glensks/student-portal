@@ -936,7 +936,7 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
-const API = "http://localhost:8080";
+const API = "";
 function token() { return localStorage.getItem("jwt") || ""; }
 function logout() {
     if (confirm('Are you sure you want to logout?')) {

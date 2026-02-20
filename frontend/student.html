@@ -3983,7 +3983,7 @@ async function loadUserProfile() {
   try {
     console.log("🔍 Loading user profile...");
     
-    const res = await fetch("http://localhost:8080/student/payments/me", {
+    const res = await fetch("/student/payments/me", {
       credentials: "include"
     });
 
@@ -4035,7 +4035,7 @@ async function loadUserProfile() {
     // ⬅️ NEW: Handle profile picture
     if (data.profile_picture && data.profile_picture.trim() !== '') {
       currentProfilePicture = data.profile_picture;
-      updateProfilePictureDisplay(`http://localhost:8080/${data.profile_picture}`);
+      updateProfilePictureDisplay(`/${data.profile_picture}`);
     } else {
       currentProfilePicture = null;
       updateProfilePictureDisplay(null);
@@ -4043,7 +4043,7 @@ async function loadUserProfile() {
 
     // ⬅️ NEW: Load full profile data for edit forms
     try {
-      const profileRes = await fetch("http://localhost:8080/student/profile", {
+      const profileRes = await fetch("/student/profile", {
         credentials: "include"
       });
       
@@ -4257,7 +4257,7 @@ async function loadAnnouncements() {
   const container = document.getElementById("announcementsContainer");
   
   try {
-    const res = await fetch("http://localhost:8080/student/announcements", {
+    const res = await fetch("/student/announcements", {
       credentials: "include"
     });
 
@@ -4502,7 +4502,7 @@ function updateActiveNav(index) {
 // Dashboard Stats
 async function loadDashboardStats() {
   try {
-    const res = await fetch("http://localhost:8080/student/payments/me", {
+    const res = await fetch("/student/payments/me", {
       credentials: "include"
     });
 
@@ -4561,7 +4561,7 @@ function toggleView(view) {
 
 async function loadSchedule() {
   try {
-    const res = await fetch("http://localhost:8080/student/schedule", {
+    const res = await fetch("/student/schedule", {
       credentials: "include"
     });
 
@@ -4734,7 +4734,7 @@ async function getPayments() {
   msgDiv.innerHTML = "";
 
   try {
-    const res = await fetch("http://localhost:8080/student/payments/me", {
+    const res = await fetch("/student/payments/me", {
       credentials: "include"
     });
 
@@ -5051,7 +5051,7 @@ async function loadNotifications() {
   
   // ===== 2. GRADES NOTIFICATIONS =====
   try {
-    const gradesRes = await fetch('http://localhost:8080/student/grades', {
+    const gradesRes = await fetch('/student/grades', {
       credentials: 'include'
     });
     
@@ -5098,7 +5098,7 @@ async function loadNotifications() {
   
   // ===== 5. LESSON MATERIALS NOTIFICATIONS =====
   try {
-    const lessonsRes = await fetch('http://localhost:8080/student/lessons', {
+    const lessonsRes = await fetch('/student/lessons', {
       credentials: 'include'
     });
     
@@ -5333,7 +5333,7 @@ async function payNow(paymentId) {
   if (!confirm(`Confirm payment of ₱${amount.toLocaleString()} via ${method.toUpperCase()}?`)) return;
 
   try {
-    const res = await fetch("http://localhost:8080/student/pay", {
+    const res = await fetch("/student/pay", {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -5381,7 +5381,7 @@ async function viewBreakdown(paymentId) {
 
   try {
     const res = await fetch(
-      `http://localhost:8080/student/installments?payment_id=${paymentId}`,
+      `/student/installments?payment_id=${paymentId}`,
       { credentials: "include" }
     );
 
@@ -5815,7 +5815,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       try {
-        const res = await fetch('http://localhost:8080/student/documents/request', {
+        const res = await fetch('/student/documents/request', {
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
@@ -5967,7 +5967,7 @@ async function loadDocumentRequests() {
   const container = document.getElementById('requestsContainer');
   
   try {
-    const res = await fetch('http://localhost:8080/student/documents/requests', {
+    const res = await fetch('/student/documents/requests', {
       credentials: 'include'
     });
     
@@ -6003,7 +6003,7 @@ async function loadDocumentRequests() {
       
       // Check if document is available
       const hasDocument = req.document_path && req.document_path.trim() !== '';
-      const documentUrl = hasDocument ? `http://localhost:8080/${req.document_path}` : '';
+      const documentUrl = hasDocument ? `/${req.document_path}` : '';
       
       // Determine file type
       const isPDF = documentUrl.toLowerCase().endsWith('.pdf');
@@ -6135,7 +6135,7 @@ async function loadStudentGrades() {
   messageDiv.innerHTML = '';
   
   try {
-    const res = await fetch('http://localhost:8080/student/grades', {
+    const res = await fetch('/student/grades', {
       credentials: 'include'
     });
     
@@ -6361,7 +6361,7 @@ function recalcGWA(grades) {
 
 async function downloadGradesReport() {
   try {
-    const res = await fetch('http://localhost:8080/student/grades', {
+    const res = await fetch('/student/grades', {
       credentials: 'include'
     });
     
@@ -6713,7 +6713,7 @@ async function loadUserProfile() {
   try {
     console.log("🔍 Loading user profile...");
     
-    const res = await fetch("http://localhost:8080/student/payments/me", {
+    const res = await fetch("/student/payments/me", {
       credentials: "include"
     });
 
@@ -6760,7 +6760,7 @@ async function loadUserProfile() {
     // ⬅️ NEW: Handle profile picture
     if (data.profile_picture && data.profile_picture.trim() !== '') {
       currentProfilePicture = data.profile_picture;
-      updateProfilePictureDisplay(`http://localhost:8080/${data.profile_picture}`);
+      updateProfilePictureDisplay(`/${data.profile_picture}`);
     } else {
       currentProfilePicture = null;
       updateProfilePictureDisplay(null);
@@ -6801,7 +6801,7 @@ async function showProfileSettings(event) {
   if (event) event.preventDefault();
   
   try {
-    const res = await fetch('http://localhost:8080/student/profile', {
+    const res = await fetch('/student/profile', {
       credentials: 'include'
     });
     
@@ -6825,7 +6825,7 @@ async function showProfileSettings(event) {
               
               <div class="profile-picture-preview" id="profilePicturePreview" onclick="triggerFileInput()">
                 ${profile.profile_picture 
-                  ? `<img src="http://localhost:8080/${profile.profile_picture}" alt="Profile Picture" />`
+                  ? `<img src="/${profile.profile_picture}" alt="Profile Picture" />`
                   : '<span style="font-size: 48px;">👤</span>'
                 }
                 <div class="profile-picture-overlay">
@@ -6956,7 +6956,7 @@ async function handleProfilePictureUpload(event) {
   formData.append('profile_picture', file);
   
   try {
-    const res = await fetch('http://localhost:8080/student/profile/upload-picture', {
+    const res = await fetch('/student/profile/upload-picture', {
       method: 'POST',
       credentials: 'include',
       body: formData
@@ -6974,7 +6974,7 @@ async function handleProfilePictureUpload(event) {
     console.log('✅ Profile picture uploaded:', data.profile_picture);
     
     // Update profile picture everywhere
-    const imageUrl = `http://localhost:8080/${data.profile_picture}`;
+    const imageUrl = `/${data.profile_picture}`;
     updateProfilePictureDisplay(imageUrl);
     currentProfilePicture = data.profile_picture;
     
@@ -7179,7 +7179,7 @@ async function handleProfileUpdate(event) {
   if (!confirm('Save changes to your profile?')) return;
   
   try {
-    const res = await fetch('http://localhost:8080/student/profile/update', {
+    const res = await fetch('/student/profile/update', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -7331,7 +7331,7 @@ async function handlePasswordChange(event) {
   if (!confirm('Are you sure you want to change your password?')) return;
   
   try {
-    const res = await fetch('http://localhost:8080/student/change-password', {
+    const res = await fetch('/student/change-password', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -7423,7 +7423,7 @@ async function loadLessonMaterials() {
   messageDiv.innerHTML = '';
   
   try {
-    const res = await fetch('http://localhost:8080/student/lessons', {
+    const res = await fetch('/student/lessons', {
       credentials: 'include'
     });
     
@@ -7497,7 +7497,7 @@ function displayLessonMaterials(lessons) {
         <div class="material-actions">
           ${lesson.file_path ? `
             <a 
-              href="http://localhost:8080/${lesson.file_path}" 
+              href="/${lesson.file_path}" 
               target="_blank"
               class="material-download-btn"
             >
@@ -7718,7 +7718,7 @@ async function handleSubmission(event) {
   formData.append('file', file);
 
   try {
-    const res = await fetch('http://localhost:8080/student/submissions/upload', {
+    const res = await fetch('/student/submissions/upload', {
       method: 'POST',
       credentials: 'include',
       body: formData
@@ -7750,7 +7750,7 @@ async function loadMySubmissions() {
   container.innerHTML = '<div style="text-align:center;padding:40px;color:#999;">Loading submissions...</div>';
   
   try {
-    const res = await fetch('http://localhost:8080/student/submissions', {
+    const res = await fetch('/student/submissions', {
       credentials: 'include'
     });
     
@@ -7845,7 +7845,7 @@ function displaySubmissions(submissions) {
         
         <div class="material-actions" style="margin-top: 12px;">
           <a 
-            href="http://localhost:8080/${sub.file_path}" 
+            href="/${sub.file_path}" 
             target="_blank"
             class="material-download-btn"
           >
@@ -7887,7 +7887,7 @@ async function handleLogout(event) {
   }
   
   try {
-    const res = await fetch('http://localhost:8080/logout', {
+    const res = await fetch('/logout', {
       method: 'POST',
       credentials: 'include'
     });
@@ -8069,7 +8069,7 @@ window.addEventListener('pageshow', function(event) {
 
 async function checkAuthStatus() {
   try {
-    const res = await fetch("http://localhost:8080/student/payments/me", {
+    const res = await fetch("/student/payments/me", {
       credentials: "include"
     });
     
@@ -8117,7 +8117,7 @@ loadEnrollmentHistory();
 // ===== LOAD COURSES INTO ENROLLMENT DROPDOWN =====
 async function loadEnrollmentCourses() {
   try {
-    const res     = await fetch('http://localhost:8080/public/courses');
+    const res     = await fetch('/public/courses');
     const courses = await res.json();
     const sel     = document.getElementById('enroll_course');
     sel.innerHTML = '<option value="">Select a course</option>';
@@ -8198,7 +8198,7 @@ async function loadEnrollmentSubjects() {
   sel.style.display  = 'none';
 
   try {
-    const res      = await fetch(`http://localhost:8080/public/subjects?course_id=${course}&year_level=${year}&semester=${encodeURIComponent(semester)}`);
+    const res      = await fetch(`/public/subjects?course_id=${course}&year_level=${year}&semester=${encodeURIComponent(semester)}`);
     const subjects = await res.json();
 
     if (!subjects || !subjects.length) {
@@ -8296,7 +8296,7 @@ async function submitEnrollment(event) {
   btn.disabled  = true;
 
   try {
-    const res = await fetch('http://localhost:8080/student/enroll', {
+    const res = await fetch('/student/enroll', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -8361,7 +8361,7 @@ async function loadEnrollmentHistory() {
   container.innerHTML = '<div style="text-align:center;padding:40px;color:#999;">Loading...</div>';
 
   try {
-    const res  = await fetch('http://localhost:8080/student/enrollments', { credentials:'include' });
+    const res  = await fetch('/student/enrollments', { credentials:'include' });
     const data = await res.json();
 
     if (!data.enrollments || !data.enrollments.length) {
@@ -8460,7 +8460,7 @@ function updateEnrollProgress() {
   
   try {
     // Reload schedule data in background
-    const schedRes = await fetch('http://localhost:8080/student/schedule', { credentials: 'include' });
+    const schedRes = await fetch('/student/schedule', { credentials: 'include' });
     if (schedRes.ok) {
       const schedData = await schedRes.json();
       if (schedData.schedule) {
@@ -8472,7 +8472,7 @@ function updateEnrollProgress() {
 
   try {
     // Reload lesson materials in background
-    const lessonRes = await fetch('http://localhost:8080/student/lessons', { credentials: 'include' });
+    const lessonRes = await fetch('/student/lessons', { credentials: 'include' });
     if (lessonRes.ok) {
       const lessonData = await lessonRes.json();
       if (lessonData.lessons) {
@@ -8484,7 +8484,7 @@ function updateEnrollProgress() {
 
   try {
     // Reload grades in background
-    const gradesRes = await fetch('http://localhost:8080/student/grades', { credentials: 'include' });
+    const gradesRes = await fetch('/student/grades', { credentials: 'include' });
     if (gradesRes.ok) {
       console.log('✅ Grades data refreshed');
     }
