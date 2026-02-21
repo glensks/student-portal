@@ -12,6 +12,7 @@ import (
 func main() {
 	// ---------------- CONNECT TO DATABASE ----------------
 	config.ConnectDB()
+	config.MigrateDB()
 	config.CreateDefaultUsers()
 
 	// ---------------- CREATE GIN ROUTER ----------------
