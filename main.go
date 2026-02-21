@@ -54,27 +54,29 @@ func main() {
 	r.GET("/verify-reset-token", controllers.VerifyResetToken)
 	r.POST("/reset-password", controllers.ResetPassword)
 	r.GET("/reset-password", func(c *gin.Context) {
-		c.File("./frontend/reset_password.html") // Put reset-password.html in frontend folder
+		c.File("./frontend/reset_password.html")
 	})
 
 	// ---------------- PROTECTED ROUTES ----------------
 	protected := r.Group("/")
 	protected.Use(middleware.AuthMiddleware())
-	r.GET("/public/courses", controllers.FacultyGetCourses)
-	r.GET("/public/subjects", controllers.FacultyGetSubjects)
+
+	// ✅ FIXED: was using r.GET (unprotected), now correctly uses protected.GET
+	protected.GET("/public/courses", controllers.FacultyGetCourses)
+	protected.GET("/public/subjects", controllers.FacultyGetSubjects)
 
 	// ---------------- ADMIN ROUTES ----------------
 	admin := protected.Group("/admin")
 	admin.Use(middleware.RoleOnly("admin"))
 	admin.GET("/dashboard", func(c *gin.Context) { c.File("./frontend/admin.html") })
 
-	// User CRUD (Original Functions)
+	// User CRUD
 	admin.GET("/users", controllers.AdminGetUsers)
 	admin.POST("/users", controllers.AdminCreateUser)
 	admin.PUT("/users/:id", controllers.AdminEditUser)
 	admin.DELETE("/users/:id", controllers.AdminDeleteUser)
 
-	// IT Management Functions (New Functions)
+	// IT Management
 	admin.GET("/users/:id/details", controllers.AdminGetUserDetails)
 	admin.POST("/users/:id/reset-password", controllers.AdminResetUserPassword)
 	admin.PUT("/users/:id/status", controllers.AdminToggleUserStatus)
@@ -101,45 +103,35 @@ func main() {
 	teacher.GET("/lessons/:id/submissions", controllers.TeacherGetSubmissions)
 	teacher.PUT("/lessons/:id", controllers.TeacherUpdateLesson)
 	teacher.DELETE("/lessons/:id", controllers.TeacherDeleteLessonMaterial)
-
 	teacher.GET("/submissions/pending", controllers.TeacherGetPendingSubmissions)
 	teacher.POST("/submissions/:id/review", controllers.TeacherReviewSubmission)
-
 	teacher.POST("/announcements", controllers.TeacherPostAnnouncement)
 	teacher.GET("/announcements", controllers.TeacherGetAnnouncements)
-
 	teacher.DELETE("/announcements/:id", controllers.TeacherDeleteAnnouncement)
 
+	// ---------------- STUDENT ROUTES ----------------
 	student := protected.Group("/student")
-	student.Use(middleware.AuthMiddleware(), middleware.RoleOnly("student"))
+	student.Use(middleware.RoleOnly("student"))
 
-	// Serve frontend - One route to serve the student dashboard
 	student.GET("/dashboard", func(c *gin.Context) {
 		c.File("./frontend/student.html")
 	})
-
-	// Get payments for logged-in student
 	student.GET("/payments/me", controllers.StudentGetPaymentsMe)
 	student.POST("/pay", controllers.StudentPayBill)
 	student.POST("/payments/downpayment", controllers.StudentDownPayment)
-	student.GET("/installments", controllers.StudentGetInstallments) // ⭐ ADD THIS
+	student.GET("/installments", controllers.StudentGetInstallments)
 	student.GET("/schedule", controllers.StudentGetSchedule)
 	student.POST("/documents/request", controllers.StudentRequestDocument)
-
 	student.GET("/lessons", controllers.StudentGetLessons)
 	student.POST("/submissions/upload", controllers.StudentUploadSubmission)
 	student.GET("/submissions", controllers.StudentGetSubmissions)
-	// View all document requests
 	student.GET("/documents/requests", controllers.StudentGetDocumentRequests)
 	student.GET("/grades", controllers.StudentGetGrades)
-
 	student.GET("/profile", controllers.StudentGetProfile)
 	student.PUT("/profile/update", controllers.StudentUpdateProfile)
 	student.POST("/profile/change-password", controllers.StudentChangePassword)
 	student.POST("/profile/upload-picture", controllers.StudentUploadProfilePicture)
-
 	student.GET("/announcements", controllers.StudentGetAnnouncements)
-
 	student.POST("/enroll", controllers.StudentSubmitEnrollment)
 	student.GET("/enrollments", controllers.StudentGetEnrollments)
 
@@ -151,39 +143,38 @@ func main() {
 	})
 	registrar.GET("/students", controllers.RegistrarGetStudentsByStatus)
 	registrar.POST("/approve-with-assessment", controllers.RegistrarApproveWithAssessment)
-
 	registrar.POST("/announcements", controllers.RegistrarPostAnnouncement)
 	registrar.GET("/announcements", controllers.RegistrarGetAnnouncements)
 	registrar.DELETE("/announcements/:id", controllers.RegistrarDeleteAnnouncement)
+	registrar.GET("/enrollment-applications", controllers.RegistrarGetEnrollmentApplications)
+	registrar.POST("/enrollment-applications/approve", controllers.RegistrarApproveEnrollmentApplication)
+	registrar.POST("/enrollment-applications/reject", controllers.RegistrarRejectEnrollmentApplication)
+
+	// ✅ FIXED: was using r.POST (unprotected), now correctly uses registrar group
+	registrar.POST("/student/status", controllers.RegistrarUpdateStudentStatus)
 
 	// ---------------- CASHIER ROUTES ----------------
 	cashier := protected.Group("/cashier")
 	cashier.Use(middleware.RoleOnly("cashier"))
-
 	cashier.GET("/dashboard", func(c *gin.Context) {
 		c.File("./frontend/cashier.html")
 	})
-
 	cashier.GET("/pending-payments", controllers.CashierGetPendingPayments)
 	cashier.POST("/approve-payment", controllers.CashierApprovePayment)
 
+	// ---------------- RECORDS ROUTES ----------------
 	records := protected.Group("/records")
 	records.Use(middleware.RoleOnly("records"))
-
 	records.GET("/dashboard", func(c *gin.Context) {
 		c.File("./frontend/records.html")
 	})
-
 	records.GET("/me", controllers.RecordsMe)
 	records.GET("/document-requests", controllers.RecordsGetDocumentRequests)
 	records.GET("/document-requests/:id", controllers.RecordsGetDocumentRequestDetails)
 	records.POST("/document-requests/:id", controllers.RecordsProcessDocumentRequest)
-
-	// NEW GRADE ROUTES
 	records.GET("/grades", controllers.RecordsGetAllGrades)
 	records.GET("/grades/student/:student_id", controllers.RecordsGetStudentGrades)
 	records.POST("/grades/:grade_id/release", controllers.RecordsReleaseGrade)
-
 	records.GET("/announcements", controllers.RecordsGetAnnouncements)
 	records.GET("/announcements/:id", controllers.RecordsGetAnnouncementDetails)
 	records.POST("/announcements", controllers.RecordsPostAnnouncement)
@@ -191,33 +182,17 @@ func main() {
 	records.POST("/announcements/:id/toggle", controllers.RecordsToggleAnnouncement)
 	records.DELETE("/announcements/:id", controllers.RecordsDeleteAnnouncement)
 
-	registrar.GET("/enrollment-applications", controllers.RegistrarGetEnrollmentApplications)
-	registrar.POST("/enrollment-applications/approve", controllers.RegistrarApproveEnrollmentApplication)
-	registrar.POST("/enrollment-applications/reject", controllers.RegistrarRejectEnrollmentApplication)
-	r.POST("/registrar/student/status", controllers.RegistrarUpdateStudentStatus)
-
 	// ---------------- FACULTY ROUTES ----------------
 	faculty := protected.Group("/faculty")
 	faculty.Use(middleware.RoleOnly("faculty"))
-
-	// Serve frontend
 	faculty.GET("/dashboard", func(c *gin.Context) { c.File("./frontend/faculty.html") })
 	faculty.GET("/me", controllers.FacultyMe)
-
 	faculty.POST("/assign-teacher", controllers.FacultyAssignTeacher)
 	faculty.GET("/teachers", controllers.FacultyGetTeachers)
-
-	// Course management
 	faculty.GET("/courses", controllers.FacultyGetCourses)
 	faculty.POST("/courses", controllers.FacultyCreateCourse)
-
-	// Subject management
 	faculty.GET("/subjects", controllers.FacultyGetSubjects)
 	faculty.POST("/subjects", controllers.FacultyCreateSubject)
-
-	// Teacher assignment
-
-	// School year
 	faculty.POST("/school-year", controllers.FacultySetSchoolYear)
 
 	// ---------------- TEST PING ----------------
@@ -225,5 +200,4 @@ func main() {
 
 	// ---------------- RUN SERVER ----------------
 	r.Run(":" + os.Getenv("PORT"))
-
 }
