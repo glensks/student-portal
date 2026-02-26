@@ -16,19 +16,15 @@ import (
 )
 
 // ===== VIEW CLASSES (Assigned by Admin) =====
-// This function retrieves all classes assigned to the logged-in teacher by the admin
 func TeacherGetClasses(c *gin.Context) {
 	role := c.GetString("role")
 	teacherID := c.GetInt("user_id")
 
-	// Validate role
 	if role != "teacher" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied: Teacher role required"})
 		return
 	}
 
-	// Query to get teacher's classes with room information
-	// This automatically gets all schedules assigned by admin in the teacher_subjects table
 	query := `
 		SELECT 
 			ts.id,
@@ -66,13 +62,11 @@ func TeacherGetClasses(c *gin.Context) {
 			roomNull                                 sql.NullString
 		)
 
-		// Scan with NULL handling for room
 		if err := rows.Scan(&id, &subject, &subjectCode, &course, &courseCode, &roomNull, &day, &timeStart, &timeEnd); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse class data: " + err.Error()})
 			return
 		}
 
-		// Handle NULL room value
 		room := "Not assigned"
 		if roomNull.Valid {
 			room = roomNull.String
@@ -91,13 +85,11 @@ func TeacherGetClasses(c *gin.Context) {
 		})
 	}
 
-	// Check for errors during iteration
 	if err := rows.Err(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error reading class data: " + err.Error()})
 		return
 	}
 
-	// Return empty array instead of null if no classes found
 	if classes == nil {
 		classes = []gin.H{}
 	}
@@ -175,7 +167,7 @@ func TeacherGetClassDetails(c *gin.Context) {
 	})
 }
 
-// ===== GET SCHEDULE/TIMETABLE =====
+// ===== GET STUDENTS (only approved students) =====
 func TeacherGetStudents(c *gin.Context) {
 	role := c.GetString("role")
 	teacherID := c.GetInt("user_id")
@@ -191,6 +183,7 @@ func TeacherGetStudents(c *gin.Context) {
 		return
 	}
 
+	// FIX: Added AND st.status = 'approved' so only registrar-confirmed students appear
 	query := `
 		SELECT DISTINCT
 			st.id,
@@ -204,6 +197,7 @@ func TeacherGetStudents(c *gin.Context) {
 		INNER JOIN students st
 			ON st.id = sa.student_id
 		WHERE ts.teacher_id = ? AND ts.id = ?
+		AND st.status = 'approved'
 		ORDER BY st.last_name, st.first_name
 	`
 
@@ -258,7 +252,6 @@ func TeacherSubmitGrade(c *gin.Context) {
 		return
 	}
 
-	// Parse request body
 	var request struct {
 		ClassID   int      `json:"class_id" binding:"required"`
 		StudentID int      `json:"student_id" binding:"required"`
@@ -285,23 +278,24 @@ func TeacherSubmitGrade(c *gin.Context) {
 		return
 	}
 
-	// Validate that the student is enrolled in this class
+	// FIX: Validate that the student is approved AND enrolled in this class
 	var studentEnrolled bool
 	err = config.DB.QueryRow(`
 		SELECT EXISTS(
 			SELECT 1 FROM student_academic sa
+			INNER JOIN students st ON st.id = sa.student_id
 			WHERE sa.student_id = ? 
 			AND FIND_IN_SET(?, sa.subjects) > 0
+			AND st.status = 'approved'
 		)
 	`, request.StudentID, subjectID).Scan(&studentEnrolled)
 
 	if err != nil || !studentEnrolled {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Student not enrolled in this class"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Student not found, not enrolled in this class, or not yet approved by the Registrar"})
 		return
 	}
 
-	// ===== FIX: Validate grades using Filipino GWA scale (1.0 = highest, 5.0 = failed) =====
-	// 1.0 = Excellent, 2.0 = Good, 3.0 = Satisfactory, 4.0 = Conditional, 5.0 = Failed
+	// Validate grades using Filipino GWA scale (1.0 = highest, 5.0 = failed)
 	if request.Prelim != nil && (*request.Prelim < 1.0 || *request.Prelim > 5.0) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Prelim grade must be between 1.0 and 5.0 (Filipino GWA scale)"})
 		return
@@ -364,7 +358,7 @@ func TeacherSubmitGrade(c *gin.Context) {
 	}
 }
 
-// ===== GET GRADES FOR A CLASS =====
+// ===== GET GRADES FOR A CLASS (only approved students) =====
 func TeacherGetGrades(c *gin.Context) {
 	role := c.GetString("role")
 	teacherID := c.GetInt("user_id")
@@ -392,6 +386,8 @@ func TeacherGetGrades(c *gin.Context) {
 		return
 	}
 
+	// FIX: Added INNER JOIN students + AND st.status = 'approved'
+	// so only registrar-approved students show up in the grades list
 	query := `
 		SELECT 
 			st.id,
@@ -410,6 +406,7 @@ func TeacherGetGrades(c *gin.Context) {
 			AND g.subject_id = ? 
 			AND g.teacher_id = ?
 		WHERE FIND_IN_SET(?, sa.subjects) > 0
+		AND st.status = 'approved'
 		ORDER BY st.last_name, st.first_name
 	`
 
@@ -462,6 +459,7 @@ func TeacherGetGrades(c *gin.Context) {
 	})
 }
 
+// ===== UPLOAD LESSON =====
 func TeacherUploadLesson(c *gin.Context) {
 	role := c.GetString("role")
 	teacherID := c.GetInt("user_id")
@@ -471,14 +469,12 @@ func TeacherUploadLesson(c *gin.Context) {
 		return
 	}
 
-	// Get form data
 	classID := c.PostForm("class_id")
 	title := c.PostForm("title")
 	description := c.PostForm("description")
-	materialType := c.PostForm("type")   // "video", "image", "document"
-	dueDateStr := c.PostForm("due_date") // Optional: "YYYY-MM-DD" or "YYYY-MM-DD HH:MM:SS"
+	materialType := c.PostForm("type")
+	dueDateStr := c.PostForm("due_date")
 
-	// Validate required fields
 	if classID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "class_id is required"})
 		return
@@ -492,7 +488,6 @@ func TeacherUploadLesson(c *gin.Context) {
 		return
 	}
 
-	// Parse due date if provided
 	var dueDate sql.NullTime
 	if dueDateStr != "" {
 		formats := []string{"2006-01-02 15:04:05", "2006-01-02"}
@@ -515,7 +510,6 @@ func TeacherUploadLesson(c *gin.Context) {
 		dueDate = sql.NullTime{Time: parsedTime, Valid: true}
 	}
 
-	// Verify that the class belongs to this teacher
 	var subjectID int
 	err := config.DB.QueryRow(`SELECT subject_id FROM teacher_subjects WHERE id = ? AND teacher_id = ?`, classID, teacherID).Scan(&subjectID)
 	if err != nil {
@@ -523,21 +517,18 @@ func TeacherUploadLesson(c *gin.Context) {
 		return
 	}
 
-	// Get uploaded file
 	file, err := c.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "File is required"})
 		return
 	}
 
-	// Allowed MIME types
 	allowedTypes := map[string][]string{
 		"image":    {"image/jpeg", "image/jpg", "image/png", "image/gif"},
 		"video":    {"video/mp4", "video/mpeg", "video/quicktime", "video/x-msvideo", "video/webm"},
 		"document": {"application/pdf"},
 	}
 
-	// Open file to detect MIME type
 	fileHeader, err := file.Open()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read file"})
@@ -554,7 +545,6 @@ func TeacherUploadLesson(c *gin.Context) {
 
 	contentType := http.DetectContentType(buffer)
 
-	// Validate file type
 	validType := false
 	for _, t := range allowedTypes[materialType] {
 		if t == contentType {
@@ -569,35 +559,30 @@ func TeacherUploadLesson(c *gin.Context) {
 		return
 	}
 
-	// Validate file size
-	maxSize := int64(10 * 1024 * 1024) // 10MB for images/documents
+	maxSize := int64(10 * 1024 * 1024)
 	if materialType == "video" {
-		maxSize = int64(100 * 1024 * 1024) // 100MB for videos
+		maxSize = int64(100 * 1024 * 1024)
 	}
 	if file.Size > maxSize {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("File too large. Max size: %dMB", maxSize/(1024*1024))})
 		return
 	}
 
-	// Create upload directory
 	uploadDir := "./uploads/lessons"
 	if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create upload directory"})
 		return
 	}
 
-	// Generate unique filename
 	fileExt := filepath.Ext(file.Filename)
 	fileName := fmt.Sprintf("%d_%d_%s%s", teacherID, time.Now().Unix(), strings.ReplaceAll(uuid.New().String(), "-", ""), fileExt)
 	filePath := filepath.Join(uploadDir, fileName)
 
-	// Save uploaded file
 	if err := c.SaveUploadedFile(file, filePath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save file"})
 		return
 	}
 
-	// Insert record into database
 	result, err := config.DB.Exec(`
 		INSERT INTO lesson_materials
 		(teacher_id, subject_id, class_id, title, description, type, file_name, file_path, file_size, due_date, created_at, updated_at)
@@ -611,7 +596,6 @@ func TeacherUploadLesson(c *gin.Context) {
 
 	materialID, _ := result.LastInsertId()
 
-	// Response
 	response := gin.H{
 		"message":     "Lesson material uploaded successfully",
 		"material_id": materialID,
@@ -643,7 +627,6 @@ func TeacherGetLessonMaterials(c *gin.Context) {
 		return
 	}
 
-	// Verify teacher owns this class
 	var exists bool
 	err := config.DB.QueryRow(`
 		SELECT EXISTS(SELECT 1 FROM teacher_subjects WHERE id = ? AND teacher_id = ?)
@@ -755,7 +738,6 @@ func TeacherGetSubmissions(c *gin.Context) {
 		return
 	}
 
-	// Verify teacher owns this material
 	var exists bool
 	err := config.DB.QueryRow(`
 		SELECT EXISTS(SELECT 1 FROM lesson_materials WHERE id = ? AND teacher_id = ?)
@@ -766,6 +748,8 @@ func TeacherGetSubmissions(c *gin.Context) {
 		return
 	}
 
+	// FIX: Added INNER JOIN students + AND st.status = 'approved'
+	// so submissions from non-approved students are excluded
 	query := `
 		SELECT 
 			ss.id,
@@ -782,6 +766,7 @@ func TeacherGetSubmissions(c *gin.Context) {
 		FROM student_submissions ss
 		INNER JOIN students st ON st.id = ss.student_id
 		WHERE ss.material_id = ?
+		AND st.status = 'approved'
 		ORDER BY ss.submitted_at DESC
 	`
 
@@ -861,7 +846,6 @@ func TeacherDeleteLessonMaterial(c *gin.Context) {
 		return
 	}
 
-	// Get file path and verify ownership
 	var filePath string
 	err := config.DB.QueryRow(`
 		SELECT file_path FROM lesson_materials 
@@ -878,7 +862,6 @@ func TeacherDeleteLessonMaterial(c *gin.Context) {
 		return
 	}
 
-	// Delete all student submissions first (files)
 	var submissionPaths []string
 	rows, _ := config.DB.Query(`SELECT file_path FROM student_submissions WHERE material_id = ?`, materialID)
 	if rows != nil {
@@ -890,14 +873,12 @@ func TeacherDeleteLessonMaterial(c *gin.Context) {
 		}
 	}
 
-	// Delete from database (CASCADE will handle student_submissions)
 	_, err = config.DB.Exec(`DELETE FROM lesson_materials WHERE id = ?`, materialID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete material"})
 		return
 	}
 
-	// Delete files from disk
 	os.Remove(filePath)
 	for _, path := range submissionPaths {
 		os.Remove(path)
@@ -906,7 +887,7 @@ func TeacherDeleteLessonMaterial(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Lesson material deleted successfully"})
 }
 
-// ===== UPDATE LESSON MATERIAL (including due date) =====
+// ===== UPDATE LESSON MATERIAL =====
 func TeacherUpdateLesson(c *gin.Context) {
 	role := c.GetString("role")
 	teacherID := c.GetInt("user_id")
@@ -917,7 +898,6 @@ func TeacherUpdateLesson(c *gin.Context) {
 		return
 	}
 
-	// Verify ownership
 	var exists bool
 	err := config.DB.QueryRow(`
 		SELECT EXISTS(SELECT 1 FROM lesson_materials WHERE id = ? AND teacher_id = ?)
@@ -928,12 +908,10 @@ func TeacherUpdateLesson(c *gin.Context) {
 		return
 	}
 
-	// Get form data
 	title := c.PostForm("title")
 	description := c.PostForm("description")
 	dueDateStr := c.PostForm("due_date")
 
-	// Parse due date if provided
 	var dueDate sql.NullTime
 	if dueDateStr != "" {
 		formats := []string{
@@ -959,7 +937,6 @@ func TeacherUpdateLesson(c *gin.Context) {
 		dueDate = sql.NullTime{Time: parsedTime, Valid: true}
 	}
 
-	// Update database
 	_, err = config.DB.Exec(`
 		UPDATE lesson_materials 
 		SET title = ?, description = ?, due_date = ?, updated_at = NOW()
@@ -982,8 +959,7 @@ func TeacherUpdateLesson(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// ===================== TEACHER REVIEW SUBMISSION =====================
-
+// ===== REVIEW SUBMISSION =====
 func TeacherReviewSubmission(c *gin.Context) {
 	role := c.GetString("role")
 	teacherID := c.GetInt("user_id")
@@ -995,9 +971,9 @@ func TeacherReviewSubmission(c *gin.Context) {
 	}
 
 	var request struct {
-		Status  string   `json:"status" binding:"required"` // "accepted", "rejected"
-		Grade   *float64 `json:"grade"`                     // Optional grade (0-100)
-		Remarks string   `json:"remarks"`                   // Feedback for student
+		Status  string   `json:"status" binding:"required"`
+		Grade   *float64 `json:"grade"`
+		Remarks string   `json:"remarks"`
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -1005,19 +981,17 @@ func TeacherReviewSubmission(c *gin.Context) {
 		return
 	}
 
-	// Validate status
 	if request.Status != "accepted" && request.Status != "rejected" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Status must be 'accepted' or 'rejected'"})
 		return
 	}
 
-	// Validate grade if provided
 	if request.Grade != nil && (*request.Grade < 0 || *request.Grade > 100) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Grade must be between 0 and 100"})
 		return
 	}
 
-	// Verify teacher owns this submission's lesson material
+	// FIX: Also verify that the submitting student is approved
 	var materialID int
 	var studentID int
 	var currentStatus string
@@ -1026,11 +1000,13 @@ func TeacherReviewSubmission(c *gin.Context) {
 		SELECT ss.material_id, ss.student_id, ss.status
 		FROM student_submissions ss
 		INNER JOIN lesson_materials lm ON ss.material_id = lm.id
+		INNER JOIN students st ON st.id = ss.student_id
 		WHERE ss.id = ? AND lm.teacher_id = ?
+		AND st.status = 'approved'
 	`, submissionID, teacherID).Scan(&materialID, &studentID, &currentStatus)
 
 	if err == sql.ErrNoRows {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Submission not found or not owned by you"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Submission not found, not owned by you, or student not yet approved"})
 		return
 	}
 
@@ -1039,7 +1015,6 @@ func TeacherReviewSubmission(c *gin.Context) {
 		return
 	}
 
-	// Update submission status and remarks
 	_, err = config.DB.Exec(`
 		UPDATE student_submissions
 		SET status = ?, remarks = ?, reviewed_at = NOW()
@@ -1051,16 +1026,13 @@ func TeacherReviewSubmission(c *gin.Context) {
 		return
 	}
 
-	// If grade is provided and submission is accepted, update or insert grade
 	if request.Grade != nil && request.Status == "accepted" {
-		// Get subject_id from material
 		var subjectID int
 		err = config.DB.QueryRow(`
 			SELECT subject_id FROM lesson_materials WHERE id = ?
 		`, materialID).Scan(&subjectID)
 
 		if err == nil {
-			// Check if grade record exists
 			var gradeID int
 			err = config.DB.QueryRow(`
 				SELECT id FROM grades 
@@ -1092,8 +1064,7 @@ func TeacherReviewSubmission(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// ===================== TEACHER GET PENDING SUBMISSIONS =====================
-
+// ===== GET PENDING SUBMISSIONS (only from approved students) =====
 func TeacherGetPendingSubmissions(c *gin.Context) {
 	role := c.GetString("role")
 	teacherID := c.GetInt("user_id")
@@ -1103,13 +1074,13 @@ func TeacherGetPendingSubmissions(c *gin.Context) {
 		return
 	}
 
-	// Optional: filter by class_id
 	classID := c.Query("class_id")
 
 	var query string
 	var args []interface{}
 
 	if classID != "" {
+		// FIX: Added AND st.status = 'approved'
 		query = `
 			SELECT 
 				ss.id,
@@ -1133,10 +1104,12 @@ func TeacherGetPendingSubmissions(c *gin.Context) {
 			WHERE lm.teacher_id = ? 
 			AND lm.class_id = ?
 			AND ss.status IN ('pending', 'on-time', 'late')
+			AND st.status = 'approved'
 			ORDER BY ss.submitted_at DESC
 		`
 		args = []interface{}{teacherID, classID}
 	} else {
+		// FIX: Added AND st.status = 'approved'
 		query = `
 			SELECT 
 				ss.id,
@@ -1159,6 +1132,7 @@ func TeacherGetPendingSubmissions(c *gin.Context) {
 			INNER JOIN subjects s ON lm.subject_id = s.id
 			WHERE lm.teacher_id = ?
 			AND ss.status IN ('pending', 'on-time', 'late')
+			AND st.status = 'approved'
 			ORDER BY ss.submitted_at DESC
 		`
 		args = []interface{}{teacherID}
@@ -1194,7 +1168,6 @@ func TeacherGetPendingSubmissions(c *gin.Context) {
 			return
 		}
 
-		// Normalize file path
 		cleanPath := strings.ReplaceAll(filePath, "\\", "/")
 		if strings.HasPrefix(cleanPath, "./") {
 			cleanPath = cleanPath[2:]
@@ -1246,7 +1219,6 @@ func TeacherPostAnnouncement(c *gin.Context) {
 		return
 	}
 
-	// Verify this class belongs to the teacher
 	var subjectID int
 	err := config.DB.QueryRow(`
         SELECT subject_id FROM teacher_subjects WHERE id = ? AND teacher_id = ?
@@ -1256,13 +1228,11 @@ func TeacherPostAnnouncement(c *gin.Context) {
 		return
 	}
 
-	// Handle optional image
 	var imageName, imagePath sql.NullString
 	var imageSize sql.NullInt64
 
 	file, err := c.FormFile("image")
 	if err == nil {
-		// Image was provided — validate it
 		allowedTypes := []string{"image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"}
 
 		fileHeader, err := file.Open()
@@ -1287,7 +1257,7 @@ func TeacherPostAnnouncement(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Image must be JPEG, PNG, GIF, or WebP"})
 			return
 		}
-		if file.Size > int64(10*1024*1024) { // 10MB max
+		if file.Size > int64(10*1024*1024) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Image too large. Max 10MB"})
 			return
 		}
