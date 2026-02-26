@@ -3,6 +3,40 @@ package config
 import "log"
 
 func MigrateDB() {
+
+	// ----------------  DROP ALL TABLES (reset) ----------------
+	drops := []string{
+		`SET FOREIGN_KEY_CHECKS = 0`,
+		`DROP TABLE IF EXISTS password_reset_tokens`,
+		`DROP TABLE IF EXISTS student_submissions`,
+		`DROP TABLE IF EXISTS lesson_materials`,
+		`DROP TABLE IF EXISTS records_announcements`,
+		`DROP TABLE IF EXISTS registrar_announcements`,
+		`DROP TABLE IF EXISTS announcements`,
+		`DROP TABLE IF EXISTS enrollment_applications`,
+		`DROP TABLE IF EXISTS document_requests`,
+		`DROP TABLE IF EXISTS student_installments`,
+		`DROP TABLE IF EXISTS payment_fees`,
+		`DROP TABLE IF EXISTS student_payments`,
+		`DROP TABLE IF EXISTS grades`,
+		`DROP TABLE IF EXISTS school_year`,
+		`DROP TABLE IF EXISTS teacher_subjects`,
+		`DROP TABLE IF EXISTS subjects`,
+		`DROP TABLE IF EXISTS courses`,
+		`DROP TABLE IF EXISTS student_academic`,
+		`DROP TABLE IF EXISTS student_family`,
+		`DROP TABLE IF EXISTS students`,
+		`DROP TABLE IF EXISTS users`,
+		`SET FOREIGN_KEY_CHECKS = 1`,
+	}
+
+	for _, q := range drops {
+		DB.Exec(q)
+	}
+
+	log.Println("🗑️ Old tables dropped")
+
+	// ---------------- CREATE ALL TABLES ----------------
 	queries := []string{
 
 		`CREATE TABLE IF NOT EXISTS users (
@@ -293,5 +327,5 @@ func MigrateDB() {
 		}
 	}
 
-	log.Println("✅ Database migrated")
+	log.Println("✅ Database migrated successfully")
 }
