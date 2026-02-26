@@ -34,7 +34,6 @@ function setFieldError(inputEl, message) {
     inputEl.classList.add('input-error');
     let errEl = inputEl.parentElement.querySelector('.field-error');
     if (!errEl) {
-        // Check one level up (input-wrap scenario)
         errEl = inputEl.closest('.form-group') && inputEl.closest('.form-group').querySelector('.field-error');
     }
     if (errEl) {
@@ -64,7 +63,6 @@ function attachFilter(id, ruleKey, extraValidation) {
     const [regex, maxLen, hint] = RULES[ruleKey];
 
     el.addEventListener('input', function () {
-        // Strip any character not matching the allowed set
         const cursor = this.selectionStart;
         const filtered = this.value.split('').filter(c => regex.test(c)).join('');
         this.value = filtered.length > maxLen ? filtered.slice(0, maxLen) : filtered;
@@ -126,19 +124,22 @@ function validateEmail(val) {
    ============================================================ */
 document.addEventListener('DOMContentLoaded', function () {
 
-    /* --- LOGIN FIELDS --- */
-    // Student ID in login: digits and hyphens only
+    /* --- LOGIN FIELDS ---
+       Allow letters, numbers, hyphens, underscores, dots
+       so both student IDs (2024-00001) and admin/staff usernames work
+    --- */
     const loginId = document.getElementById('login_id');
     if (loginId) {
         loginId.addEventListener('input', function () {
-            const [regex, maxLen] = RULES.student_id;
-            const filtered = this.value.split('').filter(c => regex.test(c)).join('');
-            this.value = filtered.length > maxLen ? filtered.slice(0, maxLen) : filtered;
+            // Allow letters (a-z, A-Z), numbers, hyphens, underscores, dots
+            const filtered = this.value.replace(/[^A-Za-z0-9\-_.]/g, '');
+            this.value = filtered.length > 50 ? filtered.slice(0, 50) : filtered;
+            clearFieldError(this);
+            this.classList.remove('input-valid');
         });
         loginId.addEventListener('blur', function () {
             if (!this.value) return;
-            const msg = validateStudentId(this.value);
-            msg ? setFieldError(this, msg) : setFieldValid(this);
+            setFieldValid(this);
         });
     }
 
@@ -175,7 +176,6 @@ document.addEventListener('DOMContentLoaded', function () {
     attachFilter('father_last_name',   'name',    null);
     attachFilter('father_occupation',  'text_gen', null);
     attachFilter('father_contact_number', 'contact', validateContact);
-    // father_address is a textarea — attach manually
     const fAddr = document.getElementById('father_address');
     if (fAddr) {
         fAddr.addEventListener('input', function () {
@@ -374,11 +374,11 @@ function checkPasswordMatch() {
 }
 
 async function submitResetPassword() {
-    const btn            = document.getElementById('resetBtn');
-    const msgEl          = document.getElementById('resetMsg');
-    const params         = new URLSearchParams(window.location.search);
-    const token          = params.get('token');
-    const newPassword    = document.getElementById('new_password').value;
+    const btn             = document.getElementById('resetBtn');
+    const msgEl           = document.getElementById('resetMsg');
+    const params          = new URLSearchParams(window.location.search);
+    const token           = params.get('token');
+    const newPassword     = document.getElementById('new_password').value;
     const confirmPassword = document.getElementById('confirm_password').value;
     msgEl.className = 'message-box';
     msgEl.innerHTML = '';
@@ -410,23 +410,18 @@ async function submitResetPassword() {
    LOGIN
    ============================================================ */
 async function login() {
-    const btn         = event.target;
+    const btn          = event.target;
     const originalHTML = btn.innerHTML;
-    const msgEl       = document.getElementById('loginMsg');
-    msgEl.className   = 'message-box';
-    msgEl.innerHTML   = '';
+    const msgEl        = document.getElementById('loginMsg');
+    msgEl.className    = 'message-box';
+    msgEl.innerHTML    = '';
 
     const loginId  = document.getElementById('login_id').value.trim();
     const password = document.getElementById('login_password').value;
 
-    // Validate login ID
-    const idError = validateStudentId(loginId);
+    // Just check not empty — supports both student IDs (2024-00001) and admin usernames (admin, faculty01)
     if (!loginId) {
-        setFieldError(document.getElementById('login_id'), 'Student ID is required.');
-        return;
-    }
-    if (idError) {
-        setFieldError(document.getElementById('login_id'), idError);
+        setFieldError(document.getElementById('login_id'), 'Please enter your Student ID or Username.');
         return;
     }
     if (!password) {
@@ -494,14 +489,15 @@ function removeSubject(id) {
 function updateProgress() {
     const fields = ['student_id','password','first_name','last_name','age','contact_number','email','address','last_school_attended','last_school_year','course','year_level','semester','scholarship_status'];
     let filled = fields.filter(f => { const el = document.getElementById(f); return el && el.value.trim(); }).length;
-    if (Array.from(document.getElementById('subjects').selectedOptions).length > 0) filled++;
+    const subjectsEl = document.getElementById('subjects');
+    if (subjectsEl && Array.from(subjectsEl.selectedOptions).length > 0) filled++;
     const total     = fields.length + 1;
     const pct       = Math.round((filled / total) * 100);
     const indicator = document.getElementById('progressIndicator');
-    if (filled > 0) {
+    if (indicator && filled > 0) {
         indicator.style.display = 'block';
-        document.getElementById('progressFill').style.width      = pct + '%';
-        document.getElementById('progressPercent').textContent   = pct + '%';
+        document.getElementById('progressFill').style.width    = pct + '%';
+        document.getElementById('progressPercent').textContent = pct + '%';
     }
 }
 
@@ -599,37 +595,37 @@ function validateRegisterForm(fields) {
     if (!fields.last_school_year) errors.push('School year is required.');
     else if (validateSchoolYear(fields.last_school_year)) errors.push(validateSchoolYear(fields.last_school_year));
 
-    if (!fields.course)            errors.push('Please select a course.');
-    if (!fields.year_level)        errors.push('Please select a year level.');
-    if (!fields.semester)          errors.push('Please select a semester.');
+    if (!fields.course)             errors.push('Please select a course.');
+    if (!fields.year_level)         errors.push('Please select a year level.');
+    if (!fields.semester)           errors.push('Please select a semester.');
     if (!fields.scholarship_status) errors.push('Please select scholarship status.');
 
     return errors;
 }
 
 async function register() {
-    const btn         = event.target;
+    const btn          = event.target;
     const originalHTML = btn.innerHTML;
-    const msgEl       = document.getElementById('registerMsg');
-    msgEl.className   = 'message-box';
-    msgEl.innerHTML   = '';
+    const msgEl        = document.getElementById('registerMsg');
+    msgEl.className    = 'message-box';
+    msgEl.innerHTML    = '';
 
     const fields = {
-        student_id:          document.getElementById('student_id').value.trim(),
-        password:            document.getElementById('password').value,
-        first_name:          document.getElementById('first_name').value.trim(),
-        middle_name:         document.getElementById('middle_name').value.trim(),
-        last_name:           document.getElementById('last_name').value.trim(),
-        age:                 document.getElementById('age').value,
-        contact_number:      document.getElementById('contact_number').value.trim(),
-        email:               document.getElementById('email').value.trim(),
-        address:             document.getElementById('address').value.trim(),
+        student_id:           document.getElementById('student_id').value.trim(),
+        password:             document.getElementById('password').value,
+        first_name:           document.getElementById('first_name').value.trim(),
+        middle_name:          document.getElementById('middle_name').value.trim(),
+        last_name:            document.getElementById('last_name').value.trim(),
+        age:                  document.getElementById('age').value,
+        contact_number:       document.getElementById('contact_number').value.trim(),
+        email:                document.getElementById('email').value.trim(),
+        address:              document.getElementById('address').value.trim(),
         last_school_attended: document.getElementById('last_school_attended').value.trim(),
-        last_school_year:    document.getElementById('last_school_year').value.trim(),
-        course:              document.getElementById('course').value,
-        year_level:          document.getElementById('year_level').value,
-        semester:            document.getElementById('semester').value,
-        scholarship_status:  document.getElementById('scholarship_status').value,
+        last_school_year:     document.getElementById('last_school_year').value.trim(),
+        course:               document.getElementById('course').value,
+        year_level:           document.getElementById('year_level').value,
+        semester:             document.getElementById('semester').value,
+        scholarship_status:   document.getElementById('scholarship_status').value,
     };
 
     const errors = validateRegisterForm(fields);
@@ -651,19 +647,19 @@ async function register() {
     const payload = {
         ...fields,
         age: parseInt(fields.age) || 18,
-        father_first_name:      document.getElementById('father_first_name').value.trim(),
-        father_middle_name:     document.getElementById('father_middle_name').value.trim(),
-        father_last_name:       document.getElementById('father_last_name').value.trim(),
-        father_occupation:      document.getElementById('father_occupation').value.trim(),
-        father_contact_number:  document.getElementById('father_contact_number').value.trim(),
-        father_address:         document.getElementById('father_address').value.trim(),
-        mother_first_name:      document.getElementById('mother_first_name').value.trim(),
-        mother_middle_name:     document.getElementById('mother_middle_name').value.trim(),
-        mother_last_name:       document.getElementById('mother_last_name').value.trim(),
-        mother_occupation:      document.getElementById('mother_occupation').value.trim(),
-        mother_contact_number:  document.getElementById('mother_contact_number').value.trim(),
-        mother_address:         document.getElementById('mother_address').value.trim(),
-        subjects:               selectedSubjects,
+        father_first_name:     document.getElementById('father_first_name').value.trim(),
+        father_middle_name:    document.getElementById('father_middle_name').value.trim(),
+        father_last_name:      document.getElementById('father_last_name').value.trim(),
+        father_occupation:     document.getElementById('father_occupation').value.trim(),
+        father_contact_number: document.getElementById('father_contact_number').value.trim(),
+        father_address:        document.getElementById('father_address').value.trim(),
+        mother_first_name:     document.getElementById('mother_first_name').value.trim(),
+        mother_middle_name:    document.getElementById('mother_middle_name').value.trim(),
+        mother_last_name:      document.getElementById('mother_last_name').value.trim(),
+        mother_occupation:     document.getElementById('mother_occupation').value.trim(),
+        mother_contact_number: document.getElementById('mother_contact_number').value.trim(),
+        mother_address:        document.getElementById('mother_address').value.trim(),
+        subjects:              selectedSubjects,
     };
 
     btn.innerHTML = '<span class="spinner"></span> Submitting Application...';
