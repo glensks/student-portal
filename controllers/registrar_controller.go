@@ -273,13 +273,8 @@ func RegistrarApproveWithAssessment(c *gin.Context) {
 		return
 	}
 
-	// ===== GENERATE DEFAULT PASSWORD =====
-	rawPassword, err := generateDefaultPassword()
-	if err != nil {
-		tx.Rollback()
-		c.JSON(500, gin.H{"error": "Failed to generate password"})
-		return
-	}
+	// ===== DEFAULT PASSWORD =====
+	rawPassword := "12345678"
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(rawPassword), bcrypt.DefaultCost)
 	if err != nil {
