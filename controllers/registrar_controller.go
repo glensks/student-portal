@@ -29,8 +29,8 @@ type StudentSubject struct {
 }
 
 type Student struct {
-	ID                int              `json:"-"`
-	StudentID         string           `json:"student_id"`
+	ID                int              `json:"id"`         // ✅ EXPOSED — frontend uses this to identify pending students
+	StudentID         string           `json:"student_id"` // NULL for pending students
 	FirstName         string           `json:"first_name"`
 	LastName          string           `json:"last_name"`
 	FullName          string           `json:"full_name"`
@@ -67,10 +67,11 @@ type PaymentDetails struct {
 }
 
 type ApproveWithAssessmentRequest struct {
-	StudentID  string       `json:"student_id"`
-	Semester   string       `json:"semester"`
-	SchoolYear string       `json:"school_year"`
-	OtherFees  []PaymentFee `json:"other_fees"`
+	// For pending students (no student_id yet), frontend sends the DB row id as a string
+	StudentDBID string       `json:"student_db_id"`
+	Semester    string       `json:"semester"`
+	SchoolYear  string       `json:"school_year"`
+	OtherFees   []PaymentFee `json:"other_fees"`
 }
 
 /* =======================
@@ -107,8 +108,8 @@ func generateStudentID(tx *sql.Tx) (string, error) {
 	}
 }
 
-// generateDefaultPassword returns a random 8-character password
-// Uses uppercase letters + digits, excludes ambiguous chars (0/O, 1/I/L)
+// generateDefaultPassword returns a random 8-character password.
+// Uses uppercase letters + digits, excludes ambiguous chars (0/O, 1/I/L).
 func generateDefaultPassword() (string, error) {
 	const charset = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 	result := make([]byte, 8)
@@ -186,7 +187,7 @@ func RegistrarGetStudentsByStatus(c *gin.Context) {
 			for _, id := range ids {
 				var subj StudentSubject
 				config.DB.QueryRow(
-					`SELECT code, subject_name FROM subjects WHERE id=?`,
+					`SELECT IFNULL(code,''), subject_name FROM subjects WHERE id=?`,
 					strings.TrimSpace(id),
 				).Scan(&subj.SubjectCode, &subj.SubjectName)
 				s.Subjects = append(s.Subjects, subj)
@@ -202,12 +203,15 @@ func RegistrarGetStudentsByStatus(c *gin.Context) {
 /* ====================================================
 APPROVE WITH ASSESSMENT
 (Initial Enrollment — new student registered via portal)
-When registrar approves:
-  1. Generates a Student ID (format: YYYY-NNNNN)
-  2. Generates a random default password
-  3. Hashes and saves the password to students table
-  4. Creates billing record
-  5. Sends email with credentials + billing statement
+
+Flow:
+  1. Frontend sends student.id (DB row id) — NOT student_id (which is NULL for pending)
+  2. Look up student by DB row id (st.id = ?)
+  3. Generate Student ID (YYYY-NNNNN format)
+  4. Generate random default password, bcrypt hash it
+  5. Save student_id + password to students table
+  6. Create billing record
+  7. Send email with credentials + billing statement
 ==================================================== */
 
 func RegistrarApproveWithAssessment(c *gin.Context) {
@@ -215,6 +219,11 @@ func RegistrarApproveWithAssessment(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(400, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	if req.StudentDBID == "" {
+		c.JSON(400, gin.H{"error": "student_db_id is required"})
 		return
 	}
 
@@ -227,21 +236,20 @@ func RegistrarApproveWithAssessment(c *gin.Context) {
 	var studentDBID, totalUnits int
 	var scholarshipStatus, studentEmail, firstName, lastName string
 
-	// ===== GET STUDENT INFO =====
-	// At this point student_id in students table is still NULL (pending student)
-	// So we look up by the internal DB id passed from the frontend as student_id field
-	// (The frontend sends s.student_id which for pending students is the DB row id string)
+	// ===== GET STUDENT INFO BY DB ROW ID =====
+	// Pending students have student_id = NULL in DB.
+	// The frontend sends s.id (the DB row id) as student_db_id.
 	err = tx.QueryRow(`
 		SELECT st.id,
-		       IFNULL(sa.total_units,0),
-		       IFNULL(sa.scholarship_status,''),
+		       IFNULL(sa.total_units, 0),
+		       IFNULL(sa.scholarship_status, ''),
 		       st.email,
 		       st.first_name,
 		       st.last_name
 		FROM students st
 		LEFT JOIN student_academic sa ON sa.student_id = st.id
-		WHERE st.student_id = ?
-	`, req.StudentID).Scan(
+		WHERE st.id = ?
+	`, req.StudentDBID).Scan(
 		&studentDBID,
 		&totalUnits,
 		&scholarshipStatus,
@@ -341,7 +349,7 @@ func RegistrarApproveWithAssessment(c *gin.Context) {
 
 	if err != nil {
 		tx.Rollback()
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(500, gin.H{"error": "Failed to update student: " + err.Error()})
 		return
 	}
 
@@ -374,7 +382,7 @@ func RegistrarApproveWithAssessment(c *gin.Context) {
 	style="background:#ffffff;border-radius:12px;overflow:hidden;
 	       box-shadow:0 4px 20px rgba(0,0,0,0.08);max-width:600px;width:100%%;">
 
-	<!-- ===== HEADER ===== -->
+	<!-- HEADER -->
 	<tr>
 		<td style="background:linear-gradient(135deg,#1b4332,#2d6a4f);padding:36px 40px;text-align:center;">
 			<div style="font-size:52px;margin-bottom:12px;">🎓</div>
@@ -387,7 +395,7 @@ func RegistrarApproveWithAssessment(c *gin.Context) {
 		</td>
 	</tr>
 
-	<!-- ===== GREETING ===== -->
+	<!-- GREETING -->
 	<tr>
 		<td style="padding:32px 40px 0;">
 			<p style="margin:0;font-size:15px;color:#333;line-height:1.7;">
@@ -399,7 +407,7 @@ func RegistrarApproveWithAssessment(c *gin.Context) {
 		</td>
 	</tr>
 
-	<!-- ===== CREDENTIALS CARD ===== -->
+	<!-- CREDENTIALS CARD -->
 	<tr>
 		<td style="padding:24px 40px 0;">
 			<table width="100%%" cellpadding="0" cellspacing="0"
@@ -444,7 +452,7 @@ func RegistrarApproveWithAssessment(c *gin.Context) {
 		</td>
 	</tr>
 
-	<!-- ===== ENROLLMENT DETAILS ===== -->
+	<!-- ENROLLMENT DETAILS -->
 	<tr>
 		<td style="padding:24px 40px 0;">
 			<table width="100%%" cellpadding="0" cellspacing="0"
@@ -483,7 +491,7 @@ func RegistrarApproveWithAssessment(c *gin.Context) {
 		</td>
 	</tr>
 
-	<!-- ===== BILLING STATEMENT ===== -->
+	<!-- BILLING STATEMENT -->
 	<tr>
 		<td style="padding:24px 40px 0;">
 			<p style="margin:0 0 10px;font-size:12px;font-weight:700;color:#888;
@@ -519,7 +527,7 @@ func RegistrarApproveWithAssessment(c *gin.Context) {
 		</td>
 	</tr>
 
-	<!-- ===== PAYMENT STATUS ===== -->
+	<!-- PAYMENT STATUS -->
 	<tr>
 		<td style="padding:20px 40px 0;text-align:center;">
 			<table cellpadding="0" cellspacing="0" style="display:inline-table;margin:auto;">
@@ -534,7 +542,7 @@ func RegistrarApproveWithAssessment(c *gin.Context) {
 		</td>
 	</tr>
 
-	<!-- ===== REMINDER ===== -->
+	<!-- REMINDER -->
 	<tr>
 		<td style="padding:24px 40px;">
 			<table width="100%%" cellpadding="0" cellspacing="0"
@@ -550,7 +558,7 @@ func RegistrarApproveWithAssessment(c *gin.Context) {
 		</td>
 	</tr>
 
-	<!-- ===== FOOTER ===== -->
+	<!-- FOOTER -->
 	<tr>
 		<td style="background:#f5f7fa;padding:20px 40px;text-align:center;border-top:1px solid #e8e8e8;">
 			<p style="margin:0 0 4px;font-size:12px;color:#aaa;">
@@ -588,7 +596,6 @@ func RegistrarApproveWithAssessment(c *gin.Context) {
 		emailBody,
 	)
 
-	// ===== RESPONSE =====
 	c.JSON(200, gin.H{
 		"message":              "Student approved with assessment",
 		"generated_student_id": generatedStudentID,
@@ -943,7 +950,7 @@ func RegistrarGetEnrollmentApplications(c *gin.Context) {
 }
 
 // POST /registrar/enrollment-applications/approve
-// Re-enrollment approval — student already HAS credentials, just send billing email
+// Re-enrollment: student already HAS credentials — only send billing email
 func RegistrarApproveEnrollmentApplication(c *gin.Context) {
 	var req struct {
 		EnrollmentID int          `json:"enrollment_id"`
@@ -1083,28 +1090,22 @@ func RegistrarApproveEnrollmentApplication(c *gin.Context) {
 <table width="600" cellpadding="0" cellspacing="0"
 	style="background:#ffffff;border-radius:12px;overflow:hidden;
 	       box-shadow:0 4px 20px rgba(0,0,0,0.08);max-width:600px;width:100%%;">
-
 	<tr>
 		<td style="background:linear-gradient(135deg,#1b4332,#2d6a4f);padding:36px 40px;text-align:center;">
 			<div style="font-size:52px;margin-bottom:12px;">✅</div>
 			<h1 style="margin:0;color:#ffffff;font-size:26px;font-weight:700;">Re-Enrollment Approved!</h1>
-			<p style="margin:10px 0 0;color:#95d5b2;font-size:14px;">
-				Your re-enrollment application has been approved.
-			</p>
+			<p style="margin:10px 0 0;color:#95d5b2;font-size:14px;">Your re-enrollment has been approved.</p>
 		</td>
 	</tr>
-
 	<tr>
 		<td style="padding:32px 40px 0;">
 			<p style="margin:0;font-size:15px;color:#333;line-height:1.7;">
 				Dear <strong>%s %s</strong>,<br><br>
-				Your re-enrollment application for <strong>%s — %s</strong> has been approved by the
-				Registrar's Office. Please review your billing statement below and settle your balance
-				before the payment deadline.
+				Your re-enrollment for <strong>%s — %s</strong> has been approved by the Registrar's Office.
+				Please review your billing statement below and settle your balance before the payment deadline.
 			</p>
 		</td>
 	</tr>
-
 	<tr>
 		<td style="padding:24px 40px 0;">
 			<p style="margin:0 0 10px;font-size:12px;font-weight:700;color:#888;
@@ -1119,8 +1120,7 @@ func RegistrarApproveEnrollmentApplication(c *gin.Context) {
 				</tr>
 				<tr>
 					<td style="padding:12px;color:#444;font-size:14px;">
-						Tuition Fee
-						<span style="font-size:12px;color:#999;display:block;">%d units</span>
+						Tuition Fee<span style="font-size:12px;color:#999;display:block;">%d units</span>
 					</td>
 					<td style="padding:12px;text-align:right;color:#444;font-size:14px;">&#8369;%d</td>
 				</tr>
@@ -1128,14 +1128,11 @@ func RegistrarApproveEnrollmentApplication(c *gin.Context) {
 				<tr><td colspan="2" style="padding:0;border-top:2px solid #e3eefb;"></td></tr>
 				<tr style="background:#f0f7ff;">
 					<td style="padding:14px 12px;font-size:16px;font-weight:700;color:#1565c0;">Total Amount Due</td>
-					<td style="padding:14px 12px;font-size:16px;font-weight:700;color:#1565c0;text-align:right;">
-						&#8369;%d
-					</td>
+					<td style="padding:14px 12px;font-size:16px;font-weight:700;color:#1565c0;text-align:right;">&#8369;%d</td>
 				</tr>
 			</table>
 		</td>
 	</tr>
-
 	<tr>
 		<td style="padding:20px 40px 0;text-align:center;">
 			<table cellpadding="0" cellspacing="0" style="display:inline-table;margin:auto;">
@@ -1149,30 +1146,25 @@ func RegistrarApproveEnrollmentApplication(c *gin.Context) {
 			</table>
 		</td>
 	</tr>
-
 	<tr>
 		<td style="padding:24px 40px;">
 			<table width="100%%" cellpadding="0" cellspacing="0"
 				style="background:#fff3e0;border-left:4px solid #fb8c00;border-radius:0 8px 8px 0;">
 				<tr>
 					<td style="padding:14px 18px;font-size:13px;color:#555;line-height:1.7;">
-						🔔 <strong>Reminder:</strong> Please settle your balance at the Cashier's Office or
-						through the Student Portal before the payment deadline.
+						🔔 <strong>Reminder:</strong> Please settle your balance before the payment deadline.
 					</td>
 				</tr>
 			</table>
 		</td>
 	</tr>
-
 	<tr>
 		<td style="background:#f5f7fa;padding:20px 40px;text-align:center;border-top:1px solid #e8e8e8;">
 			<p style="margin:0;font-size:12px;color:#aaa;">
-				Automated notification from the University of Manila Student Portal.
-				Please do not reply to this email.
+				Automated notification from the University of Manila Student Portal. Do not reply.
 			</p>
 		</td>
 	</tr>
-
 </table>
 </td></tr>
 </table>
@@ -1232,9 +1224,10 @@ func RegistrarRejectEnrollmentApplication(c *gin.Context) {
 }
 
 // POST /registrar/student/status
+// Works for both pending (no student_id yet → match by DB id) and existing students
 func RegistrarUpdateStudentStatus(c *gin.Context) {
 	var req struct {
-		StudentID string `json:"student_id"`
+		StudentID string `json:"student_id"` // DB row id (as string) for pending students
 		Action    string `json:"action"`
 		Remarks   string `json:"remarks"`
 	}
@@ -1254,9 +1247,10 @@ func RegistrarUpdateStudentStatus(c *gin.Context) {
 		return
 	}
 
+	// Try matching by DB row id first (pending students), then by student_id column
 	result, err := config.DB.Exec(`
-        UPDATE students SET status = ? WHERE student_id = ?
-    `, newStatus, req.StudentID)
+        UPDATE students SET status = ? WHERE id = ? OR student_id = ?
+    `, newStatus, req.StudentID, req.StudentID)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return

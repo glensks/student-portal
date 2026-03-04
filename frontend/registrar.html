@@ -1373,12 +1373,12 @@ function renderAssessmentUI(s, safeId) {
             <div class="totals-box" id="total-${safeId}"></div>
             <div class="action-buttons">
                 <button class="btn btn-approve" id="approve-${safeId}">Approve & Create Bill</button>
-                <button class="btn btn-reject" onclick="rejectStudent('${esc(s.student_id)}')">Reject</button>
+                <button class="btn btn-reject" onclick="rejectStudent(${s.id})">Reject</button>
             </div>
         </div>`;
 
     const rateInput = document.getElementById(`rate-${safeId}`);
-    const rateNote = document.getElementById(`rate-note-${safeId}`);
+    const rateNote  = document.getElementById(`rate-note-${safeId}`);
     let rate = 800;
     if ((s.scholarship_status || "").toLowerCase().trim() === "scholar") {
         rate = 500;
@@ -1390,9 +1390,12 @@ function renderAssessmentUI(s, safeId) {
 
     const feesDiv = document.getElementById(`fees-${safeId}`);
     DEFAULT_FEES.forEach(fee => addFeeRow(feesDiv, safeId, fee.name, fee.amount));
+
+    // ✅ Pass s.id (DB row id) — NOT s.student_id which is null for pending students
     document.getElementById(`approve-${safeId}`).addEventListener("click", () => approveStudent(s, safeId));
     computeTotals(safeId);
 }
+
 
 function addFeeRow(parent, safeId, name = "", amount = "") {
     const row = document.createElement("div");
@@ -1443,7 +1446,7 @@ async function approveStudent(student, safeId) {
     const otherFees = [];
     document.querySelectorAll(`#fees-${safeId} .fee-row`).forEach(r => {
         const name = r.children[0].value.trim();
-        const amt = Number(r.children[1].value || 0);
+        const amt  = Number(r.children[1].value || 0);
         if (name && amt > 0) otherFees.push({ fee_name: name, amount: amt });
     });
 
@@ -1452,16 +1455,21 @@ async function approveStudent(student, safeId) {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                student_id: student.student_id,
-                semester: student.semester,
-                school_year: "2025-2026",
-                rate_per_unit: 0,
-                other_fees: otherFees
+                student_db_id: String(student.id),   // ✅ DB row id — works even when student_id is NULL
+                semester:      student.semester,
+                school_year:   "2025-2026",
+                other_fees:    otherFees
             })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Approval failed");
-        alert("✅ Student approved successfully!\n\nTotal bill: ₱" + data.total_amount.toLocaleString());
+
+        alert(
+            "✅ Student approved successfully!\n\n" +
+            "Student ID: " + data.generated_student_id + "\n" +
+            "Total bill: ₱" + data.total_amount.toLocaleString() + "\n\n" +
+            "Login credentials have been sent to the student's email."
+        );
         filterStudents();
     } catch (err) {
         alert("❌ Error: " + err.message);
@@ -1470,14 +1478,18 @@ async function approveStudent(student, safeId) {
     }
 }
 
-async function rejectStudent(studentId) {
+async function rejectStudent(studentDbId) {
     const remarks = prompt("Reason for rejection (optional):") ?? '';
     if (!confirm("⚠️ Are you sure you want to reject this student's enrollment?")) return;
     try {
         const res = await fetch('/registrar/student/status', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ student_id: studentId, action: "reject", remarks: remarks })
+            body: JSON.stringify({
+                student_id: String(studentDbId),  // ✅ DB row id — backend matches by id OR student_id
+                action:     "reject",
+                remarks:    remarks
+            })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Rejection failed');
