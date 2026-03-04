@@ -1,8 +1,10 @@
 package controllers
 
 import (
+	"crypto/rand"
 	"database/sql"
 	"fmt"
+	"math/big"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -14,6 +16,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 /* =======================
@@ -33,7 +36,7 @@ type Student struct {
 	FullName          string           `json:"full_name"`
 	Course            string           `json:"course"`
 	YearLevel         string           `json:"year_level"`
-	Semester          string           `json:"semester"` // ✅ INCLUDED
+	Semester          string           `json:"semester"`
 	ScholarshipStatus string           `json:"scholarship_status"`
 	Status            string           `json:"status"`
 	Subjects          []StudentSubject `json:"subjects"`
@@ -53,7 +56,7 @@ type PaymentDetails struct {
 	PaymentID      int          `json:"payment_id"`
 	StudentID      string       `json:"student_id"`
 	FullName       string       `json:"full_name"`
-	Semester       string       `json:"semester"` // ✅ INCLUDED
+	Semester       string       `json:"semester"`
 	Scholarship    string       `json:"scholarship_status"`
 	TotalUnits     int          `json:"total_units"`
 	OtherFees      []PaymentFee `json:"other_fees"`
@@ -65,9 +68,58 @@ type PaymentDetails struct {
 
 type ApproveWithAssessmentRequest struct {
 	StudentID  string       `json:"student_id"`
-	Semester   string       `json:"semester"`    // ✅ REQUIRED
-	SchoolYear string       `json:"school_year"` // ✅ REQUIRED
+	Semester   string       `json:"semester"`
+	SchoolYear string       `json:"school_year"`
 	OtherFees  []PaymentFee `json:"other_fees"`
+}
+
+/* =======================
+HELPERS
+======================= */
+
+// generateStudentID generates a unique student ID in the format YYYY-NNNNN
+// e.g. 2025-00001, 2025-00002, etc.
+func generateStudentID(tx *sql.Tx) (string, error) {
+	year := time.Now().Year()
+	prefix := fmt.Sprintf("%d-", year)
+
+	var count int
+	err := tx.QueryRow(
+		`SELECT COUNT(*) FROM students WHERE student_id LIKE ?`,
+		prefix+"%",
+	).Scan(&count)
+	if err != nil {
+		return "", err
+	}
+
+	// Keep incrementing until a non-taken ID is found (handles gaps/deletions)
+	for {
+		candidate := fmt.Sprintf("%d-%05d", year, count+1)
+		var exists int
+		tx.QueryRow(
+			`SELECT COUNT(*) FROM students WHERE student_id = ?`,
+			candidate,
+		).Scan(&exists)
+		if exists == 0 {
+			return candidate, nil
+		}
+		count++
+	}
+}
+
+// generateDefaultPassword returns a random 8-character password
+// Uses uppercase letters + digits, excludes ambiguous chars (0/O, 1/I/L)
+func generateDefaultPassword() (string, error) {
+	const charset = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+	result := make([]byte, 8)
+	for i := range result {
+		n, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+		if err != nil {
+			return "", err
+		}
+		result[i] = charset[n.Int64()]
+	}
+	return string(result), nil
 }
 
 /* =======================
@@ -80,7 +132,7 @@ func RegistrarGetStudentsByStatus(c *gin.Context) {
 	rows, err := config.DB.Query(`
 		SELECT 
 			st.id,
-			st.student_id,
+			IFNULL(st.student_id,''),
 			st.first_name,
 			st.last_name,
 			IFNULL(c.course_name,''),
@@ -88,7 +140,7 @@ func RegistrarGetStudentsByStatus(c *gin.Context) {
 			IFNULL(sa.scholarship_status,''),
 			st.status,
 			IFNULL(sa.total_units,0),
-			IFNULL(sa.semester,''),     -- ✅ SEMESTER
+			IFNULL(sa.semester,''),
 			IFNULL(sa.subjects,'')
 		FROM students st
 		LEFT JOIN student_academic sa ON sa.student_id = st.id
@@ -118,7 +170,7 @@ func RegistrarGetStudentsByStatus(c *gin.Context) {
 			&s.ScholarshipStatus,
 			&s.Status,
 			&s.TotalUnits,
-			&s.Semester, // ✅ SCANNED
+			&s.Semester,
 			&subjectsStr,
 		)
 		if err != nil {
@@ -137,7 +189,6 @@ func RegistrarGetStudentsByStatus(c *gin.Context) {
 					`SELECT code, subject_name FROM subjects WHERE id=?`,
 					strings.TrimSpace(id),
 				).Scan(&subj.SubjectCode, &subj.SubjectName)
-
 				s.Subjects = append(s.Subjects, subj)
 			}
 		}
@@ -148,9 +199,16 @@ func RegistrarGetStudentsByStatus(c *gin.Context) {
 	c.JSON(200, gin.H{"students": students})
 }
 
-/* =======================
+/* ====================================================
 APPROVE WITH ASSESSMENT
-======================= */
+(Initial Enrollment — new student registered via portal)
+When registrar approves:
+  1. Generates a Student ID (format: YYYY-NNNNN)
+  2. Generates a random default password
+  3. Hashes and saves the password to students table
+  4. Creates billing record
+  5. Sends email with credentials + billing statement
+==================================================== */
 
 func RegistrarApproveWithAssessment(c *gin.Context) {
 	var req ApproveWithAssessmentRequest
@@ -167,14 +225,19 @@ func RegistrarApproveWithAssessment(c *gin.Context) {
 	}
 
 	var studentDBID, totalUnits int
-	var scholarshipStatus, studentEmail string
+	var scholarshipStatus, studentEmail, firstName, lastName string
 
 	// ===== GET STUDENT INFO =====
+	// At this point student_id in students table is still NULL (pending student)
+	// So we look up by the internal DB id passed from the frontend as student_id field
+	// (The frontend sends s.student_id which for pending students is the DB row id string)
 	err = tx.QueryRow(`
 		SELECT st.id,
 		       IFNULL(sa.total_units,0),
 		       IFNULL(sa.scholarship_status,''),
-		       st.email
+		       st.email,
+		       st.first_name,
+		       st.last_name
 		FROM students st
 		LEFT JOIN student_academic sa ON sa.student_id = st.id
 		WHERE st.student_id = ?
@@ -183,6 +246,8 @@ func RegistrarApproveWithAssessment(c *gin.Context) {
 		&totalUnits,
 		&scholarshipStatus,
 		&studentEmail,
+		&firstName,
+		&lastName,
 	)
 
 	if err != nil {
@@ -191,9 +256,32 @@ func RegistrarApproveWithAssessment(c *gin.Context) {
 		return
 	}
 
+	// ===== GENERATE STUDENT ID =====
+	generatedStudentID, err := generateStudentID(tx)
+	if err != nil {
+		tx.Rollback()
+		c.JSON(500, gin.H{"error": "Failed to generate student ID: " + err.Error()})
+		return
+	}
+
+	// ===== GENERATE DEFAULT PASSWORD =====
+	rawPassword, err := generateDefaultPassword()
+	if err != nil {
+		tx.Rollback()
+		c.JSON(500, gin.H{"error": "Failed to generate password"})
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(rawPassword), bcrypt.DefaultCost)
+	if err != nil {
+		tx.Rollback()
+		c.JSON(500, gin.H{"error": "Failed to hash password"})
+		return
+	}
+
 	// ===== COMPUTE TUITION =====
 	tuition := 800 * totalUnits
-	if strings.ToLower(scholarshipStatus) == "scholar" {
+	if strings.ToLower(strings.TrimSpace(scholarshipStatus)) == "scholar" {
 		tuition = 500 * totalUnits
 	}
 
@@ -212,25 +300,21 @@ func RegistrarApproveWithAssessment(c *gin.Context) {
 
 	paymentID, _ := res.LastInsertId()
 
-	// ===== OTHER FEES =====
+	// ===== INSERT OTHER FEES =====
 	otherTotal := 0
-
 	for _, fee := range req.OtherFees {
 		if fee.Amount <= 0 {
 			continue
 		}
-
 		_, err := tx.Exec(`
 			INSERT INTO payment_fees (payment_id, fee_name, amount)
 			VALUES (?, ?, ?)
 		`, paymentID, fee.FeeName, fee.Amount)
-
 		if err != nil {
 			tx.Rollback()
 			c.JSON(500, gin.H{"error": err.Error()})
 			return
 		}
-
 		otherTotal += fee.Amount
 	}
 
@@ -238,23 +322,22 @@ func RegistrarApproveWithAssessment(c *gin.Context) {
 	totalAmount := tuition + otherTotal
 
 	_, err = tx.Exec(`
-		UPDATE student_payments
-		SET total_amount = ?
-		WHERE id = ?
+		UPDATE student_payments SET total_amount = ? WHERE id = ?
 	`, totalAmount, paymentID)
-
 	if err != nil {
 		tx.Rollback()
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 
-	// ===== APPROVE STUDENT =====
+	// ===== APPROVE STUDENT + ASSIGN STUDENT ID + SET PASSWORD =====
 	_, err = tx.Exec(`
 		UPDATE students
-		SET status='approved'
-		WHERE id=?
-	`, studentDBID)
+		SET status     = 'approved',
+		    student_id = ?,
+		    password   = ?
+		WHERE id = ?
+	`, generatedStudentID, string(hashedPassword), studentDBID)
 
 	if err != nil {
 		tx.Rollback()
@@ -264,16 +347,14 @@ func RegistrarApproveWithAssessment(c *gin.Context) {
 
 	tx.Commit()
 
-	// ===== EMAIL =====
-
-	// Build other fees rows for the billing table
+	// ===== BUILD & SEND EMAIL =====
 	otherFeesRows := ""
 	for _, fee := range req.OtherFees {
 		if fee.Amount > 0 {
 			otherFeesRows += fmt.Sprintf(`
 				<tr>
-					<td style="padding:8px 12px; color:#555; border-top:1px solid #f0f0f0;">%s</td>
-					<td style="padding:8px 12px; text-align:right; color:#555; border-top:1px solid #f0f0f0;">&#8369;%d</td>
+					<td style="padding:8px 12px;color:#555;border-top:1px solid #f0f0f0;">%s</td>
+					<td style="padding:8px 12px;text-align:right;color:#555;border-top:1px solid #f0f0f0;">&#8369;%d</td>
 				</tr>`, fee.FeeName, fee.Amount)
 		}
 	}
@@ -286,205 +367,239 @@ func RegistrarApproveWithAssessment(c *gin.Context) {
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Enrollment Approved</title>
 </head>
-<body style="margin:0; padding:0; background-color:#f0f4f8; font-family:'Segoe UI', Arial, sans-serif;">
-	<table width="100%%" cellpadding="0" cellspacing="0" style="background-color:#f0f4f8; padding:40px 20px;">
-		<tr>
-			<td align="center">
-				<table width="600" cellpadding="0" cellspacing="0"
-					style="background:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,0.08); max-width:600px; width:100%%;">
+<body style="margin:0;padding:0;background-color:#f0f4f8;font-family:'Segoe UI',Arial,sans-serif;">
+<table width="100%%" cellpadding="0" cellspacing="0" style="background-color:#f0f4f8;padding:40px 20px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0"
+	style="background:#ffffff;border-radius:12px;overflow:hidden;
+	       box-shadow:0 4px 20px rgba(0,0,0,0.08);max-width:600px;width:100%%;">
 
-					<!-- HEADER -->
-					<tr>
-						<td style="background:linear-gradient(135deg, #1565c0, #1e88e5); padding:36px 40px; text-align:center;">
-							<div style="background:rgba(255,255,255,0.15); display:inline-block; border-radius:50%%; width:60px; height:60px; line-height:60px; font-size:28px; margin-bottom:16px;">
-								&#10003;
-							</div>
-							<h1 style="margin:0; color:#ffffff; font-size:26px; font-weight:700; letter-spacing:0.3px;">
-								Enrollment Approved
-							</h1>
-							<p style="margin:10px 0 0; color:#bbdefb; font-size:14px; line-height:1.5;">
-								Your enrollment application has been reviewed and approved by the Registrar's Office.
-							</p>
-						</td>
-					</tr>
+	<!-- ===== HEADER ===== -->
+	<tr>
+		<td style="background:linear-gradient(135deg,#1b4332,#2d6a4f);padding:36px 40px;text-align:center;">
+			<div style="font-size:52px;margin-bottom:12px;">🎓</div>
+			<h1 style="margin:0;color:#ffffff;font-size:26px;font-weight:700;letter-spacing:0.3px;">
+				Enrollment Approved!
+			</h1>
+			<p style="margin:10px 0 0;color:#95d5b2;font-size:14px;line-height:1.5;">
+				Welcome to the University of Manila — your application has been approved.
+			</p>
+		</td>
+	</tr>
 
-					<!-- GREETING -->
-					<tr>
-						<td style="padding:32px 40px 0;">
-							<p style="margin:0; font-size:15px; color:#333; line-height:1.7;">
-								Congratulations! Your enrollment for <strong>%s</strong> has been
-								successfully processed. Please review your billing statement below and
-								settle your balance before the payment deadline to finalize your enrollment.
-							</p>
-						</td>
-					</tr>
+	<!-- ===== GREETING ===== -->
+	<tr>
+		<td style="padding:32px 40px 0;">
+			<p style="margin:0;font-size:15px;color:#333;line-height:1.7;">
+				Dear <strong>%s %s</strong>,<br><br>
+				Congratulations! Your enrollment application has been reviewed and approved by the
+				Registrar's Office. Your student account has been created — please find your
+				<strong>login credentials</strong> and <strong>billing statement</strong> below.
+			</p>
+		</td>
+	</tr>
 
-					<!-- ENROLLMENT DETAILS CARD -->
-					<tr>
-						<td style="padding:24px 40px 0;">
-							<table width="100%%" cellpadding="0" cellspacing="0"
-								style="background:#f5f9ff; border:1px solid #dce8fb; border-radius:10px; overflow:hidden;">
-								<tr>
-									<td style="padding:12px 18px; background:#e3eefb; font-size:12px; font-weight:700;
-										color:#1565c0; text-transform:uppercase; letter-spacing:0.8px;">
-										Enrollment Information
-									</td>
-								</tr>
-								<tr>
-									<td>
-										<table width="100%%" cellpadding="0" cellspacing="0">
-											<tr>
-												<td style="padding:12px 18px; font-size:14px; color:#444; border-bottom:1px solid #e8f0fb; width:45%%;">
-													<span style="color:#888; font-size:12px; display:block; margin-bottom:2px;">SEMESTER</span>
-													<strong>%s</strong>
-												</td>
-												<td style="padding:12px 18px; font-size:14px; color:#444; border-bottom:1px solid #e8f0fb;">
-													<span style="color:#888; font-size:12px; display:block; margin-bottom:2px;">SCHOOL YEAR</span>
-													<strong>%s</strong>
-												</td>
-											</tr>
-											<tr>
-												<td style="padding:12px 18px; font-size:14px; color:#444;" colspan="2">
-													<span style="color:#888; font-size:12px; display:block; margin-bottom:2px;">TOTAL UNITS ENROLLED</span>
-													<strong>%d units</strong>
-												</td>
-											</tr>
-										</table>
-									</td>
-								</tr>
-							</table>
-						</td>
-					</tr>
+	<!-- ===== CREDENTIALS CARD ===== -->
+	<tr>
+		<td style="padding:24px 40px 0;">
+			<table width="100%%" cellpadding="0" cellspacing="0"
+				style="background:#f0fff4;border:2px solid #52b788;border-radius:10px;overflow:hidden;">
+				<tr>
+					<td style="padding:12px 18px;background:#d1fae5;font-size:12px;font-weight:700;
+						color:#065f46;text-transform:uppercase;letter-spacing:0.8px;">
+						🔐 Your Student Account Credentials
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<table width="100%%" cellpadding="0" cellspacing="0">
+							<tr>
+								<td style="padding:18px;border-bottom:1px solid #d1fae5;width:50%%;">
+									<span style="color:#888;font-size:11px;display:block;margin-bottom:6px;
+										text-transform:uppercase;letter-spacing:0.5px;">Student ID</span>
+									<strong style="font-size:24px;color:#1b4332;font-family:monospace;
+										letter-spacing:0.06em;">%s</strong>
+								</td>
+								<td style="padding:18px;border-bottom:1px solid #d1fae5;
+									border-left:1px solid #d1fae5;">
+									<span style="color:#888;font-size:11px;display:block;margin-bottom:6px;
+										text-transform:uppercase;letter-spacing:0.5px;">Default Password</span>
+									<strong style="font-size:24px;color:#1b4332;font-family:monospace;
+										letter-spacing:0.15em;">%s</strong>
+								</td>
+							</tr>
+							<tr>
+								<td colspan="2" style="padding:12px 18px;background:#ecfdf5;">
+									<p style="margin:0;font-size:12px;color:#065f46;line-height:1.7;">
+										⚠️ <strong>Important:</strong> Log in using the credentials above and
+										<strong>change your password immediately</strong> after your first login.
+										Do not share these credentials with anyone.
+									</p>
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
 
-					<!-- BILLING BREAKDOWN -->
-					<tr>
-						<td style="padding:24px 40px 0;">
-							<p style="margin:0 0 10px; font-size:12px; font-weight:700; color:#888;
-								text-transform:uppercase; letter-spacing:0.8px;">
-								Billing Statement
-							</p>
-							<table width="100%%" cellpadding="0" cellspacing="0"
-								style="border:1px solid #e0e0e0; border-radius:10px; overflow:hidden;">
-								<!-- Table Header -->
-								<tr style="background:#f9f9f9;">
-									<td style="padding:11px 12px; font-size:12px; font-weight:700;
-										color:#777; border-bottom:1px solid #e8e8e8; text-transform:uppercase; letter-spacing:0.5px;">
-										Description
-									</td>
-									<td style="padding:11px 12px; font-size:12px; font-weight:700;
-										color:#777; border-bottom:1px solid #e8e8e8; text-align:right; text-transform:uppercase; letter-spacing:0.5px;">
-										Amount
-									</td>
-								</tr>
-								<!-- Tuition Row -->
-								<tr>
-									<td style="padding:12px; color:#444; font-size:14px;">
-										Tuition Fee
-										<span style="font-size:12px; color:#999; display:block;">%d units</span>
-									</td>
-									<td style="padding:12px; text-align:right; color:#444; font-size:14px;">
-										&#8369;%d
-									</td>
-								</tr>
-								<!-- Dynamic Other Fees Rows -->
-								%s
-								<!-- Divider -->
-								<tr>
-									<td colspan="2" style="padding:0; border-top:2px solid #e3eefb;"></td>
-								</tr>
-								<!-- Total Row -->
-								<tr style="background:#f0f7ff;">
-									<td style="padding:14px 12px; font-size:16px; font-weight:700; color:#1565c0;">
-										Total Amount Due
-									</td>
-									<td style="padding:14px 12px; font-size:16px; font-weight:700;
-										color:#1565c0; text-align:right;">
-										&#8369;%d
-									</td>
-								</tr>
-							</table>
-						</td>
-					</tr>
+	<!-- ===== ENROLLMENT DETAILS ===== -->
+	<tr>
+		<td style="padding:24px 40px 0;">
+			<table width="100%%" cellpadding="0" cellspacing="0"
+				style="background:#f5f9ff;border:1px solid #dce8fb;border-radius:10px;overflow:hidden;">
+				<tr>
+					<td style="padding:12px 18px;background:#e3eefb;font-size:12px;font-weight:700;
+						color:#1565c0;text-transform:uppercase;letter-spacing:0.8px;">
+						📋 Enrollment Information
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<table width="100%%" cellpadding="0" cellspacing="0">
+							<tr>
+								<td style="padding:12px 18px;font-size:14px;color:#444;
+									border-bottom:1px solid #e8f0fb;width:50%%;">
+									<span style="color:#888;font-size:12px;display:block;margin-bottom:2px;">SEMESTER</span>
+									<strong>%s</strong>
+								</td>
+								<td style="padding:12px 18px;font-size:14px;color:#444;
+									border-bottom:1px solid #e8f0fb;">
+									<span style="color:#888;font-size:12px;display:block;margin-bottom:2px;">SCHOOL YEAR</span>
+									<strong>%s</strong>
+								</td>
+							</tr>
+							<tr>
+								<td colspan="2" style="padding:12px 18px;font-size:14px;color:#444;">
+									<span style="color:#888;font-size:12px;display:block;margin-bottom:2px;">TOTAL UNITS ENROLLED</span>
+									<strong>%d units</strong>
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
 
-					<!-- PAYMENT STATUS BADGE -->
-					<tr>
-						<td style="padding:20px 40px 0; text-align:center;">
-							<table cellpadding="0" cellspacing="0" style="display:inline-table; margin:auto;">
-								<tr>
-									<td style="background:#fff8e1; border:1px solid #ffe082; border-radius:25px;
-										padding:10px 28px; font-size:13px; font-weight:700; color:#f57f17;
-										text-transform:uppercase; letter-spacing:0.8px;">
-										&#9201; Payment Status: Unpaid
-									</td>
-								</tr>
-							</table>
-						</td>
-					</tr>
+	<!-- ===== BILLING STATEMENT ===== -->
+	<tr>
+		<td style="padding:24px 40px 0;">
+			<p style="margin:0 0 10px;font-size:12px;font-weight:700;color:#888;
+				text-transform:uppercase;letter-spacing:0.8px;">💰 Billing Statement</p>
+			<table width="100%%" cellpadding="0" cellspacing="0"
+				style="border:1px solid #e0e0e0;border-radius:10px;overflow:hidden;">
+				<tr style="background:#f9f9f9;">
+					<td style="padding:11px 12px;font-size:12px;font-weight:700;color:#777;
+						border-bottom:1px solid #e8e8e8;text-transform:uppercase;letter-spacing:0.5px;">
+						Description
+					</td>
+					<td style="padding:11px 12px;font-size:12px;font-weight:700;color:#777;
+						border-bottom:1px solid #e8e8e8;text-align:right;text-transform:uppercase;letter-spacing:0.5px;">
+						Amount
+					</td>
+				</tr>
+				<tr>
+					<td style="padding:12px;color:#444;font-size:14px;">
+						Tuition Fee
+						<span style="font-size:12px;color:#999;display:block;">%d units</span>
+					</td>
+					<td style="padding:12px;text-align:right;color:#444;font-size:14px;">&#8369;%d</td>
+				</tr>
+				%s
+				<tr><td colspan="2" style="padding:0;border-top:2px solid #e3eefb;"></td></tr>
+				<tr style="background:#f0f7ff;">
+					<td style="padding:14px 12px;font-size:16px;font-weight:700;color:#1565c0;">Total Amount Due</td>
+					<td style="padding:14px 12px;font-size:16px;font-weight:700;color:#1565c0;text-align:right;">
+						&#8369;%d
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
 
-					<!-- CTA / NOTE -->
-					<tr>
-						<td style="padding:24px 40px;">
-							<table width="100%%" cellpadding="0" cellspacing="0"
-								style="background:#fff3e0; border-left:4px solid #fb8c00; border-radius:0 8px 8px 0; padding:14px 18px;">
-								<tr>
-									<td style="font-size:13px; color:#555; line-height:1.7; padding:14px 18px;">
-										&#128276; <strong>Reminder:</strong> Please settle your balance at the Cashier's Office
-										or through the Student Portal before the payment deadline. Failure to pay on time
-										may result in your enrollment being placed on hold.
-									</td>
-								</tr>
-							</table>
-						</td>
-					</tr>
+	<!-- ===== PAYMENT STATUS ===== -->
+	<tr>
+		<td style="padding:20px 40px 0;text-align:center;">
+			<table cellpadding="0" cellspacing="0" style="display:inline-table;margin:auto;">
+				<tr>
+					<td style="background:#fff8e1;border:1px solid #ffe082;border-radius:25px;
+						padding:10px 28px;font-size:13px;font-weight:700;color:#f57f17;
+						text-transform:uppercase;letter-spacing:0.8px;">
+						⏱ Payment Status: Unpaid
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
 
-					<!-- FOOTER -->
-					<tr>
-						<td style="background:#f5f7fa; padding:20px 40px; text-align:center;
-							border-top:1px solid #e8e8e8;">
-							<p style="margin:0 0 4px; font-size:12px; color:#aaa;">
-								This is an automated notification from the <strong>Student Portal</strong>.
-								Please do not reply to this email.
-							</p>
-							<p style="margin:0; font-size:12px; color:#aaa;">
-								For concerns or inquiries, please visit or contact the Registrar's Office.
-							</p>
-						</td>
-					</tr>
+	<!-- ===== REMINDER ===== -->
+	<tr>
+		<td style="padding:24px 40px;">
+			<table width="100%%" cellpadding="0" cellspacing="0"
+				style="background:#fff3e0;border-left:4px solid #fb8c00;border-radius:0 8px 8px 0;">
+				<tr>
+					<td style="padding:14px 18px;font-size:13px;color:#555;line-height:1.7;">
+						🔔 <strong>Reminder:</strong> Please settle your balance at the Cashier's Office or
+						through the Student Portal before the payment deadline. Failure to pay on time may
+						result in your enrollment being placed on hold.
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
 
-				</table>
-			</td>
-		</tr>
-	</table>
+	<!-- ===== FOOTER ===== -->
+	<tr>
+		<td style="background:#f5f7fa;padding:20px 40px;text-align:center;border-top:1px solid #e8e8e8;">
+			<p style="margin:0 0 4px;font-size:12px;color:#aaa;">
+				This is an automated notification from the
+				<strong>University of Manila Student Portal</strong>.
+				Please do not reply to this email.
+			</p>
+			<p style="margin:0;font-size:12px;color:#aaa;">
+				For concerns or inquiries, please visit or contact the Registrar's Office.
+			</p>
+		</td>
+	</tr>
+
+</table>
+</td></tr>
+</table>
 </body>
 </html>
 	`,
-		req.Semester,   // greeting paragraph
-		req.Semester,   // enrollment card: semester
-		req.SchoolYear, // enrollment card: school year
-		totalUnits,     // enrollment card: units
-		totalUnits,     // billing row: units label
-		tuition,        // billing row: tuition amount
-		otherFeesRows,  // dynamic other fees rows
-		totalAmount,    // total amount due
+		firstName, lastName, // greeting
+		generatedStudentID, // credentials: student ID
+		rawPassword,        // credentials: default password
+		req.Semester,       // enrollment: semester
+		req.SchoolYear,     // enrollment: school year
+		totalUnits,         // enrollment: units
+		totalUnits,         // billing: units label
+		tuition,            // billing: tuition amount
+		otherFeesRows,      // billing: other fees rows
+		totalAmount,        // billing: total
 	)
 
 	go utils.SendEmail(
 		studentEmail,
-		"Enrollment Approved – Billing Statement",
+		"🎓 Enrollment Approved – Your Student ID & Billing Statement",
 		emailBody,
 	)
 
 	// ===== RESPONSE =====
 	c.JSON(200, gin.H{
-		"message":      "Student approved with assessment",
-		"payment_id":   paymentID,
-		"semester":     req.Semester, // ✅ RETURNED
-		"school_year":  req.SchoolYear,
-		"tuition":      tuition,
-		"other_fees":   otherTotal,
-		"total_amount": totalAmount,
-		"amount_paid":  0,
-		"status":       "unpaid",
+		"message":              "Student approved with assessment",
+		"generated_student_id": generatedStudentID,
+		"payment_id":           paymentID,
+		"semester":             req.Semester,
+		"school_year":          req.SchoolYear,
+		"tuition":              tuition,
+		"other_fees":           otherTotal,
+		"total_amount":         totalAmount,
+		"amount_paid":          0,
+		"status":               "unpaid",
 	})
 }
 
@@ -507,27 +622,20 @@ func RegistrarPostAnnouncement(c *gin.Context) {
 		return
 	}
 
-	// Validate target_audience
 	validAudiences := map[string]bool{
-		"all":      true,
-		"pending":  true,
-		"approved": true,
-		"enrolled": true,
+		"all": true, "pending": true, "approved": true, "enrolled": true,
 	}
 	if !validAudiences[targetAudience] {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid target_audience. Must be: all, pending, approved, or enrolled"})
 		return
 	}
 
-	// Handle optional image
 	var imageName, imagePath sql.NullString
 	var imageSize sql.NullInt64
 
 	file, err := c.FormFile("image")
 	if err == nil {
-		// Image was provided — validate it
 		allowedTypes := []string{"image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"}
-
 		fileHeader, err := file.Open()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read image"})
@@ -550,7 +658,7 @@ func RegistrarPostAnnouncement(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Image must be JPEG, PNG, GIF, or WebP"})
 			return
 		}
-		if file.Size > int64(10*1024*1024) { // 10MB max
+		if file.Size > int64(10*1024*1024) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Image too large. Max 10MB"})
 			return
 		}
@@ -577,7 +685,8 @@ func RegistrarPostAnnouncement(c *gin.Context) {
 	}
 
 	result, err := config.DB.Exec(`
-        INSERT INTO registrar_announcements (registrar_id, title, content, target_audience, image_name, image_path, image_size, created_at, updated_at)
+        INSERT INTO registrar_announcements
+            (registrar_id, title, content, target_audience, image_name, image_path, image_size, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
     `, registrarID, title, content, targetAudience, imageName, imagePath, imageSize)
 
@@ -608,26 +717,21 @@ func RegistrarPostAnnouncement(c *gin.Context) {
 // ===== GET REGISTRAR ANNOUNCEMENTS =====
 func RegistrarGetAnnouncements(c *gin.Context) {
 	role := c.GetString("role")
-
 	if role != "registrar" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
 		return
 	}
 
-	targetAudience := c.Query("target_audience") // Optional filter
-
+	targetAudience := c.Query("target_audience")
 	query := `
         SELECT id, title, content, target_audience, image_name, image_path, image_size, created_at
         FROM registrar_announcements
     `
-
 	args := []interface{}{}
-
 	if targetAudience != "" {
 		query += ` WHERE target_audience = ?`
 		args = append(args, targetAudience)
 	}
-
 	query += ` ORDER BY created_at DESC`
 
 	rows, err := config.DB.Query(query, args...)
@@ -721,6 +825,10 @@ func RegistrarDeleteAnnouncement(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Announcement deleted successfully"})
 }
+
+/* ==========================
+RE-ENROLLMENT APPLICATIONS
+========================== */
 
 // GET /registrar/enrollment-applications?status=pending
 func RegistrarGetEnrollmentApplications(c *gin.Context) {
@@ -835,11 +943,10 @@ func RegistrarGetEnrollmentApplications(c *gin.Context) {
 }
 
 // POST /registrar/enrollment-applications/approve
+// Re-enrollment approval — student already HAS credentials, just send billing email
 func RegistrarApproveEnrollmentApplication(c *gin.Context) {
 	var req struct {
 		EnrollmentID int          `json:"enrollment_id"`
-		Semester     string       `json:"semester"`
-		SchoolYear   string       `json:"school_year"`
 		OtherFees    []PaymentFee `json:"other_fees"`
 	}
 
@@ -854,10 +961,9 @@ func RegistrarApproveEnrollmentApplication(c *gin.Context) {
 		return
 	}
 
-	// Get enrollment application details
 	var studentDBID, totalUnits, courseID int
 	var scholarshipStatus, semester, academicYear, subjectsStr string
-	var studentEmail, studentID string
+	var studentEmail, studentID, firstName, lastName string
 
 	err = tx.QueryRow(`
         SELECT 
@@ -869,7 +975,9 @@ func RegistrarApproveEnrollmentApplication(c *gin.Context) {
             ea.subjects,
             ea.course_id,
             st.email,
-            st.student_id as student_str_id
+            st.student_id as student_str_id,
+            st.first_name,
+            st.last_name
         FROM enrollment_applications ea
         JOIN students st ON st.id = ea.student_id
         WHERE ea.id = ? AND ea.status = 'pending'
@@ -883,6 +991,8 @@ func RegistrarApproveEnrollmentApplication(c *gin.Context) {
 		&courseID,
 		&studentEmail,
 		&studentID,
+		&firstName,
+		&lastName,
 	)
 
 	if err != nil {
@@ -903,7 +1013,6 @@ func RegistrarApproveEnrollmentApplication(c *gin.Context) {
             (student_id, total_amount, amount_paid, status, semester, school_year)
         VALUES (?, 0, 0, 'unpaid', ?, ?)
     `, studentDBID, semester, academicYear)
-
 	if err != nil {
 		tx.Rollback()
 		c.JSON(500, gin.H{"error": err.Error()})
@@ -931,36 +1040,156 @@ func RegistrarApproveEnrollmentApplication(c *gin.Context) {
 	}
 
 	totalAmount := tuition + otherTotal
-
-	// Update payment total
 	tx.Exec(`UPDATE student_payments SET total_amount = ? WHERE id = ?`, totalAmount, paymentID)
 
-	// Update student_academic record with new semester data
+	// Update student_academic
 	_, err = tx.Exec(`
         UPDATE student_academic 
         SET semester = ?, subjects = ?, total_units = ?, scholarship_status = ?, course = ?
         WHERE student_id = ?
     `, semester, subjectsStr, totalUnits, scholarshipStatus, courseID, studentDBID)
-
 	if err != nil {
-		// If no existing record, insert one
 		tx.Exec(`
             INSERT INTO student_academic (student_id, semester, subjects, total_units, scholarship_status, course)
             VALUES (?, ?, ?, ?, ?, ?)
         `, studentDBID, semester, subjectsStr, totalUnits, scholarshipStatus, courseID)
 	}
 
-	// Mark enrollment application as approved
-	tx.Exec(`
-        UPDATE enrollment_applications 
-        SET status = 'approved', processed_at = NOW() 
-        WHERE id = ?
-    `, req.EnrollmentID)
-
-	// Keep student status as approved
+	// Mark application approved
+	tx.Exec(`UPDATE enrollment_applications SET status = 'approved', processed_at = NOW() WHERE id = ?`, req.EnrollmentID)
 	tx.Exec(`UPDATE students SET status = 'approved' WHERE id = ?`, studentDBID)
 
 	tx.Commit()
+
+	// ===== SEND RE-ENROLLMENT BILLING EMAIL =====
+	otherFeesRows := ""
+	for _, fee := range req.OtherFees {
+		if fee.Amount > 0 {
+			otherFeesRows += fmt.Sprintf(`
+				<tr>
+					<td style="padding:8px 12px;color:#555;border-top:1px solid #f0f0f0;">%s</td>
+					<td style="padding:8px 12px;text-align:right;color:#555;border-top:1px solid #f0f0f0;">&#8369;%d</td>
+				</tr>`, fee.FeeName, fee.Amount)
+		}
+	}
+
+	reEnrollEmailBody := fmt.Sprintf(`
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Re-Enrollment Approved</title></head>
+<body style="margin:0;padding:0;background-color:#f0f4f8;font-family:'Segoe UI',Arial,sans-serif;">
+<table width="100%%" cellpadding="0" cellspacing="0" style="background-color:#f0f4f8;padding:40px 20px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0"
+	style="background:#ffffff;border-radius:12px;overflow:hidden;
+	       box-shadow:0 4px 20px rgba(0,0,0,0.08);max-width:600px;width:100%%;">
+
+	<tr>
+		<td style="background:linear-gradient(135deg,#1b4332,#2d6a4f);padding:36px 40px;text-align:center;">
+			<div style="font-size:52px;margin-bottom:12px;">✅</div>
+			<h1 style="margin:0;color:#ffffff;font-size:26px;font-weight:700;">Re-Enrollment Approved!</h1>
+			<p style="margin:10px 0 0;color:#95d5b2;font-size:14px;">
+				Your re-enrollment application has been approved.
+			</p>
+		</td>
+	</tr>
+
+	<tr>
+		<td style="padding:32px 40px 0;">
+			<p style="margin:0;font-size:15px;color:#333;line-height:1.7;">
+				Dear <strong>%s %s</strong>,<br><br>
+				Your re-enrollment application for <strong>%s — %s</strong> has been approved by the
+				Registrar's Office. Please review your billing statement below and settle your balance
+				before the payment deadline.
+			</p>
+		</td>
+	</tr>
+
+	<tr>
+		<td style="padding:24px 40px 0;">
+			<p style="margin:0 0 10px;font-size:12px;font-weight:700;color:#888;
+				text-transform:uppercase;letter-spacing:0.8px;">💰 Billing Statement</p>
+			<table width="100%%" cellpadding="0" cellspacing="0"
+				style="border:1px solid #e0e0e0;border-radius:10px;overflow:hidden;">
+				<tr style="background:#f9f9f9;">
+					<td style="padding:11px 12px;font-size:12px;font-weight:700;color:#777;
+						border-bottom:1px solid #e8e8e8;text-transform:uppercase;">Description</td>
+					<td style="padding:11px 12px;font-size:12px;font-weight:700;color:#777;
+						border-bottom:1px solid #e8e8e8;text-align:right;text-transform:uppercase;">Amount</td>
+				</tr>
+				<tr>
+					<td style="padding:12px;color:#444;font-size:14px;">
+						Tuition Fee
+						<span style="font-size:12px;color:#999;display:block;">%d units</span>
+					</td>
+					<td style="padding:12px;text-align:right;color:#444;font-size:14px;">&#8369;%d</td>
+				</tr>
+				%s
+				<tr><td colspan="2" style="padding:0;border-top:2px solid #e3eefb;"></td></tr>
+				<tr style="background:#f0f7ff;">
+					<td style="padding:14px 12px;font-size:16px;font-weight:700;color:#1565c0;">Total Amount Due</td>
+					<td style="padding:14px 12px;font-size:16px;font-weight:700;color:#1565c0;text-align:right;">
+						&#8369;%d
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+
+	<tr>
+		<td style="padding:20px 40px 0;text-align:center;">
+			<table cellpadding="0" cellspacing="0" style="display:inline-table;margin:auto;">
+				<tr>
+					<td style="background:#fff8e1;border:1px solid #ffe082;border-radius:25px;
+						padding:10px 28px;font-size:13px;font-weight:700;color:#f57f17;
+						text-transform:uppercase;letter-spacing:0.8px;">
+						⏱ Payment Status: Unpaid
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+
+	<tr>
+		<td style="padding:24px 40px;">
+			<table width="100%%" cellpadding="0" cellspacing="0"
+				style="background:#fff3e0;border-left:4px solid #fb8c00;border-radius:0 8px 8px 0;">
+				<tr>
+					<td style="padding:14px 18px;font-size:13px;color:#555;line-height:1.7;">
+						🔔 <strong>Reminder:</strong> Please settle your balance at the Cashier's Office or
+						through the Student Portal before the payment deadline.
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+
+	<tr>
+		<td style="background:#f5f7fa;padding:20px 40px;text-align:center;border-top:1px solid #e8e8e8;">
+			<p style="margin:0;font-size:12px;color:#aaa;">
+				Automated notification from the University of Manila Student Portal.
+				Please do not reply to this email.
+			</p>
+		</td>
+	</tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`,
+		firstName, lastName,
+		semester, academicYear,
+		totalUnits, tuition,
+		otherFeesRows,
+		totalAmount,
+	)
+
+	go utils.SendEmail(
+		studentEmail,
+		"✅ Re-Enrollment Approved – Billing Statement",
+		reEnrollEmailBody,
+	)
 
 	c.JSON(200, gin.H{
 		"message":       "Re-enrollment approved successfully",
