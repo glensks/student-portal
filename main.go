@@ -63,8 +63,8 @@ func main() {
 	protected.Use(middleware.AuthMiddleware())
 
 	// ✅ FIXED: was using r.GET (unprotected), now correctly uses protected.GET
-	protected.GET("/public/courses", controllers.FacultyGetCourses)
-	protected.GET("/public/subjects", controllers.FacultyGetSubjects)
+	r.GET("/public/courses", controllers.FacultyGetCourses)
+	r.GET("/public/subjects", controllers.FacultyGetSubjects)
 
 	// ---------------- ADMIN ROUTES ----------------
 	admin := protected.Group("/admin")

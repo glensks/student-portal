@@ -513,9 +513,11 @@ function updateProgress() {
 
 async function loadCourses() {
     try {
-        const res     = await fetch(API + '/public/courses');
-        const courses = await res.json();
-        const sel     = document.getElementById('course');
+        const res  = await fetch(API + '/public/courses');
+        if (!res.ok) { console.error('Failed to load courses, status:', res.status); return; }
+        const data = await res.json();
+        const courses = Array.isArray(data) ? data : [];
+        const sel  = document.getElementById('course');
         sel.innerHTML = "<option value=''>Select a course</option>";
         courses.forEach(c => {
             const opt = document.createElement('option');
