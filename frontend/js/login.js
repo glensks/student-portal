@@ -47,7 +47,6 @@ function fpRlAttemptsLeft() {
    ============================================================ */
 const RULES = {
     name:        [/^[A-Za-zÀ-ÖØ-öø-ÿ\s'\-]*$/, 50,  'letters, spaces, hyphens, and apostrophes'],
-    age:         [/^\d*$/,                       3,   'numbers only (15–100)'],
     contact:     [/^[\d\s\+\-\(\)]*$/,          15,  'digits and phone characters only'],
     school_year: [/^[\d\-]*$/,                  9,   'format YYYY-YYYY (e.g. 2022-2023)'],
     text_gen:    [/^[A-Za-z0-9À-ÖØ-öø-ÿ\s',.\-\/\#\&\(\)]*$/, 200, 'letters, numbers, and common punctuation'],
@@ -88,7 +87,6 @@ function attachFilter(id, ruleKey, extraValidation) {
     });
 }
 
-function validateAge(val)        { const n = parseInt(val,10); if (isNaN(n)||n<15||n>100) return 'Age must be between 15 and 100.'; return null; }
 function validateSchoolYear(val) { if (!/^\d{4}-\d{4}$/.test(val)) return 'Format must be YYYY-YYYY (e.g. 2022-2023).'; const [y1,y2]=val.split('-').map(Number); if(y2!==y1+1) return 'End year must be start year + 1.'; return null; }
 function validateContact(val)    { const digits=val.replace(/\D/g,''); if(digits.length<7||digits.length>15) return 'Enter a valid phone number (7–15 digits).'; return null; }
 function validateEmail(val)      { if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) return 'Enter a valid email address.'; return null; }
@@ -109,10 +107,9 @@ function computeAgeFromBirthday() {
         return;
     }
 
-    const dob  = new Date(val);
-    const now  = new Date();
+    const dob = new Date(val);
+    const now = new Date();
 
-    // Reject future dates
     if (dob >= now) {
         ageDisplay.value = '';
         birthdayEl.classList.add('input-error');
@@ -122,22 +119,34 @@ function computeAgeFromBirthday() {
     }
 
     let age = now.getFullYear() - dob.getFullYear();
-    const monthDiff = now.getMonth() - dob.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < dob.getDate())) age--;
+    const m = now.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) age--;
 
     if (age < 15 || age > 100) {
-        ageDisplay.value = age;
+        ageDisplay.value = age + ' years old';
         birthdayEl.classList.add('input-error');
         birthdayEl.classList.remove('input-valid');
         if (birthdayErr) { birthdayErr.textContent = '⚠ Age must be between 15 and 100.'; birthdayErr.classList.add('show'); }
         return;
     }
 
-    // Valid
     ageDisplay.value = age + ' years old';
     birthdayEl.classList.add('input-valid');
     birthdayEl.classList.remove('input-error');
     if (birthdayErr) { birthdayErr.textContent = ''; birthdayErr.classList.remove('show'); }
+}
+
+// Helper: get computed age as integer from birthday field (returns null if invalid)
+function getComputedAge() {
+    const val = document.getElementById('birthday').value;
+    if (!val) return null;
+    const dob = new Date(val);
+    const now = new Date();
+    if (dob >= now) return null;
+    let age = now.getFullYear() - dob.getFullYear();
+    const m = now.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) age--;
+    return age;
 }
 
 /* ============================================================
@@ -154,7 +163,6 @@ document.addEventListener('DOMContentLoaded', function () {
         loginId.addEventListener('blur', function () { if (this.value) setFieldValid(this); });
     }
 
-    // No student_id filter needed — removed from registration form
     attachFilter('first_name',      'name',        v => v.trim().length < 2 ? 'First name must be at least 2 characters.' : null);
     attachFilter('middle_name',     'name',        null);
     attachFilter('last_name',       'name',        v => v.trim().length < 2 ? 'Last name must be at least 2 characters.' : null);
@@ -170,20 +178,20 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    attachFilter('address',            'text_gen',    v => v.trim().length < 5 ? 'Please enter a complete address.' : null);
-    attachFilter('father_first_name',  'name',        null);
-    attachFilter('father_middle_name', 'name',        null);
-    attachFilter('father_last_name',   'name',        null);
-    attachFilter('father_occupation',  'text_gen',    null);
-    attachFilter('father_contact_number', 'contact',  validateContact);
+    attachFilter('address',               'text_gen',    v => v.trim().length < 5 ? 'Please enter a complete address.' : null);
+    attachFilter('father_first_name',     'name',        null);
+    attachFilter('father_middle_name',    'name',        null);
+    attachFilter('father_last_name',      'name',        null);
+    attachFilter('father_occupation',     'text_gen',    null);
+    attachFilter('father_contact_number', 'contact',     validateContact);
     const fAddr = document.getElementById('father_address');
     if (fAddr) fAddr.addEventListener('input', function () { const [regex,maxLen]=RULES.text_gen; const filtered=this.value.split('').filter(c=>regex.test(c)||c==='\n').join(''); this.value=filtered.length>maxLen?filtered.slice(0,maxLen):filtered; });
 
-    attachFilter('mother_first_name',  'name',        null);
-    attachFilter('mother_middle_name', 'name',        null);
-    attachFilter('mother_last_name',   'name',        null);
-    attachFilter('mother_occupation',  'text_gen',    null);
-    attachFilter('mother_contact_number', 'contact',  validateContact);
+    attachFilter('mother_first_name',     'name',        null);
+    attachFilter('mother_middle_name',    'name',        null);
+    attachFilter('mother_last_name',      'name',        null);
+    attachFilter('mother_occupation',     'text_gen',    null);
+    attachFilter('mother_contact_number', 'contact',     validateContact);
     const mAddr = document.getElementById('mother_address');
     if (mAddr) mAddr.addEventListener('input', function () { const [regex,maxLen]=RULES.text_gen; const filtered=this.value.split('').filter(c=>regex.test(c)||c==='\n').join(''); this.value=filtered.length>maxLen?filtered.slice(0,maxLen):filtered; });
 
@@ -203,12 +211,9 @@ document.addEventListener('DOMContentLoaded', function () {
     if (yearEl)   yearEl.addEventListener('change',   loadSubjects);
     if (semEl)    semEl.addEventListener('change',    loadSubjects);
 
-    // Set max date on birthday to today (can't be born in the future)
+    // Prevent picking future dates
     const birthdayEl = document.getElementById('birthday');
-    if (birthdayEl) {
-        const today = new Date().toISOString().split('T')[0];
-        birthdayEl.setAttribute('max', today);
-    }
+    if (birthdayEl) birthdayEl.setAttribute('max', new Date().toISOString().split('T')[0]);
 
     initPage();
 });
@@ -261,17 +266,10 @@ function openForgotModal() {
     document.getElementById('forgotMsg').className = 'message-box';
     document.getElementById('forgotMsg').innerHTML = '';
     document.getElementById('forgot_email').value  = '';
-
     updateAttemptsHint();
-
     const blockedUntil = fpRlBlockedUntil();
-    if (blockedUntil) {
-        showModalStep(3);
-        startModalBlockTimer(blockedUntil);
-    } else {
-        showModalStep(1);
-        setTimeout(() => document.getElementById('forgot_email').focus(), 300);
-    }
+    if (blockedUntil) { showModalStep(3); startModalBlockTimer(blockedUntil); }
+    else { showModalStep(1); setTimeout(() => document.getElementById('forgot_email').focus(), 300); }
 }
 
 function closeForgotModal() {
@@ -296,51 +294,35 @@ function updateAttemptsHint() {
     const hint = document.getElementById('fpAttemptsHint');
     if (!hint) return;
     const left = fpRlAttemptsLeft();
-    if (left === 1) {
-        hint.textContent = '⚠️ 1 attempt remaining in this window.';
-        hint.style.color = '#d97706';
-        hint.style.fontSize = '12px';
-    } else {
-        hint.textContent = '';
-    }
+    if (left === 1) { hint.textContent = '⚠️ 1 attempt remaining in this window.'; hint.style.color = '#d97706'; }
+    else { hint.textContent = ''; }
 }
 
 async function submitForgotPassword() {
     const btn   = document.getElementById('forgotBtn');
     const msgEl = document.getElementById('forgotMsg');
     const email = document.getElementById('forgot_email').value.trim().toLowerCase();
-
-    msgEl.className = 'message-box';
-    msgEl.innerHTML = '';
-
+    msgEl.className = 'message-box'; msgEl.innerHTML = '';
     const blockedUntil = fpRlBlockedUntil();
     if (blockedUntil) { showModalStep(3); startModalBlockTimer(blockedUntil); return; }
-
     if (!email) { msgEl.className = 'message-box error'; msgEl.innerHTML = '⚠️ Please enter your email address.'; return; }
     if (validateEmail(email)) { msgEl.className = 'message-box error'; msgEl.innerHTML = '⚠️ Please enter a valid email address.'; return; }
-
     const original = btn.innerHTML;
-    btn.innerHTML = '<span class="spinner"></span> Sending...';
-    btn.disabled  = true;
-
+    btn.innerHTML = '<span class="spinner"></span> Sending...'; btn.disabled = true;
     try {
         const res  = await fetch(API + '/forgot-password', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ email }) });
         const data = await res.json();
-
         if (res.status === 429) {
             const until = data.retry_after_seconds ? Date.now() + data.retry_after_seconds * 1000 : Date.now() + FP_RL.blockMs;
             const d = fpRlLoad(); d.blockedUntil = until; fpRlSave(d);
             showModalStep(3); startModalBlockTimer(until); return;
         }
-
         fpRlRecord(); updateAttemptsHint();
-        document.getElementById('sentToEmail').textContent  = email;
+        document.getElementById('sentToEmail').textContent   = email;
         document.getElementById('modalSubtitle').textContent = 'Reset email sent!';
         showModalStep(2); startResendCountdown();
-
     } catch (_) {
-        msgEl.className = 'message-box error';
-        msgEl.innerHTML = '⚠️ Unable to connect. Please check your connection.';
+        msgEl.className = 'message-box error'; msgEl.innerHTML = '⚠️ Unable to connect. Please check your connection.';
     } finally { btn.innerHTML = original; btn.disabled = false; }
 }
 
@@ -371,7 +353,6 @@ async function resendReset() {
 }
 
 let fpBlockTimer = null;
-
 function startModalBlockTimer(blockedUntil) {
     const el = document.getElementById('fpBlockedTimer');
     if (!el) return;
@@ -398,15 +379,12 @@ async function verifyToken(token) {
     try {
         const res  = await fetch(API + '/verify-reset-token?token=' + encodeURIComponent(token));
         const data = await res.json();
-        if (!data.valid) {
-            document.getElementById('resetFormArea').style.display = 'none';
-            document.getElementById('invalidToken').style.display  = 'block';
-        }
+        if (!data.valid) { document.getElementById('resetFormArea').style.display = 'none'; document.getElementById('invalidToken').style.display = 'block'; }
     } catch (_) {}
 }
 
 function checkPasswordStrength() {
-    const pw        = document.getElementById('new_password').value;
+    const pw = document.getElementById('new_password').value;
     const indicator = document.getElementById('strengthIndicator');
     const fill      = document.getElementById('strengthFill');
     const label     = document.getElementById('strengthLabel');
@@ -441,9 +419,9 @@ function checkPasswordMatch() {
 }
 
 async function submitResetPassword() {
-    const btn             = document.getElementById('resetBtn');
-    const msgEl           = document.getElementById('resetMsg');
-    const token           = new URLSearchParams(window.location.search).get('token');
+    const btn = document.getElementById('resetBtn');
+    const msgEl = document.getElementById('resetMsg');
+    const token = new URLSearchParams(window.location.search).get('token');
     const newPassword     = document.getElementById('new_password').value;
     const confirmPassword = document.getElementById('confirm_password').value;
     msgEl.className = 'message-box'; msgEl.innerHTML = '';
@@ -454,16 +432,10 @@ async function submitResetPassword() {
     try {
         const res  = await fetch(API + '/reset-password', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ token, new_password: newPassword }) });
         const data = await res.json();
-        if (res.ok) {
-            document.getElementById('resetFormArea').style.display = 'none';
-            document.getElementById('resetSuccess').style.display  = 'block';
-        } else {
-            msgEl.className = 'message-box error';
-            msgEl.innerHTML = '✗ ' + (data.error || 'Reset failed. The link may have expired.');
-        }
-    } catch (_) {
-        msgEl.className = 'message-box error'; msgEl.innerHTML = '⚠️ Unable to connect. Please try again.';
-    } finally { btn.innerHTML = original; btn.disabled = false; }
+        if (res.ok) { document.getElementById('resetFormArea').style.display = 'none'; document.getElementById('resetSuccess').style.display = 'block'; }
+        else { msgEl.className = 'message-box error'; msgEl.innerHTML = '✗ ' + (data.error || 'Reset failed. The link may have expired.'); }
+    } catch (_) { msgEl.className = 'message-box error'; msgEl.innerHTML = '⚠️ Unable to connect. Please try again.'; }
+    finally { btn.innerHTML = original; btn.disabled = false; }
 }
 
 /* ============================================================
@@ -474,13 +446,10 @@ async function login() {
     const originalHTML = btn.innerHTML;
     const msgEl        = document.getElementById('loginMsg');
     msgEl.className = 'message-box'; msgEl.innerHTML = '';
-
     const loginId  = document.getElementById('login_id').value.trim();
     const password = document.getElementById('login_password').value;
-
     if (!loginId)  { setFieldError(document.getElementById('login_id'), 'Please enter your Student ID or Username.'); return; }
     if (!password) { msgEl.className='message-box error'; msgEl.innerHTML='⚠️ Please enter your password.'; return; }
-
     btn.innerHTML = '<span class="spinner"></span> Authenticating...'; btn.disabled = true;
     try {
         const res  = await fetch(API + '/login', { method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ login_id: loginId, password }) });
@@ -493,9 +462,8 @@ async function login() {
         } else {
             msgEl.className = 'message-box error'; msgEl.innerHTML = '✗ ' + (data.error || 'Invalid credentials.');
         }
-    } catch (_) {
-        msgEl.className = 'message-box error'; msgEl.innerHTML = '⚠️ Unable to connect to the server.';
-    } finally { btn.innerHTML = originalHTML; btn.disabled = false; }
+    } catch (_) { msgEl.className = 'message-box error'; msgEl.innerHTML = '⚠️ Unable to connect to the server.'; }
+    finally { btn.innerHTML = originalHTML; btn.disabled = false; }
 }
 
 /* ============================================================
@@ -528,8 +496,8 @@ function removeSubject(id) {
 }
 
 function updateProgress() {
-    // Removed 'student_id' from tracked fields; added 'birthday'
-    const fields = ['password','first_name','last_name','birthday','contact_number','email','address','last_school_attended','last_school_year','course','year_level','semester','scholarship_status'];
+    // Tracks birthday instead of age/student_id/password
+    const fields = ['first_name','last_name','birthday','contact_number','email','address','last_school_attended','last_school_year','course','year_level','semester','scholarship_status'];
     let filled = fields.filter(f => { const el = document.getElementById(f); return el && el.value.trim(); }).length;
     const subjectsEl = document.getElementById('subjects');
     if (subjectsEl && Array.from(subjectsEl.selectedOptions).length > 0) filled++;
@@ -563,7 +531,6 @@ async function loadSubjects() {
     const semester  = document.getElementById('semester').value;
     const prompt    = document.getElementById('subjectsPrompt');
     const sel       = document.getElementById('subjects');
-
     if (!course || !yearLevel || !semester) {
         prompt.style.display = 'block';
         prompt.innerHTML = '<div class="prompt-icon">📚</div><div>Please select your <strong>Course</strong>, <strong>Year Level</strong>, and <strong>Semester</strong> first to load available subjects.</div>';
@@ -571,11 +538,9 @@ async function loadSubjects() {
         document.getElementById('selectedSubjectsDisplay').classList.remove('show');
         return;
     }
-
     prompt.style.display = 'block';
     prompt.innerHTML = '<div class="subjects-loading">⏳ Loading subjects...</div>';
     sel.style.display = 'none';
-
     try {
         const res         = await fetch(`${API}/public/subjects?course_id=${course}&year_level=${yearLevel}&semester=${encodeURIComponent(semester)}`);
         const contentType = res.headers.get('content-type') || '';
@@ -603,25 +568,14 @@ async function loadSubjects() {
     }
 }
 
-function validateRegisterForm(fields) {
+function validateRegisterForm(fields, age) {
     const errors = [];
-    // No student_id validation — assigned by registrar
-    if (!fields.password || fields.password.length < 8) errors.push('Password must be at least 8 characters.');
     if (!fields.first_name || fields.first_name.trim().length < 2) errors.push('First name is required (min 2 characters).');
     if (!fields.last_name  || fields.last_name.trim().length < 2)  errors.push('Last name is required (min 2 characters).');
     if (!fields.birthday) {
         errors.push('Date of birth is required.');
-    } else {
-        const dob = new Date(fields.birthday);
-        const now = new Date();
-        if (dob >= now) {
-            errors.push('Date of birth cannot be in the future.');
-        } else {
-            let age = now.getFullYear() - dob.getFullYear();
-            const m = now.getMonth() - dob.getMonth();
-            if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) age--;
-            if (age < 15 || age > 100) errors.push('Age must be between 15 and 100.');
-        }
+    } else if (age === null || age < 15 || age > 100) {
+        errors.push('Please enter a valid date of birth (age must be 15–100).');
     }
     if (!fields.contact_number) errors.push('Contact number is required.');
     else if (validateContact(fields.contact_number)) errors.push(validateContact(fields.contact_number));
@@ -645,11 +599,10 @@ async function register() {
     msgEl.className = 'message-box'; msgEl.innerHTML = '';
 
     const fields = {
-        password:             document.getElementById('password').value,
         first_name:           document.getElementById('first_name').value.trim(),
         middle_name:          document.getElementById('middle_name').value.trim(),
         last_name:            document.getElementById('last_name').value.trim(),
-        birthday:             document.getElementById('birthday').value,        // YYYY-MM-DD
+        birthday:             document.getElementById('birthday').value,
         contact_number:       document.getElementById('contact_number').value.trim(),
         email:                document.getElementById('email').value.trim(),
         address:              document.getElementById('address').value.trim(),
@@ -661,7 +614,8 @@ async function register() {
         scholarship_status:   document.getElementById('scholarship_status').value,
     };
 
-    const errors = validateRegisterForm(fields);
+    const age = getComputedAge();
+    const errors = validateRegisterForm(fields, age);
     if (errors.length > 0) { msgEl.className='message-box error'; msgEl.innerHTML='⚠️ '+errors[0]; msgEl.scrollIntoView({behavior:'smooth',block:'center'}); return; }
 
     const selectedSubjects = Array.from(document.getElementById('subjects').selectedOptions).map(o => o.value);
@@ -669,6 +623,7 @@ async function register() {
 
     const payload = {
         ...fields,
+        age,           // integer computed from birthday — no birthday column needed in DB
         father_first_name:     document.getElementById('father_first_name').value.trim(),
         father_middle_name:    document.getElementById('father_middle_name').value.trim(),
         father_last_name:      document.getElementById('father_last_name').value.trim(),
@@ -684,8 +639,10 @@ async function register() {
         subjects:              selectedSubjects,
     };
 
-    btn.innerHTML = '<span class="spinner"></span> Submitting Application...'; btn.disabled = true;
+    // birthday is only used for frontend UX — not sent to backend
+    delete payload.birthday;
 
+    btn.innerHTML = '<span class="spinner"></span> Submitting Application...'; btn.disabled = true;
     try {
         const res  = await fetch(API + '/register-student', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
         const data = await res.json();
