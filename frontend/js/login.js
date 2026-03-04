@@ -47,7 +47,6 @@ function fpRlAttemptsLeft() {
    ============================================================ */
 const RULES = {
     name:        [/^[A-Za-zÀ-ÖØ-öø-ÿ\s'\-]*$/, 50,  'letters, spaces, hyphens, and apostrophes'],
-    student_id:  [/^[\d\-]*$/,                  20,  'digits and hyphens only (e.g. 2024-00001)'],
     age:         [/^\d*$/,                       3,   'numbers only (15–100)'],
     contact:     [/^[\d\s\+\-\(\)]*$/,          15,  'digits and phone characters only'],
     school_year: [/^[\d\-]*$/,                  9,   'format YYYY-YYYY (e.g. 2022-2023)'],
@@ -90,10 +89,56 @@ function attachFilter(id, ruleKey, extraValidation) {
 }
 
 function validateAge(val)        { const n = parseInt(val,10); if (isNaN(n)||n<15||n>100) return 'Age must be between 15 and 100.'; return null; }
-function validateStudentId(val)  { if (!/^\d{4}-\d{1,5}$/.test(val)) return 'Format must be YYYY-NNNNN (e.g. 2024-00001).'; return null; }
 function validateSchoolYear(val) { if (!/^\d{4}-\d{4}$/.test(val)) return 'Format must be YYYY-YYYY (e.g. 2022-2023).'; const [y1,y2]=val.split('-').map(Number); if(y2!==y1+1) return 'End year must be start year + 1.'; return null; }
 function validateContact(val)    { const digits=val.replace(/\D/g,''); if(digits.length<7||digits.length>15) return 'Enter a valid phone number (7–15 digits).'; return null; }
 function validateEmail(val)      { if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) return 'Enter a valid email address.'; return null; }
+
+/* ============================================================
+   BIRTHDAY → AGE AUTO-COMPUTE
+   ============================================================ */
+function computeAgeFromBirthday() {
+    const birthdayEl  = document.getElementById('birthday');
+    const ageDisplay  = document.getElementById('age_display');
+    const birthdayErr = document.getElementById('birthdayErr');
+    const val         = birthdayEl.value;
+
+    if (!val) {
+        ageDisplay.value = '';
+        birthdayEl.classList.remove('input-valid', 'input-error');
+        if (birthdayErr) { birthdayErr.textContent = ''; birthdayErr.classList.remove('show'); }
+        return;
+    }
+
+    const dob  = new Date(val);
+    const now  = new Date();
+
+    // Reject future dates
+    if (dob >= now) {
+        ageDisplay.value = '';
+        birthdayEl.classList.add('input-error');
+        birthdayEl.classList.remove('input-valid');
+        if (birthdayErr) { birthdayErr.textContent = '⚠ Date of birth cannot be in the future.'; birthdayErr.classList.add('show'); }
+        return;
+    }
+
+    let age = now.getFullYear() - dob.getFullYear();
+    const monthDiff = now.getMonth() - dob.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < dob.getDate())) age--;
+
+    if (age < 15 || age > 100) {
+        ageDisplay.value = age;
+        birthdayEl.classList.add('input-error');
+        birthdayEl.classList.remove('input-valid');
+        if (birthdayErr) { birthdayErr.textContent = '⚠ Age must be between 15 and 100.'; birthdayErr.classList.add('show'); }
+        return;
+    }
+
+    // Valid
+    ageDisplay.value = age + ' years old';
+    birthdayEl.classList.add('input-valid');
+    birthdayEl.classList.remove('input-error');
+    if (birthdayErr) { birthdayErr.textContent = ''; birthdayErr.classList.remove('show'); }
+}
 
 /* ============================================================
    DOM READY
@@ -109,11 +154,10 @@ document.addEventListener('DOMContentLoaded', function () {
         loginId.addEventListener('blur', function () { if (this.value) setFieldValid(this); });
     }
 
-    attachFilter('student_id',      'student_id',  validateStudentId);
+    // No student_id filter needed — removed from registration form
     attachFilter('first_name',      'name',        v => v.trim().length < 2 ? 'First name must be at least 2 characters.' : null);
     attachFilter('middle_name',     'name',        null);
     attachFilter('last_name',       'name',        v => v.trim().length < 2 ? 'Last name must be at least 2 characters.' : null);
-    attachFilter('age',             'age',         validateAge);
     attachFilter('contact_number',  'contact',     validateContact);
 
     const emailEl = document.getElementById('email');
@@ -158,6 +202,13 @@ document.addEventListener('DOMContentLoaded', function () {
     if (courseEl) courseEl.addEventListener('change', loadSubjects);
     if (yearEl)   yearEl.addEventListener('change',   loadSubjects);
     if (semEl)    semEl.addEventListener('change',    loadSubjects);
+
+    // Set max date on birthday to today (can't be born in the future)
+    const birthdayEl = document.getElementById('birthday');
+    if (birthdayEl) {
+        const today = new Date().toISOString().split('T')[0];
+        birthdayEl.setAttribute('max', today);
+    }
 
     initPage();
 });
@@ -211,13 +262,11 @@ function openForgotModal() {
     document.getElementById('forgotMsg').innerHTML = '';
     document.getElementById('forgot_email').value  = '';
 
-    // Show attempts warning if low
     updateAttemptsHint();
 
-    // Check if already blocked
     const blockedUntil = fpRlBlockedUntil();
     if (blockedUntil) {
-        showModalStep(3); // blocked screen
+        showModalStep(3);
         startModalBlockTimer(blockedUntil);
     } else {
         showModalStep(1);
@@ -256,7 +305,6 @@ function updateAttemptsHint() {
     }
 }
 
-/* ---- MAIN SUBMIT (with rate limit + validation) ---- */
 async function submitForgotPassword() {
     const btn   = document.getElementById('forgotBtn');
     const msgEl = document.getElementById('forgotMsg');
@@ -265,139 +313,82 @@ async function submitForgotPassword() {
     msgEl.className = 'message-box';
     msgEl.innerHTML = '';
 
-    // 1. Client-side block check
     const blockedUntil = fpRlBlockedUntil();
-    if (blockedUntil) {
-        showModalStep(3);
-        startModalBlockTimer(blockedUntil);
-        return;
-    }
+    if (blockedUntil) { showModalStep(3); startModalBlockTimer(blockedUntil); return; }
 
-    // 2. Empty check
-    if (!email) {
-        msgEl.className = 'message-box error';
-        msgEl.innerHTML = '⚠️ Please enter your email address.';
-        return;
-    }
+    if (!email) { msgEl.className = 'message-box error'; msgEl.innerHTML = '⚠️ Please enter your email address.'; return; }
+    if (validateEmail(email)) { msgEl.className = 'message-box error'; msgEl.innerHTML = '⚠️ Please enter a valid email address.'; return; }
 
-    // 3. Format validation — validateEmail returns error string or null
-    if (validateEmail(email)) {
-        msgEl.className = 'message-box error';
-        msgEl.innerHTML = '⚠️ Please enter a valid email address.';
-        return;
-    }
-
-    // 4. Loading
     const original = btn.innerHTML;
     btn.innerHTML = '<span class="spinner"></span> Sending...';
     btn.disabled  = true;
 
     try {
-        const res  = await fetch(API + '/forgot-password', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ email })
-        });
+        const res  = await fetch(API + '/forgot-password', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ email }) });
         const data = await res.json();
 
         if (res.status === 429) {
-            // Server-side rate limit hit
-            const until = data.retry_after_seconds
-                ? Date.now() + data.retry_after_seconds * 1000
-                : Date.now() + FP_RL.blockMs;
+            const until = data.retry_after_seconds ? Date.now() + data.retry_after_seconds * 1000 : Date.now() + FP_RL.blockMs;
             const d = fpRlLoad(); d.blockedUntil = until; fpRlSave(d);
-            showModalStep(3);
-            startModalBlockTimer(until);
-            return;
+            showModalStep(3); startModalBlockTimer(until); return;
         }
 
-        // Record attempt on any non-429 response
-        fpRlRecord();
-        updateAttemptsHint();
-
-        // Always show sent screen — never reveal if email exists or not
+        fpRlRecord(); updateAttemptsHint();
         document.getElementById('sentToEmail').textContent  = email;
         document.getElementById('modalSubtitle').textContent = 'Reset email sent!';
-        showModalStep(2);
-        startResendCountdown();
+        showModalStep(2); startResendCountdown();
 
     } catch (_) {
         msgEl.className = 'message-box error';
         msgEl.innerHTML = '⚠️ Unable to connect. Please check your connection.';
-    } finally {
-        btn.innerHTML = original;
-        btn.disabled  = false;
-    }
+    } finally { btn.innerHTML = original; btn.disabled = false; }
 }
 
-/* ---- Resend countdown ---- */
 function startResendCountdown() {
     const resendBtn = document.getElementById('resendBtn');
     const cdEl      = document.getElementById('resendCountdown');
     if (!resendBtn || !cdEl) return;
-
     let secs = FP_RL.resendCooldown;
-    resendBtn.disabled = true;
-    cdEl.textContent   = secs;
-
+    resendBtn.disabled = true; cdEl.textContent = secs;
     clearInterval(fpResendTimer);
     fpResendTimer = setInterval(() => {
-        secs--;
-        cdEl.textContent = secs;
-        if (secs <= 0) {
-            clearInterval(fpResendTimer);
-            resendBtn.disabled = false;
-            resendBtn.innerHTML = 'Resend email';
-        }
+        secs--; cdEl.textContent = secs;
+        if (secs <= 0) { clearInterval(fpResendTimer); resendBtn.disabled = false; resendBtn.innerHTML = 'Resend email'; }
     }, 1000);
 }
 
 async function resendReset() {
     const email = document.getElementById('sentToEmail').textContent;
-
     const blockedUntil = fpRlBlockedUntil();
     if (blockedUntil) { showModalStep(3); startModalBlockTimer(blockedUntil); return; }
-
     const btn = document.getElementById('resendBtn');
-    btn.disabled  = true;
-    btn.innerHTML = 'Sending...';
-
+    btn.disabled = true; btn.innerHTML = 'Sending...';
     try {
-        await fetch(API + '/forgot-password', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ email })
-        });
-        fpRlRecord();
-        updateAttemptsHint();
+        await fetch(API + '/forgot-password', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ email }) });
+        fpRlRecord(); updateAttemptsHint();
     } catch (_) {}
-
     startResendCountdown();
 }
 
-/* ---- Blocked modal step countdown ---- */
 let fpBlockTimer = null;
 
 function startModalBlockTimer(blockedUntil) {
     const el = document.getElementById('fpBlockedTimer');
     if (!el) return;
     clearInterval(fpBlockTimer);
-
     function tick() {
         const ms   = Math.max(0, blockedUntil - Date.now());
         const mins = Math.floor(ms / 60000);
         const secs = Math.floor((ms % 60000) / 1000);
         el.textContent = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
         if (ms <= 0) {
-            clearInterval(fpBlockTimer);
-            showModalStep(1);
+            clearInterval(fpBlockTimer); showModalStep(1);
             document.getElementById('forgot_email').value = '';
             const hint = document.getElementById('fpAttemptsHint');
             if (hint) hint.textContent = '';
         }
     }
-    tick();
-    fpBlockTimer = setInterval(tick, 1000);
+    tick(); fpBlockTimer = setInterval(tick, 1000);
 }
 
 /* ============================================================
@@ -459,8 +450,7 @@ async function submitResetPassword() {
     if (!newPassword || newPassword.length < 8) { msgEl.className='message-box error'; msgEl.innerHTML='⚠️ Password must be at least 8 characters.'; return; }
     if (newPassword !== confirmPassword) { msgEl.className='message-box error'; msgEl.innerHTML='⚠️ Passwords do not match.'; return; }
     const original = btn.innerHTML;
-    btn.innerHTML = '<span class="spinner"></span> Resetting...';
-    btn.disabled  = true;
+    btn.innerHTML = '<span class="spinner"></span> Resetting...'; btn.disabled = true;
     try {
         const res  = await fetch(API + '/reset-password', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ token, new_password: newPassword }) });
         const data = await res.json();
@@ -472,8 +462,7 @@ async function submitResetPassword() {
             msgEl.innerHTML = '✗ ' + (data.error || 'Reset failed. The link may have expired.');
         }
     } catch (_) {
-        msgEl.className = 'message-box error';
-        msgEl.innerHTML = '⚠️ Unable to connect. Please try again.';
+        msgEl.className = 'message-box error'; msgEl.innerHTML = '⚠️ Unable to connect. Please try again.';
     } finally { btn.innerHTML = original; btn.disabled = false; }
 }
 
@@ -489,27 +478,23 @@ async function login() {
     const loginId  = document.getElementById('login_id').value.trim();
     const password = document.getElementById('login_password').value;
 
-    if (!loginId) { setFieldError(document.getElementById('login_id'), 'Please enter your Student ID or Username.'); return; }
+    if (!loginId)  { setFieldError(document.getElementById('login_id'), 'Please enter your Student ID or Username.'); return; }
     if (!password) { msgEl.className='message-box error'; msgEl.innerHTML='⚠️ Please enter your password.'; return; }
 
-    btn.innerHTML = '<span class="spinner"></span> Authenticating...';
-    btn.disabled  = true;
+    btn.innerHTML = '<span class="spinner"></span> Authenticating...'; btn.disabled = true;
     try {
         const res  = await fetch(API + '/login', { method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ login_id: loginId, password }) });
         const data = await res.json();
         if (res.ok) {
             localStorage.setItem('jwt', data.token);
             if (data.role === 'student' && data.student_id) localStorage.setItem('student_id', data.student_id);
-            msgEl.className = 'message-box success';
-            msgEl.innerHTML = '✓ Login successful. Redirecting...';
+            msgEl.className = 'message-box success'; msgEl.innerHTML = '✓ Login successful. Redirecting...';
             setTimeout(() => { window.location.href = data.redirect; }, 1200);
         } else {
-            msgEl.className = 'message-box error';
-            msgEl.innerHTML = '✗ ' + (data.error || 'Invalid credentials.');
+            msgEl.className = 'message-box error'; msgEl.innerHTML = '✗ ' + (data.error || 'Invalid credentials.');
         }
     } catch (_) {
-        msgEl.className = 'message-box error';
-        msgEl.innerHTML = '⚠️ Unable to connect to the server.';
+        msgEl.className = 'message-box error'; msgEl.innerHTML = '⚠️ Unable to connect to the server.';
     } finally { btn.innerHTML = originalHTML; btn.disabled = false; }
 }
 
@@ -543,7 +528,8 @@ function removeSubject(id) {
 }
 
 function updateProgress() {
-    const fields = ['student_id','password','first_name','last_name','age','contact_number','email','address','last_school_attended','last_school_year','course','year_level','semester','scholarship_status'];
+    // Removed 'student_id' from tracked fields; added 'birthday'
+    const fields = ['password','first_name','last_name','birthday','contact_number','email','address','last_school_attended','last_school_year','course','year_level','semester','scholarship_status'];
     let filled = fields.filter(f => { const el = document.getElementById(f); return el && el.value.trim(); }).length;
     const subjectsEl = document.getElementById('subjects');
     if (subjectsEl && Array.from(subjectsEl.selectedOptions).length > 0) filled++;
@@ -619,13 +605,24 @@ async function loadSubjects() {
 
 function validateRegisterForm(fields) {
     const errors = [];
-    if (!fields.student_id)  errors.push('Student ID is required.');
-    else if (validateStudentId(fields.student_id)) errors.push(validateStudentId(fields.student_id));
+    // No student_id validation — assigned by registrar
     if (!fields.password || fields.password.length < 8) errors.push('Password must be at least 8 characters.');
     if (!fields.first_name || fields.first_name.trim().length < 2) errors.push('First name is required (min 2 characters).');
     if (!fields.last_name  || fields.last_name.trim().length < 2)  errors.push('Last name is required (min 2 characters).');
-    if (!fields.age) errors.push('Age is required.');
-    else if (validateAge(fields.age)) errors.push(validateAge(fields.age));
+    if (!fields.birthday) {
+        errors.push('Date of birth is required.');
+    } else {
+        const dob = new Date(fields.birthday);
+        const now = new Date();
+        if (dob >= now) {
+            errors.push('Date of birth cannot be in the future.');
+        } else {
+            let age = now.getFullYear() - dob.getFullYear();
+            const m = now.getMonth() - dob.getMonth();
+            if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) age--;
+            if (age < 15 || age > 100) errors.push('Age must be between 15 and 100.');
+        }
+    }
     if (!fields.contact_number) errors.push('Contact number is required.');
     else if (validateContact(fields.contact_number)) errors.push(validateContact(fields.contact_number));
     if (!fields.email) errors.push('Email is required.');
@@ -648,12 +645,11 @@ async function register() {
     msgEl.className = 'message-box'; msgEl.innerHTML = '';
 
     const fields = {
-        student_id:           document.getElementById('student_id').value.trim(),
         password:             document.getElementById('password').value,
         first_name:           document.getElementById('first_name').value.trim(),
         middle_name:          document.getElementById('middle_name').value.trim(),
         last_name:            document.getElementById('last_name').value.trim(),
-        age:                  document.getElementById('age').value,
+        birthday:             document.getElementById('birthday').value,        // YYYY-MM-DD
         contact_number:       document.getElementById('contact_number').value.trim(),
         email:                document.getElementById('email').value.trim(),
         address:              document.getElementById('address').value.trim(),
@@ -673,7 +669,6 @@ async function register() {
 
     const payload = {
         ...fields,
-        age: parseInt(fields.age) || 18,
         father_first_name:     document.getElementById('father_first_name').value.trim(),
         father_middle_name:    document.getElementById('father_middle_name').value.trim(),
         father_last_name:      document.getElementById('father_last_name').value.trim(),
@@ -689,8 +684,7 @@ async function register() {
         subjects:              selectedSubjects,
     };
 
-    btn.innerHTML = '<span class="spinner"></span> Submitting Application...';
-    btn.disabled  = true;
+    btn.innerHTML = '<span class="spinner"></span> Submitting Application...'; btn.disabled = true;
 
     try {
         const res  = await fetch(API + '/register-student', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });

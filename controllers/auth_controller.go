@@ -123,12 +123,12 @@ func Login(c *gin.Context) {
 // ===================== REGISTER STUDENT =====================
 
 type StudentRegisterRequest struct {
-	StudentID  string `json:"student_id"`
+	// NOTE: No StudentID here — assigned by registrar after approval
 	Password   string `json:"password"`
 	FirstName  string `json:"first_name"`
 	MiddleName string `json:"middle_name"`
 	LastName   string `json:"last_name"`
-	Age        int    `json:"age"`
+	Birthday   string `json:"birthday"` // format: YYYY-MM-DD; age computed server-side
 
 	ContactNumber string `json:"contact_number"`
 	Email         string `json:"email"`
@@ -158,6 +158,21 @@ type StudentRegisterRequest struct {
 	ScholarshipStatus string `json:"scholarship_status"`
 }
 
+// computeAge calculates age from a YYYY-MM-DD birthday string.
+func computeAge(birthday string) (int, error) {
+	dob, err := time.Parse("2006-01-02", birthday)
+	if err != nil {
+		return 0, err
+	}
+	now := time.Now()
+	age := now.Year() - dob.Year()
+	// Subtract 1 if birthday hasn't occurred yet this year
+	if now.Month() < dob.Month() || (now.Month() == dob.Month() && now.Day() < dob.Day()) {
+		age--
+	}
+	return age, nil
+}
+
 func RegisterStudent(c *gin.Context) {
 	var req StudentRegisterRequest
 
@@ -166,9 +181,18 @@ func RegisterStudent(c *gin.Context) {
 		return
 	}
 
-	if req.Age == 0 {
-		req.Age = 18
+	// ---- Compute age from birthday
+	age, err := computeAge(req.Birthday)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid birthday format, expected YYYY-MM-DD"})
+		return
 	}
+	if age < 15 || age > 100 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "age must be between 15 and 100"})
+		return
+	}
+
+	// ---- Defaults
 	if req.YearLevel == "" {
 		req.YearLevel = "1"
 	}
@@ -190,14 +214,15 @@ func RegisterStudent(c *gin.Context) {
 	}
 
 	// ---- students table
+	// student_id is NULL at registration — registrar assigns it upon approval
 	res, err := tx.Exec(`
 		INSERT INTO students (
 			student_id, password, first_name, middle_name, last_name,
-			age, contact_number, email, address, status
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			age, birthday, contact_number, email, address, status
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`,
-		req.StudentID, hashedPassword, req.FirstName, req.MiddleName, req.LastName,
-		req.Age, req.ContactNumber, req.Email, req.Address, "pending",
+		nil, hashedPassword, req.FirstName, req.MiddleName, req.LastName,
+		age, req.Birthday, req.ContactNumber, req.Email, req.Address, "pending",
 	)
 	if err != nil {
 		tx.Rollback()
@@ -261,7 +286,7 @@ func RegisterStudent(c *gin.Context) {
 func GetSubjectsForRegistration(c *gin.Context) {
 	course := c.Query("course_id")
 	year := c.Query("year_level")
-	semester := c.Query("semester") // ✅ NEW: read semester from query
+	semester := c.Query("semester")
 
 	query := "SELECT id, subject_name, code FROM subjects WHERE 1=1"
 	args := []interface{}{}
@@ -274,7 +299,6 @@ func GetSubjectsForRegistration(c *gin.Context) {
 		query += " AND year_level=?"
 		args = append(args, year)
 	}
-	// ✅ Only filter by semester if one is selected
 	if semester != "" {
 		query += " AND semester=?"
 		args = append(args, semester)

@@ -35,7 +35,6 @@
                     onkeydown="if(event.key==='Enter') submitForgotPassword()"
                 >
                 <span class="field-error" id="forgotEmailErr"></span>
-                <!-- Attempts remaining hint -->
                 <p id="fpAttemptsHint" style="font-size:12px;margin-top:6px;min-height:18px;"></p>
             </div>
             <button class="btn btn-primary btn-block" onclick="submitForgotPassword()" id="forgotBtn">Send Reset Link</button>
@@ -233,7 +232,7 @@
                     <div class="alert-icon">📋</div>
                     <div class="alert-content">
                         <div class="alert-title">Application Guidelines</div>
-                        <div class="alert-text">All fields marked with <span class="required-mark">*</span> are required. Please ensure all information is accurate before submission.</div>
+                        <div class="alert-text">All fields marked with <span class="required-mark">*</span> are required. Your Student ID will be assigned by the Registrar once your application is approved.</div>
                     </div>
                 </div>
                 <div class="progress-indicator" id="progressIndicator" style="display:none;">
@@ -252,13 +251,9 @@
                             <div class="form-card-icon">👤</div>
                             <h3 class="form-card-title">Personal Information</h3>
                         </div>
+
+                        <!-- Password only (no Student ID) -->
                         <div class="form-grid">
-                            <div class="form-group">
-                                <label class="form-label" for="student_id">Student ID Number <span class="required-mark">*</span></label>
-                                <input type="text" id="student_id" class="form-control" placeholder="e.g., 2024-00001" maxlength="20" oninput="updateProgress()">
-                                <span class="field-error"></span>
-                                <div class="form-hint">💡 Digits and hyphens only (YYYY-NNNNN)</div>
-                            </div>
                             <div class="form-group">
                                 <label class="form-label" for="password">Password <span class="required-mark">*</span></label>
                                 <div class="input-wrap">
@@ -268,8 +263,11 @@
                                         <svg class="eye-hide" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
                                     </button>
                                 </div>
+                                <div class="form-hint">💡 Minimum 8 characters</div>
                             </div>
                         </div>
+
+                        <!-- Name fields -->
                         <div class="form-grid">
                             <div class="form-group">
                                 <label class="form-label" for="first_name">First Name <span class="required-mark">*</span></label>
@@ -290,13 +288,25 @@
                                 <div class="form-hint">💡 Letters only, no numbers or special characters</div>
                             </div>
                         </div>
+
+                        <!-- Birthday + computed Age -->
                         <div class="form-grid">
                             <div class="form-group">
-                                <label class="form-label" for="age">Age <span class="required-mark">*</span></label>
-                                <input type="text" id="age" class="form-control" placeholder="Age (15–100)" maxlength="3" oninput="updateProgress()">
-                                <span class="field-error"></span>
-                                <div class="form-hint">💡 Numbers only (15–100)</div>
+                                <label class="form-label" for="birthday">Date of Birth <span class="required-mark">*</span></label>
+                                <input type="date" id="birthday" class="form-control" oninput="computeAgeFromBirthday(); updateProgress()">
+                                <span class="field-error" id="birthdayErr"></span>
+                                <div class="form-hint">📅 Select your date of birth</div>
                             </div>
+                            <div class="form-group">
+                                <label class="form-label">Age</label>
+                                <!-- Read-only; filled automatically when birthday is picked -->
+                                <input type="text" id="age_display" class="form-control" placeholder="Auto-computed from birthday" readonly
+                                    style="background:var(--neutral-200);cursor:not-allowed;color:var(--neutral-700);">
+                                <div class="form-hint">🔒 Automatically calculated</div>
+                            </div>
+                        </div>
+
+                        <div class="form-grid">
                             <div class="form-group">
                                 <label class="form-label" for="contact_number">Contact Number <span class="required-mark">*</span></label>
                                 <input type="text" id="contact_number" class="form-control" placeholder="09XX XXX XXXX" maxlength="15" oninput="updateProgress()">
