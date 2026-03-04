@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"fmt"
+	"log"
 	"math/big"
 	"net/http"
 	"os"
@@ -590,11 +591,18 @@ func RegistrarApproveWithAssessment(c *gin.Context) {
 		totalAmount,        // billing: total
 	)
 
-	go utils.SendEmail(
-		studentEmail,
-		"🎓 Enrollment Approved – Your Student ID & Billing Statement",
-		emailBody,
-	)
+	// Run in goroutine but log any error so Railway logs show exact failure
+	go func() {
+		if err := utils.SendEmail(
+			studentEmail,
+			"🎓 Enrollment Approved – Your Student ID & Billing Statement",
+			emailBody,
+		); err != nil {
+			log.Printf("❌ APPROVAL EMAIL FAILED to %s: %v", studentEmail, err)
+		} else {
+			log.Printf("✅ APPROVAL EMAIL SENT to %s", studentEmail)
+		}
+	}()
 
 	c.JSON(200, gin.H{
 		"message":              "Student approved with assessment",
@@ -1177,11 +1185,17 @@ func RegistrarApproveEnrollmentApplication(c *gin.Context) {
 		totalAmount,
 	)
 
-	go utils.SendEmail(
-		studentEmail,
-		"✅ Re-Enrollment Approved – Billing Statement",
-		reEnrollEmailBody,
-	)
+	go func() {
+		if err := utils.SendEmail(
+			studentEmail,
+			"✅ Re-Enrollment Approved – Billing Statement",
+			reEnrollEmailBody,
+		); err != nil {
+			log.Printf("❌ RE-ENROLL EMAIL FAILED to %s: %v", studentEmail, err)
+		} else {
+			log.Printf("✅ RE-ENROLL EMAIL SENT to %s", studentEmail)
+		}
+	}()
 
 	c.JSON(200, gin.H{
 		"message":       "Re-enrollment approved successfully",
