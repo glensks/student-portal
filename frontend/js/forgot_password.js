@@ -87,15 +87,19 @@ function onEmailInput() {
     const hint = document.getElementById('attemptsHint');
     if (left === 1) {
         hint.textContent = '⚠️ 1 attempt remaining in this window.';
-        hint.className = 'attempts-hint warn';
+        hint.className   = 'attempts-hint warn';
     } else {
         hint.textContent = '';
-        hint.className = 'attempts-hint';
+        hint.className   = 'attempts-hint';
     }
 }
 
 /* ============================================================
    SUBMIT
+   FIX: Added 404 email_not_found branch — shows error and does
+        NOT call rlRecord() so typos don't burn attempts.
+        Removed the duplicate rlRecord() + showSentState() lines
+        that were left over from the old code.
    ============================================================ */
 async function submitForgot() {
     const btn   = document.getElementById('submitBtn');
@@ -135,8 +139,8 @@ async function submitForgot() {
         });
         const data = await res.json();
 
+        // 5. Server-side rate limit — sync client block state
         if (res.status === 429) {
-            // Server-side rate limit hit — sync client
             const until = data.retry_after_seconds
                 ? Date.now() + data.retry_after_seconds * 1000
                 : Date.now() + RL.blockMs;
@@ -147,10 +151,16 @@ async function submitForgot() {
             return;
         }
 
-        // Record attempt on any non-429 response
-        rlRecord();
+        // 6. Email not registered — show error, do NOT count as an attempt
+        //    so the user can correct a typo without burning their 3 attempts.
+        if (res.status === 404 && data.error === 'email_not_found') {
+            showMsg('error', '⚠️ No account found with that email address. Please check and try again.');
+            document.getElementById('emailInput').focus();
+            return;
+        }
 
-        // Always show sent screen — never reveal if email exists or not
+        // 7. Success — email was found and reset link was sent
+        rlRecord();
         showSentState(email);
 
     } catch (_) {
@@ -178,7 +188,7 @@ function startResendCountdown() {
     const cdEl = document.getElementById('resendCountdown');
     let secs   = RL.resendCooldown;
 
-    btn.disabled = true;
+    btn.disabled     = true;
     cdEl.textContent = secs;
 
     clearInterval(resendTimer);
@@ -187,12 +197,18 @@ function startResendCountdown() {
         cdEl.textContent = secs;
         if (secs <= 0) {
             clearInterval(resendTimer);
-            btn.disabled = false;
+            btn.disabled  = false;
             btn.innerHTML = 'Resend email';
         }
     }, 1000);
 }
 
+/* ============================================================
+   RESEND EMAIL
+   FIX: Now checks response status before calling rlRecord().
+        Handles 429 from server during resend.
+        Only counts the attempt when the server actually sent the email.
+   ============================================================ */
 async function resendEmail() {
     const email = document.getElementById('sentEmailDisplay').textContent;
 
@@ -205,13 +221,33 @@ async function resendEmail() {
     btn.innerHTML = 'Sending...';
 
     try {
-        await fetch(API + '/forgot-password', {
+        const res  = await fetch(API + '/forgot-password', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify({ email })
         });
-        rlRecord();
-    } catch (_) {}
+        const data = await res.json();
+
+        // Server-side rate limit hit during resend
+        if (res.status === 429) {
+            const until = data.retry_after_seconds
+                ? Date.now() + data.retry_after_seconds * 1000
+                : Date.now() + RL.blockMs;
+            const d = rlLoad();
+            d.blockedUntil = until;
+            rlSave(d);
+            showBlockedState(until);
+            return;
+        }
+
+        // Only count the attempt when the server actually processed it
+        if (res.ok) {
+            rlRecord();
+        }
+
+    } catch (_) {
+        // Network error — still restart the countdown so the button re-enables
+    }
 
     startResendCountdown();
 }
@@ -238,8 +274,8 @@ function tickBlockTimer(blockedUntil) {
         if (ms <= 0) {
             clearInterval(blockTimer);
             showState('stateForm');
-            document.getElementById('emailInput').value = '';
-            document.getElementById('attemptsHint').textContent = '';
+            document.getElementById('emailInput').value           = '';
+            document.getElementById('attemptsHint').textContent   = '';
             clearMsg();
         }
     }

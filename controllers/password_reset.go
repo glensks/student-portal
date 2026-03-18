@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"crypto/rand"
+	"database/sql"
 	"encoding/hex"
 	"fmt"
 	"net/http"
@@ -20,6 +21,10 @@ import (
    IP-BASED RATE LIMITER
    Max 3 requests per IP per 15 minutes.
    On exceed → blocked for 15 minutes.
+
+   FIX: fpAllow is now called AFTER the email existence check,
+   so a 404 (unregistered email / typo) does NOT consume an
+   attempt. Only confirmed, valid submissions count.
    ============================================================ */
 
 type fpEntry struct {
@@ -42,8 +47,9 @@ func fpClientIP(c *gin.Context) string {
 	return c.ClientIP()
 }
 
-// fpAllow returns (allowed, retryAfterSeconds)
-func fpAllow(ip string) (bool, int) {
+// fpAllow returns (allowed, retryAfterSeconds).
+// It also performs a read-only check without recording when recordAttempt=false.
+func fpAllow(ip string, recordAttempt bool) (bool, int) {
 	fpMu.Lock()
 	defer fpMu.Unlock()
 
@@ -66,7 +72,7 @@ func fpAllow(ip string) (bool, int) {
 		e.attempts = nil
 	}
 
-	// Prune old attempts
+	// Prune old attempts outside the window
 	cutoff := now.Add(-fpWindow)
 	fresh := e.attempts[:0]
 	for _, t := range e.attempts {
@@ -76,10 +82,19 @@ func fpAllow(ip string) (bool, int) {
 	}
 	e.attempts = fresh
 
-	// Record this attempt
+	// Read-only check — used at the top of the handler so a blocked IP
+	// gets a 429 immediately without wasting a DB query.
+	if !recordAttempt {
+		if len(e.attempts) >= fpMax {
+			e.blockedUntil = now.Add(fpBlockFor)
+			return false, int(fpBlockFor.Seconds())
+		}
+		return true, 0
+	}
+
+	// Record this attempt (only called after email is confirmed to exist)
 	e.attempts = append(e.attempts, now)
 
-	// Block if limit exceeded
 	if len(e.attempts) > fpMax {
 		e.blockedUntil = now.Add(fpBlockFor)
 		return false, int(fpBlockFor.Seconds())
@@ -92,49 +107,85 @@ func fpAllow(ip string) (bool, int) {
 ============================================================
 
 	POST /forgot-password
+
+	Order of operations (important for correct rate-limit UX):
+	1. Validate email format          — no DB, no rate-limit cost
+	2. Check IP is not already blocked — read-only, no cost
+	3. Check email exists in DB        — 404 costs nothing
+	4. Record rate-limit attempt       — only on confirmed email
+	5. Send reset email async
 	============================================================
 */
 func ForgotPassword(c *gin.Context) {
+	var req struct {
+		Email string `json:"email" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+
+	// 1. Basic format check — cheapest gate, no side effects
+	email := strings.ToLower(strings.TrimSpace(req.Email))
+	if !fpValidEmail(email) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid email format"})
+		return
+	}
+
 	ip := fpClientIP(c)
 
-	// --- Rate limit check ---
-	allowed, retryAfter := fpAllow(ip)
-	if !allowed {
+	// 2. Read-only block check — reject already-blocked IPs before DB hit
+	if allowed, retryAfter := fpAllow(ip, false); !allowed {
 		c.JSON(http.StatusTooManyRequests, gin.H{
-			"error":               "Too many requests. Please wait before trying again.",
+			"error":               "too many attempts, please try again later",
 			"retry_after_seconds": retryAfter,
 		})
 		return
 	}
 
-	// --- Parse body ---
-	var req struct {
-		Email string `json:"email" binding:"required"`
+	// 3. Check if email exists in DB — 404 does NOT count as an attempt
+	var studentID int
+	var firstName string
+	err := config.DB.QueryRow(`
+		SELECT id, first_name FROM students
+		WHERE LOWER(email) = ? AND status = 'approved'
+		LIMIT 1
+	`, email).Scan(&studentID, &firstName)
+
+	if err == sql.ErrNoRows {
+		// Email not registered — visible error, no rate-limit cost
+		c.JSON(http.StatusNotFound, gin.H{"error": "email_not_found"})
+		return
 	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Email is required."})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
 		return
 	}
 
-	email := strings.TrimSpace(strings.ToLower(req.Email))
-
-	// --- Format validation ---
-	if !fpValidEmail(email) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Please provide a valid email address."})
+	// 4. Email confirmed — NOW record the rate-limit attempt
+	if allowed, retryAfter := fpAllow(ip, true); !allowed {
+		c.JSON(http.StatusTooManyRequests, gin.H{
+			"error":               "too many attempts, please try again later",
+			"retry_after_seconds": retryAfter,
+		})
 		return
 	}
 
-	// --- ALWAYS return 200 (prevents email enumeration) ---
-	// Actual DB check + email send happens in background
+	// 5. Generate token and send email asynchronously
 	go fpSendIfExists(email)
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "If that email is registered, you will receive a reset link shortly.",
-	})
+	c.JSON(http.StatusOK, gin.H{"message": "reset link sent"})
 }
 
-// fpSendIfExists only sends an email when the address is actually in the DB.
-// Running in a goroutine so the HTTP response is instant.
+/*
+============================================================
+
+	fpSendIfExists
+	Runs in a goroutine — generates a secure token, saves it,
+	and sends the reset email. Fails silently on error so the
+	HTTP response is always instant.
+	============================================================
+*/
 func fpSendIfExists(email string) {
 	var studentDBID int
 	var firstName string
@@ -144,18 +195,17 @@ func fpSendIfExists(email string) {
 	`, email).Scan(&studentDBID, &firstName)
 
 	if err != nil {
-		// Email not registered — silently do nothing (no log leak either)
-		fmt.Printf("[ForgotPassword] email not found: %s — no email sent\n", email)
+		fmt.Printf("[ForgotPassword] email not found in goroutine: %s\n", email)
 		return
 	}
 
-	// Invalidate existing unused tokens for this student
+	// Invalidate any existing unused tokens for this student
 	_, _ = config.DB.Exec(`
 		UPDATE password_reset_tokens SET used = 1
 		WHERE student_id = ? AND used = 0
 	`, studentDBID)
 
-	// Generate secure token
+	// Generate a cryptographically secure 32-byte token
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
 		fmt.Printf("[ForgotPassword] token gen error: %v\n", err)
@@ -163,7 +213,7 @@ func fpSendIfExists(email string) {
 	}
 	token := hex.EncodeToString(b)
 
-	// Save token — expiry handled by MySQL
+	// Persist token with 1-hour expiry
 	_, err = config.DB.Exec(`
 		INSERT INTO password_reset_tokens (student_id, token, expires_at)
 		VALUES (?, ?, NOW() + INTERVAL 1 HOUR)
@@ -197,7 +247,6 @@ func VerifyResetToken(c *gin.Context) {
 	}
 
 	var id int
-	// MySQL compares time — no Go timezone issues
 	err := config.DB.QueryRow(`
 		SELECT id FROM password_reset_tokens
 		WHERE token = ? AND expires_at > NOW() AND used = 0
@@ -272,7 +321,7 @@ func ResetPassword(c *gin.Context) {
    HELPERS
    ============================================================ */
 
-// Basic email format check
+// fpValidEmail does a basic sanity check before hitting the DB.
 func fpValidEmail(email string) bool {
 	if len(email) < 5 || len(email) > 254 {
 		return false
