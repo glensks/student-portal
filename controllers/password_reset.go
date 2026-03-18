@@ -109,7 +109,7 @@ func fpAllow(ip string, recordAttempt bool) (bool, int) {
 	POST /forgot-password
 
 	Order of operations (important for correct rate-limit UX):
-	1. Validate email format          — no DB, no rate-limit cost
+	1. Validate email format           — no DB, no rate-limit cost
 	2. Check IP is not already blocked — read-only, no cost
 	3. Check email exists in DB        — 404 costs nothing
 	4. Record rate-limit attempt       — only on confirmed email
@@ -153,7 +153,7 @@ func ForgotPassword(c *gin.Context) {
 	`, email).Scan(&studentID, &firstName)
 
 	if err == sql.ErrNoRows {
-		// Email not registered — visible error, no rate-limit cost
+		// Email not registered or not approved — visible error, no rate-limit cost
 		c.JSON(http.StatusNotFound, gin.H{"error": "email_not_found"})
 		return
 	}
@@ -184,18 +184,26 @@ func ForgotPassword(c *gin.Context) {
 	Runs in a goroutine — generates a secure token, saves it,
 	and sends the reset email. Fails silently on error so the
 	HTTP response is always instant.
+
+	FIX: Added AND status = 'approved' — must match the main
+	handler query exactly so a non-approved student can never
+	receive a reset email even if the goroutine races ahead.
 	============================================================
 */
 func fpSendIfExists(email string) {
 	var studentDBID int
 	var firstName string
 
+	// FIX: was missing AND status = 'approved' — caused emails to be
+	// sent for pending/unapproved students and non-existent addresses.
 	err := config.DB.QueryRow(`
-		SELECT id, first_name FROM students WHERE LOWER(email) = ? LIMIT 1
+		SELECT id, first_name FROM students
+		WHERE LOWER(email) = ? AND status = 'approved'
+		LIMIT 1
 	`, email).Scan(&studentDBID, &firstName)
 
 	if err != nil {
-		fmt.Printf("[ForgotPassword] email not found in goroutine: %s\n", email)
+		fmt.Printf("[ForgotPassword] email not found or not approved in goroutine: %s\n", email)
 		return
 	}
 
