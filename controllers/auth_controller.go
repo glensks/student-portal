@@ -33,21 +33,21 @@ func Login(c *gin.Context) {
 
 	// ---- check users table
 	err := config.DB.QueryRow(`
-			SELECT id, username, password, role
-			FROM users
-			WHERE username = ?
-			LIMIT 1
-		`, req.LoginID).Scan(&id, &username, &hashedPassword, &role)
+		SELECT id, username, password, role
+		FROM users
+		WHERE username = ?
+		LIMIT 1
+	`, req.LoginID).Scan(&id, &username, &hashedPassword, &role)
 
 	// ---- if not found, check students table
 	if err == sql.ErrNoRows {
 		var firstName, lastName string
 		err = config.DB.QueryRow(`
-				SELECT id, student_id, password, first_name, last_name, status
-				FROM students
-				WHERE student_id = ?
-				LIMIT 1
-			`, req.LoginID).Scan(&id, &studentID, &hashedPassword, &firstName, &lastName, &status)
+			SELECT id, student_id, password, first_name, last_name, status
+			FROM students
+			WHERE student_id = ?
+			LIMIT 1
+		`, req.LoginID).Scan(&id, &studentID, &hashedPassword, &firstName, &lastName, &status)
 
 		if err == nil {
 			role = "student"
@@ -128,10 +128,12 @@ type StudentRegisterRequest struct {
 	LastName   string `json:"last_name"`
 	Age        int    `json:"age"` // computed on frontend from birthday picker
 
-	ContactNumber string `json:"contact_number"`
-	Email         string `json:"email"`
-	Address       string `json:"address"`
+	ContactNumber     string `json:"contact_number"`
+	Email             string `json:"email"`
+	Address           string `json:"address"`
+	ProvincialAddress string `json:"provincial_address"`
 
+	FatherDeceased   bool   `json:"father_deceased"`
 	FatherFirstName  string `json:"father_first_name"`
 	FatherMiddleName string `json:"father_middle_name"`
 	FatherLastName   string `json:"father_last_name"`
@@ -139,6 +141,7 @@ type StudentRegisterRequest struct {
 	FatherContact    string `json:"father_contact_number"`
 	FatherAddress    string `json:"father_address"`
 
+	MotherDeceased   bool   `json:"mother_deceased"`
 	MotherFirstName  string `json:"mother_first_name"`
 	MotherMiddleName string `json:"mother_middle_name"`
 	MotherLastName   string `json:"mother_last_name"`
@@ -180,6 +183,24 @@ func RegisterStudent(c *gin.Context) {
 		req.ScholarshipStatus = "non-scholar"
 	}
 
+	// If deceased, force all parent fields to empty strings
+	if req.FatherDeceased {
+		req.FatherFirstName = ""
+		req.FatherMiddleName = ""
+		req.FatherLastName = ""
+		req.FatherOccupation = ""
+		req.FatherContact = ""
+		req.FatherAddress = ""
+	}
+	if req.MotherDeceased {
+		req.MotherFirstName = ""
+		req.MotherMiddleName = ""
+		req.MotherLastName = ""
+		req.MotherOccupation = ""
+		req.MotherContact = ""
+		req.MotherAddress = ""
+	}
+
 	subjectsStr := strings.Join(req.Subjects, ",")
 
 	tx, err := config.DB.Begin()
@@ -193,12 +214,14 @@ func RegisterStudent(c *gin.Context) {
 	res, err := tx.Exec(`
 		INSERT INTO students (
 			student_id, password, first_name, middle_name, last_name,
-			age, contact_number, email, address, status
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			age, contact_number, email, address, provincial_address, status
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`,
 		nil, nil,
 		req.FirstName, req.MiddleName, req.LastName,
-		req.Age, req.ContactNumber, req.Email, req.Address, "pending",
+		req.Age, req.ContactNumber, req.Email,
+		req.Address, req.ProvincialAddress,
+		"pending",
 	)
 	if err != nil {
 		tx.Rollback()
@@ -211,16 +234,20 @@ func RegisterStudent(c *gin.Context) {
 	_, err = tx.Exec(`
 		INSERT INTO student_family (
 			student_id,
+			father_deceased,
 			father_first_name, father_middle_name, father_last_name,
 			father_occupation, father_contact_number, father_address,
+			mother_deceased,
 			mother_first_name, mother_middle_name, mother_last_name,
 			mother_occupation, mother_contact_number, mother_address
 		)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`,
 		studentDBID,
+		req.FatherDeceased,
 		req.FatherFirstName, req.FatherMiddleName, req.FatherLastName,
 		req.FatherOccupation, req.FatherContact, req.FatherAddress,
+		req.MotherDeceased,
 		req.MotherFirstName, req.MotherMiddleName, req.MotherLastName,
 		req.MotherOccupation, req.MotherContact, req.MotherAddress,
 	)

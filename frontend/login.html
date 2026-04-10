@@ -236,7 +236,6 @@
                             <h3 class="form-card-title">Personal Information</h3>
                         </div>
 
-                        <!-- Name fields -->
                         <div class="form-grid">
                             <div class="form-group">
                                 <label class="form-label" for="first_name">First Name <span class="required-mark">*</span></label>
@@ -258,7 +257,6 @@
                             </div>
                         </div>
 
-                        <!-- Birthday + computed Age -->
                         <div class="form-grid">
                             <div class="form-group">
                                 <label class="form-label" for="birthday">Date of Birth <span class="required-mark">*</span></label>
@@ -287,10 +285,19 @@
                                 <span class="field-error"></span>
                             </div>
                         </div>
+
                         <div class="form-group">
-                            <label class="form-label" for="address">Complete Address <span class="required-mark">*</span></label>
-                            <textarea id="address" class="form-control" placeholder="House/Unit No., Street, Barangay, City/Municipality, Province" maxlength="200" oninput="updateProgress()"></textarea>
+                            <label class="form-label" for="address">City Address <span class="required-mark">*</span></label>
+                            <textarea id="address" class="form-control" placeholder="House/Unit No., Street, Barangay, City/Municipality" maxlength="200" oninput="updateProgress()"></textarea>
                             <span class="field-error"></span>
+                            <div class="form-hint">🏙️ Enter your current city address</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="provincial_address">Provincial Address</label>
+                            <textarea id="provincial_address" class="form-control" placeholder="House/Unit No., Street, Barangay, City/Municipality, Province (if different from city address)" maxlength="200"></textarea>
+                            <span class="field-error"></span>
+                            <div class="form-hint">🏡 Leave blank if same as city address</div>
                         </div>
                     </div>
 
@@ -300,38 +307,51 @@
                             <div class="form-card-icon">👨</div>
                             <h3 class="form-card-title">Father's Information</h3>
                         </div>
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label class="form-label">First Name</label>
-                                <input type="text" id="father_first_name" class="form-control" placeholder="First name" maxlength="50">
-                                <span class="field-error"></span>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Middle Name</label>
-                                <input type="text" id="father_middle_name" class="form-control" placeholder="Middle name" maxlength="50">
-                                <span class="field-error"></span>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Last Name</label>
-                                <input type="text" id="father_last_name" class="form-control" placeholder="Last name" maxlength="50">
-                                <span class="field-error"></span>
-                            </div>
+
+                        <!-- NO onchange here — attached via addEventListener in JS -->
+                        <div class="deceased-toggle-row" id="fatherDeceasedRow">
+                            <label class="deceased-label">
+                                <input type="checkbox" id="fatherDeceased">
+                                <span class="deceased-check-box"></span>
+                                Mark as Deceased
+                            </label>
+                            <span class="deceased-badge" id="fatherDeceasedBadge">⚰️ Deceased</span>
                         </div>
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label class="form-label">Occupation</label>
-                                <input type="text" id="father_occupation" class="form-control" placeholder="Occupation" maxlength="100">
-                                <span class="field-error"></span>
+
+                        <div id="fatherFieldsWrap" class="parent-fields-wrap">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">First Name</label>
+                                    <input type="text" id="father_first_name" class="form-control" placeholder="First name" maxlength="50">
+                                    <span class="field-error"></span>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Middle Name</label>
+                                    <input type="text" id="father_middle_name" class="form-control" placeholder="Middle name" maxlength="50">
+                                    <span class="field-error"></span>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Last Name</label>
+                                    <input type="text" id="father_last_name" class="form-control" placeholder="Last name" maxlength="50">
+                                    <span class="field-error"></span>
+                                </div>
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">Occupation</label>
+                                    <input type="text" id="father_occupation" class="form-control" placeholder="Occupation" maxlength="100">
+                                    <span class="field-error"></span>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Contact Number</label>
+                                    <input type="text" id="father_contact_number" class="form-control" placeholder="Contact number" maxlength="15">
+                                    <span class="field-error"></span>
+                                </div>
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Contact Number</label>
-                                <input type="text" id="father_contact_number" class="form-control" placeholder="Contact number" maxlength="15">
-                                <span class="field-error"></span>
+                                <label class="form-label">Address</label>
+                                <textarea id="father_address" class="form-control" placeholder="Complete address" maxlength="200"></textarea>
                             </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Address</label>
-                            <textarea id="father_address" class="form-control" placeholder="Complete address" maxlength="200"></textarea>
                         </div>
                     </div>
 
@@ -341,38 +361,51 @@
                             <div class="form-card-icon">👩</div>
                             <h3 class="form-card-title">Mother's Information</h3>
                         </div>
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label class="form-label">First Name</label>
-                                <input type="text" id="mother_first_name" class="form-control" placeholder="First name" maxlength="50">
-                                <span class="field-error"></span>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Middle Name</label>
-                                <input type="text" id="mother_middle_name" class="form-control" placeholder="Middle name" maxlength="50">
-                                <span class="field-error"></span>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Last Name</label>
-                                <input type="text" id="mother_last_name" class="form-control" placeholder="Last name" maxlength="50">
-                                <span class="field-error"></span>
-                            </div>
+
+                        <!-- NO onchange here — attached via addEventListener in JS -->
+                        <div class="deceased-toggle-row" id="motherDeceasedRow">
+                            <label class="deceased-label">
+                                <input type="checkbox" id="motherDeceased">
+                                <span class="deceased-check-box"></span>
+                                Mark as Deceased
+                            </label>
+                            <span class="deceased-badge" id="motherDeceasedBadge">⚰️ Deceased</span>
                         </div>
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label class="form-label">Occupation</label>
-                                <input type="text" id="mother_occupation" class="form-control" placeholder="Occupation" maxlength="100">
-                                <span class="field-error"></span>
+
+                        <div id="motherFieldsWrap" class="parent-fields-wrap">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">First Name</label>
+                                    <input type="text" id="mother_first_name" class="form-control" placeholder="First name" maxlength="50">
+                                    <span class="field-error"></span>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Middle Name</label>
+                                    <input type="text" id="mother_middle_name" class="form-control" placeholder="Middle name" maxlength="50">
+                                    <span class="field-error"></span>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Last Name</label>
+                                    <input type="text" id="mother_last_name" class="form-control" placeholder="Last name" maxlength="50">
+                                    <span class="field-error"></span>
+                                </div>
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">Occupation</label>
+                                    <input type="text" id="mother_occupation" class="form-control" placeholder="Occupation" maxlength="100">
+                                    <span class="field-error"></span>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Contact Number</label>
+                                    <input type="text" id="mother_contact_number" class="form-control" placeholder="Contact number" maxlength="15">
+                                    <span class="field-error"></span>
+                                </div>
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Contact Number</label>
-                                <input type="text" id="mother_contact_number" class="form-control" placeholder="Contact number" maxlength="15">
-                                <span class="field-error"></span>
+                                <label class="form-label">Address</label>
+                                <textarea id="mother_address" class="form-control" placeholder="Complete address" maxlength="200"></textarea>
                             </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Address</label>
-                            <textarea id="mother_address" class="form-control" placeholder="Complete address" maxlength="200"></textarea>
                         </div>
                     </div>
 
@@ -411,6 +444,7 @@
                                     <option value="2">Second Year</option>
                                     <option value="3">Third Year</option>
                                     <option value="4">Fourth Year</option>
+                                    <option value="5">Fifth Year</option>
                                 </select>
                             </div>
                         </div>
@@ -467,6 +501,6 @@
     <p>&copy; 2024 University Student Information System. All rights reserved.</p>
 </footer>
 
-<script src="/assets/js/login.js"></script>
+<script src="/assets/js/login.js?v=2"></script>
 </body>
 </html>

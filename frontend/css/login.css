@@ -422,3 +422,133 @@ select[multiple] option:checked { background: linear-gradient(135deg, var(--fore
     .header-top-content { flex-direction: column; gap: 8px; text-align: center; }
     .modal { padding: 28px 24px; margin: 16px; }
 }
+
+/* ================================================================
+   DECEASED TOGGLE
+   ================================================================ */
+
+.deceased-toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    background: white;
+    border: 1.5px solid var(--neutral-300);
+    border-radius: 8px;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+/* When deceased is active, highlight the toggle row */
+.deceased-toggle-row.active {
+    border-color: #fca5a5;
+    background: #fff5f5;
+}
+
+.deceased-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--neutral-700);
+    user-select: none;
+    transition: color 0.2s;
+}
+
+.deceased-label:hover { color: #dc2626; }
+
+/* Hide the native checkbox */
+.deceased-label input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+/* Custom checkbox box */
+.deceased-check-box {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--neutral-400);
+    border-radius: 5px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.deceased-label:hover .deceased-check-box {
+    border-color: #dc2626;
+}
+
+.deceased-label input[type="checkbox"]:checked + .deceased-check-box {
+    background: #dc2626;
+    border-color: #dc2626;
+}
+
+.deceased-label input[type="checkbox"]:checked + .deceased-check-box::after {
+    content: '✓';
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* Deceased badge pill */
+.deceased-badge {
+    display: none;
+    align-items: center;
+    gap: 4px;
+    background: #fee2e2;
+    color: #991b1b;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid #fca5a5;
+    margin-left: auto;
+}
+
+.deceased-badge.show {
+    display: inline-flex;
+}
+
+/* ---- Fields wrapper — normal state ---- */
+.parent-fields-wrap {
+    transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+/* ---- Fields wrapper — deceased state ---- */
+.parent-fields-wrap.is-deceased {
+    opacity: 0.4;
+    filter: grayscale(0.5);
+    pointer-events: none;
+    user-select: none;
+}
+
+/* ---- Disabled inputs inside deceased wrap ---- */
+.parent-fields-wrap.is-deceased input,
+.parent-fields-wrap.is-deceased textarea,
+.parent-fields-wrap.is-deceased select {
+    background: var(--neutral-200) !important;
+    color: var(--neutral-400) !important;
+    border-color: var(--neutral-300) !important;
+    box-shadow: none !important;
+    cursor: not-allowed !important;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Override any valid/error states when deceased */
+.parent-fields-wrap.is-deceased input.input-valid,
+.parent-fields-wrap.is-deceased input.input-error,
+.parent-fields-wrap.is-deceased textarea.input-valid,
+.parent-fields-wrap.is-deceased textarea.input-error {
+    border-color: var(--neutral-300) !important;
+    box-shadow: none !important;
+}

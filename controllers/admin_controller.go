@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"strings"
 	"student-portal/config"
 	"student-portal/utils"
 	"time"
@@ -68,6 +69,25 @@ func AdminGetUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
+// handleDuplicateEntryError checks if an error is a MySQL duplicate entry error
+// and returns an appropriate user-facing message.
+func handleDuplicateEntryError(err error) (bool, string) {
+	if err == nil {
+		return false, ""
+	}
+	errStr := err.Error()
+	if strings.Contains(errStr, "Duplicate entry") || strings.Contains(errStr, "1062") {
+		if strings.Contains(errStr, "username") {
+			return true, "Username already exists"
+		}
+		if strings.Contains(errStr, "email") {
+			return true, "Email already exists"
+		}
+		return true, "A record with this information already exists"
+	}
+	return false, ""
+}
+
 // AdminCreateUser creates a new user (student, teacher, etc.) by admin.
 func AdminCreateUser(c *gin.Context) {
 	var input struct {
@@ -87,30 +107,46 @@ func AdminCreateUser(c *gin.Context) {
 		return
 	}
 
-	// Log incoming data for debugging purposes.
-	fmt.Println("Incoming data:", input)
+	// Sanitize: trim whitespace from all fields to prevent accidental duplicates.
+	input.Username = strings.TrimSpace(input.Username)
+	input.Email = strings.TrimSpace(input.Email)
+	input.FirstName = strings.TrimSpace(input.FirstName)
+	input.MiddleName = strings.TrimSpace(input.MiddleName)
+	input.Surname = strings.TrimSpace(input.Surname)
+	input.ContactNumber = strings.TrimSpace(input.ContactNumber)
+	input.Role = strings.TrimSpace(input.Role)
 
-	// Check if username already exists in the database.
-	var count int
-	if err := config.DB.QueryRow("SELECT COUNT(*) FROM users WHERE username=?", input.Username).Scan(&count); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	// Validate role is one of the allowed values.
+	allowedRoles := map[string]bool{
+		"admin": true, "teacher": true, "student": true,
+		"registrar": true, "cashier": true, "records": true, "faculty": true, "it_tech": true,
+	}
+	if !allowedRoles[input.Role] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid role specified"})
 		return
 	}
 
-	// If the username exists, return an error.
-	if count > 0 {
+	// Log incoming data for debugging purposes.
+	fmt.Println("Incoming data:", input.Username, input.Email, input.Role)
+
+	// Check if username already exists in the database.
+	var usernameCount int
+	if err := config.DB.QueryRow("SELECT COUNT(*) FROM users WHERE username=?", input.Username).Scan(&usernameCount); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if usernameCount > 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Username already exists"})
 		return
 	}
 
 	// Check if email already exists in the database.
-	if err := config.DB.QueryRow("SELECT COUNT(*) FROM users WHERE email=?", input.Email).Scan(&count); err != nil {
+	var emailCount int
+	if err := config.DB.QueryRow("SELECT COUNT(*) FROM users WHERE email=?", input.Email).Scan(&emailCount); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	// If the email exists, return an error.
-	if count > 0 {
+	if emailCount > 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Email already exists"})
 		return
 	}
@@ -126,7 +162,11 @@ func AdminCreateUser(c *gin.Context) {
 		input.Email, input.ContactNumber, input.Role, "active")
 
 	if err != nil {
-		// Log the error for debugging.
+		// Handle MySQL duplicate entry error as a safety net (race condition / missing pre-check).
+		if isDup, msg := handleDuplicateEntryError(err); isDup {
+			c.JSON(http.StatusBadRequest, gin.H{"error": msg})
+			return
+		}
 		fmt.Println("Error while inserting user:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -156,6 +196,32 @@ func AdminEditUser(c *gin.Context) {
 		return
 	}
 
+	// Sanitize fields.
+	input.Username = strings.TrimSpace(input.Username)
+	input.Email = strings.TrimSpace(input.Email)
+
+	// Check if username is taken by another user.
+	var usernameCount int
+	if err := config.DB.QueryRow("SELECT COUNT(*) FROM users WHERE username=? AND id!=?", input.Username, id).Scan(&usernameCount); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if usernameCount > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Username already taken by another user"})
+		return
+	}
+
+	// Check if email is taken by another user.
+	var emailCount int
+	if err := config.DB.QueryRow("SELECT COUNT(*) FROM users WHERE email=? AND id!=?", input.Email, id).Scan(&emailCount); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if emailCount > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email already taken by another user"})
+		return
+	}
+
 	// Update user in the database.
 	var err error
 	if input.Password != "" {
@@ -174,7 +240,10 @@ func AdminEditUser(c *gin.Context) {
 	}
 
 	if err != nil {
-		// Log the error for debugging.
+		if isDup, msg := handleDuplicateEntryError(err); isDup {
+			c.JSON(http.StatusBadRequest, gin.H{"error": msg})
+			return
+		}
 		fmt.Println("Error while updating user:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -189,7 +258,6 @@ func AdminDeleteUser(c *gin.Context) {
 	id := c.Param("id")
 	_, err := config.DB.Exec("DELETE FROM users WHERE id=?", id)
 	if err != nil {
-		// Log the error for debugging.
 		fmt.Println("Error while deleting user:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -315,22 +383,13 @@ func AdminGetSystemStats(c *gin.Context) {
 		RejectedStudents int `json:"rejected_students"`
 	}
 
-	// Get total users
 	config.DB.QueryRow("SELECT COUNT(*) FROM users").Scan(&stats.TotalUsers)
-
-	// Get active users
 	config.DB.QueryRow("SELECT COUNT(*) FROM users WHERE status='active'").Scan(&stats.ActiveUsers)
-
-	// Get inactive users
 	config.DB.QueryRow("SELECT COUNT(*) FROM users WHERE status='inactive'").Scan(&stats.InactiveUsers)
-
-	// Get counts by role
 	config.DB.QueryRow("SELECT COUNT(*) FROM users WHERE role='student'").Scan(&stats.StudentCount)
 	config.DB.QueryRow("SELECT COUNT(*) FROM users WHERE role='teacher'").Scan(&stats.TeacherCount)
 	config.DB.QueryRow("SELECT COUNT(*) FROM users WHERE role='admin'").Scan(&stats.AdminCount)
 	config.DB.QueryRow("SELECT COUNT(*) FROM users WHERE role='it_tech'").Scan(&stats.ITTechCount)
-
-	// Get student table stats
 	config.DB.QueryRow("SELECT COUNT(*) FROM students").Scan(&stats.TotalStudents)
 	config.DB.QueryRow("SELECT COUNT(*) FROM students WHERE status='approved'").Scan(&stats.ApprovedStudents)
 	config.DB.QueryRow("SELECT COUNT(*) FROM students WHERE status='pending'").Scan(&stats.PendingStudents)
@@ -351,20 +410,17 @@ func AdminBulkUpdateStatus(c *gin.Context) {
 		return
 	}
 
-	// Validate status
 	if input.Status != "active" && input.Status != "inactive" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Status must be 'active' or 'inactive'"})
 		return
 	}
 
-	// Begin transaction
 	tx, err := config.DB.Begin()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Update each user
 	for _, userID := range input.UserIDs {
 		_, err := tx.Exec("UPDATE users SET status=? WHERE id=?", input.Status, userID)
 		if err != nil {
@@ -374,7 +430,6 @@ func AdminBulkUpdateStatus(c *gin.Context) {
 		}
 	}
 
-	// Commit transaction
 	if err := tx.Commit(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -530,7 +585,6 @@ func AdminGetStudentDetails(c *gin.Context) {
 		return
 	}
 
-	// Convert sql.NullString to regular strings
 	student.FirstName = firstName.String
 	student.MiddleName = middleName.String
 	student.LastName = lastName.String
@@ -547,7 +601,7 @@ func AdminGetStudentDetails(c *gin.Context) {
 func AdminToggleStudentStatus(c *gin.Context) {
 	id := c.Param("id")
 	var input struct {
-		Status string `json:"status" binding:"required"` // "approved", "pending", "rejected"
+		Status string `json:"status" binding:"required"`
 	}
 
 	if err := c.BindJSON(&input); err != nil {
@@ -555,7 +609,6 @@ func AdminToggleStudentStatus(c *gin.Context) {
 		return
 	}
 
-	// Validate status value
 	if input.Status != "approved" && input.Status != "pending" && input.Status != "rejected" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Status must be 'approved', 'pending', or 'rejected'"})
 		return
@@ -583,10 +636,8 @@ func AdminResetStudentPassword(c *gin.Context) {
 		return
 	}
 
-	// Hash the new password
 	hash := utils.HashPassword(input.NewPassword)
 
-	// Update password in database
 	_, err := config.DB.Exec("UPDATE students SET password=? WHERE id=?", hash, id)
 	if err != nil {
 		fmt.Println("Error resetting student password:", err)
@@ -673,20 +724,17 @@ func AdminBulkUpdateStudentStatus(c *gin.Context) {
 		return
 	}
 
-	// Validate status
 	if input.Status != "approved" && input.Status != "pending" && input.Status != "rejected" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Status must be 'approved', 'pending', or 'rejected'"})
 		return
 	}
 
-	// Begin transaction
 	tx, err := config.DB.Begin()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Update each student
 	for _, studentID := range input.StudentIDs {
 		_, err := tx.Exec("UPDATE students SET status=? WHERE id=?", input.Status, studentID)
 		if err != nil {
@@ -696,7 +744,6 @@ func AdminBulkUpdateStudentStatus(c *gin.Context) {
 		}
 	}
 
-	// Commit transaction
 	if err := tx.Commit(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

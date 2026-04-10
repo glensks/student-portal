@@ -72,9 +72,7 @@ body {
     box-shadow: 0 0 0 2px var(--gold-light), 0 0 0 4px rgba(201,168,76,0.3);
     font-size: 22px;
 }
-.header-logo-text {
-    line-height: 1.15;
-}
+.header-logo-text { line-height: 1.15; }
 .header-logo-text .univ-name {
     font-family: 'Playfair Display', serif;
     font-size: 13px;
@@ -119,9 +117,7 @@ body {
     align-items: center;
     gap: 16px;
 }
-.header-clock {
-    text-align: right;
-}
+.header-clock { text-align: right; }
 .header-clock .time {
     font-size: 16px;
     font-weight: 600;
@@ -182,9 +178,7 @@ body {
     border-right: 1px solid rgba(255,255,255,0.07);
     z-index: 100;
 }
-.sidebar-section {
-    padding: 16px 14px 8px;
-}
+.sidebar-section { padding: 16px 14px 8px; }
 .sidebar-section-label {
     font-size: 10px;
     font-weight: 600;
@@ -213,21 +207,13 @@ body {
     letter-spacing: 0.01em;
     margin-bottom: 2px;
 }
-.sidebar-btn:hover {
-    background: rgba(255,255,255,0.08);
-    color: var(--white);
-}
+.sidebar-btn:hover { background: rgba(255,255,255,0.08); color: var(--white); }
 .sidebar-btn.active {
     background: var(--forest-800);
     color: var(--white);
     box-shadow: inset 3px 0 0 var(--gold);
 }
-.sidebar-btn .icon {
-    font-size: 16px;
-    width: 20px;
-    text-align: center;
-    flex-shrink: 0;
-}
+.sidebar-btn .icon { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
 .sidebar-logout {
     margin-top: auto;
     padding: 14px;
@@ -252,10 +238,7 @@ body {
     transition: all 0.2s;
     letter-spacing: 0.02em;
 }
-.sidebar-logout button:hover {
-    background: rgba(192,57,43,0.3);
-    color: #faa;
-}
+.sidebar-logout button:hover { background: rgba(192,57,43,0.3); color: #faa; }
 
 /* ===== MAIN ===== */
 .main {
@@ -264,25 +247,6 @@ body {
     margin-bottom: var(--footer-h);
     padding: 28px;
     min-height: calc(100vh - var(--header-h) - var(--footer-h));
-}
-.page-heading {
-    margin-bottom: 24px;
-    display: flex;
-    align-items: flex-end;
-    gap: 16px;
-    border-bottom: 2px solid var(--cream-dark);
-    padding-bottom: 16px;
-}
-.page-heading h1 {
-    font-family: 'Playfair Display', serif;
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--forest-900);
-}
-.page-heading .subtitle {
-    font-size: 13px;
-    color: var(--text-light);
-    margin-bottom: 4px;
 }
 
 /* ===== STATS CARDS ===== */
@@ -311,10 +275,7 @@ body {
     background: var(--forest-400);
     opacity: 0.08;
 }
-.stat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 14px rgba(0,0,0,0.1);
-}
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.1); }
 .stat-card h3 {
     font-size: 11px;
     font-weight: 600;
@@ -410,9 +371,7 @@ tr:hover td { background: #f0f7f4; }
     transition: border-color 0.2s;
     outline: none;
 }
-.search-container input:focus, .search-container select:focus {
-    border-color: var(--forest-600);
-}
+.search-container input:focus, .search-container select:focus { border-color: var(--forest-600); }
 .search-container input { width: 300px; }
 .search-container button {
     padding: 9px 18px;
@@ -495,7 +454,13 @@ tr:hover td { background: #f0f7f4; }
 .form-grid-full { grid-column: 1 / -1; }
 
 /* User Details Card */
-.user-details { background: var(--cream); padding: 16px 18px; border-radius: 10px; margin-bottom: 16px; border: 1px solid var(--cream-dark); }
+.user-details {
+    background: var(--cream);
+    padding: 16px 18px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    border: 1px solid var(--cream-dark);
+}
 .user-details p { margin: 7px 0; font-size: 13.5px; }
 .user-details strong { color: var(--forest-800); margin-right: 6px; }
 
@@ -515,7 +480,13 @@ tr:hover td { background: #f0f7f4; }
 .status-rejected { background: #fee2e2; color: #991b1b; }
 
 /* Bulk Actions */
-.bulk-actions { margin: 15px 0; padding: 14px; background: var(--cream); border-radius: 8px; border: 1px solid var(--cream-dark); }
+.bulk-actions {
+    margin: 15px 0;
+    padding: 14px;
+    background: var(--cream);
+    border-radius: 8px;
+    border: 1px solid var(--cream-dark);
+}
 .bulk-actions button { margin-right: 10px; }
 
 /* Overlay */
@@ -528,7 +499,29 @@ tr:hover td { background: #f0f7f4; }
     z-index: 900;
 }
 
-/* Checkbox */
+/* Error / Success toast */
+.toast {
+    position: fixed;
+    bottom: 70px;
+    right: 24px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 600;
+    z-index: 9999;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    display: none;
+    max-width: 360px;
+    animation: slideIn 0.25s ease;
+}
+.toast-error { background: #fee2e2; color: #991b1b; border-left: 4px solid var(--red); }
+.toast-success { background: #d1fae5; color: #065f46; border-left: 4px solid var(--forest-600); }
+@keyframes slideIn { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* Input error state */
+.input-error { border-color: var(--red-light) !important; }
+.field-error { font-size: 11.5px; color: var(--red-light); margin-top: -8px; margin-bottom: 8px; display: block; }
+
 input[type="checkbox"] { width: auto; margin-right: 5px; accent-color: var(--forest-700); }
 .required { color: var(--red-light); }
 .help-text { font-size: 12px; color: var(--text-light); margin-top: -8px; margin-bottom: 10px; }
@@ -552,15 +545,8 @@ input[type="checkbox"] { width: auto; margin-right: 5px; accent-color: var(--for
     color: var(--forest-500);
     letter-spacing: 0.03em;
 }
-.footer-copy strong {
-    color: var(--gold-light);
-    font-weight: 600;
-}
-.footer-links {
-    display: flex;
-    gap: 16px;
-    align-items: center;
-}
+.footer-copy strong { color: var(--gold-light); font-weight: 600; }
+.footer-links { display: flex; gap: 16px; align-items: center; }
 .footer-links span {
     font-size: 11px;
     color: var(--forest-600);
@@ -596,17 +582,9 @@ input[type="checkbox"] { width: auto; margin-right: 5px; accent-color: var(--for
     margin-bottom: 6px;
     letter-spacing: 0.01em;
 }
-.welcome-hero p {
-    font-size: 13.5px;
-    color: var(--forest-400);
-    letter-spacing: 0.02em;
-}
-.welcome-hero .gold-accent {
-    color: var(--gold-light);
-    font-weight: 600;
-}
+.welcome-hero p { font-size: 13.5px; color: var(--forest-400); letter-spacing: 0.02em; }
+.welcome-hero .gold-accent { color: var(--gold-light); font-weight: 600; }
 
-/* Quick actions strip */
 .quick-hint {
     color: var(--text-light);
     font-size: 13.5px;
@@ -618,7 +596,6 @@ input[type="checkbox"] { width: auto; margin-right: 5px; accent-color: var(--for
     box-shadow: 0 1px 4px rgba(0,0,0,0.05);
 }
 
-/* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--forest-400); border-radius: 3px; }
@@ -659,11 +636,10 @@ input[type="checkbox"] { width: auto; margin-right: 5px; accent-color: var(--for
 <div class="sidebar">
     <div class="sidebar-section">
         <div class="sidebar-section-label">Overview</div>
-        <button class="sidebar-btn active" onclick="showDashboard()">
+        <button class="sidebar-btn active" onclick="showDashboard(event)">
             <span class="icon">📊</span> Dashboard
         </button>
     </div>
-
     <div class="sidebar-section">
         <div class="sidebar-section-label">User Management</div>
         <button class="sidebar-btn" onclick="openForm('formCreateUser')">
@@ -679,7 +655,6 @@ input[type="checkbox"] { width: auto; margin-right: 5px; accent-color: var(--for
             <span class="icon">⚡</span> Bulk Actions
         </button>
     </div>
-
     <div class="sidebar-section">
         <div class="sidebar-section-label">Students</div>
         <button class="sidebar-btn" onclick="openForm('formViewStudents')">
@@ -689,7 +664,6 @@ input[type="checkbox"] { width: auto; margin-right: 5px; accent-color: var(--for
             <span class="icon">🔎</span> Search Students
         </button>
     </div>
-
     <div class="sidebar-logout">
         <button onclick="logout()">🚪 Logout</button>
     </div>
@@ -702,34 +676,14 @@ input[type="checkbox"] { width: auto; margin-right: 5px; accent-color: var(--for
             <h2>Welcome back, <span class="gold-accent">Administrator</span></h2>
             <p>University of Manila — Student Information System &nbsp;·&nbsp; Academic Year 2025–2026</p>
         </div>
-
         <div class="stats-container" id="statsContainer">
-            <div class="stat-card">
-                <h3>Total Users</h3>
-                <div class="number" id="statTotalUsers">–</div>
-            </div>
-            <div class="stat-card">
-                <h3>Active Users</h3>
-                <div class="number" id="statActiveUsers">–</div>
-            </div>
-            <div class="stat-card">
-                <h3>Students</h3>
-                <div class="number" id="statTotalStudentsTable">–</div>
-            </div>
-            <div class="stat-card">
-                <h3>Teachers</h3>
-                <div class="number" id="statTeachers">–</div>
-            </div>
-            <div class="stat-card">
-                <h3>Admins</h3>
-                <div class="number" id="statAdmins">–</div>
-            </div>
-            <div class="stat-card">
-                <h3>Inactive Users</h3>
-                <div class="number" id="statInactiveUsers">–</div>
-            </div>
+            <div class="stat-card"><h3>Total Users</h3><div class="number" id="statTotalUsers">–</div></div>
+            <div class="stat-card"><h3>Active Users</h3><div class="number" id="statActiveUsers">–</div></div>
+            <div class="stat-card"><h3>Students</h3><div class="number" id="statTotalStudentsTable">–</div></div>
+            <div class="stat-card"><h3>Teachers</h3><div class="number" id="statTeachers">–</div></div>
+            <div class="stat-card"><h3>Admins</h3><div class="number" id="statAdmins">–</div></div>
+            <div class="stat-card"><h3>Inactive Users</h3><div class="number" id="statInactiveUsers">–</div></div>
         </div>
-
         <div class="quick-hint">
             📌 Select an action from the sidebar to manage users, students, and system settings.
         </div>
@@ -750,44 +704,44 @@ input[type="checkbox"] { width: auto; margin-right: 5px; accent-color: var(--for
 <!-- ===== OVERLAY ===== -->
 <div class="overlay" id="overlay" onclick="closeAllForms()"></div>
 
+<!-- ===== TOAST ===== -->
+<div class="toast" id="toast"></div>
+
 <!-- ===== POPUPS ===== -->
 
-<!-- Create User -->
+<!-- Create User — FIX: username and role are now in SEPARATE rows so autofill can't cross them -->
 <div id="formCreateUser" class="popup" style="max-width: 700px;">
     <h3>➕ Create User</h3>
     <div class="form-grid">
         <div>
             <label>First Name <span class="required">*</span></label>
-            <input type="text" id="userFirstName" placeholder="Juan">
+            <input type="text" id="userFirstName" placeholder="Juan" autocomplete="off">
         </div>
         <div>
             <label>Middle Name</label>
-            <input type="text" id="userMiddleName" placeholder="Santos (optional)">
+            <input type="text" id="userMiddleName" placeholder="Santos (optional)" autocomplete="off">
         </div>
     </div>
     <div class="form-grid">
         <div>
             <label>Surname <span class="required">*</span></label>
-            <input type="text" id="userSurname" placeholder="Dela Cruz">
+            <input type="text" id="userSurname" placeholder="Dela Cruz" autocomplete="off">
         </div>
         <div>
-            <label>Username <span class="required">*</span></label>
-            <input type="text" id="userUsername" placeholder="jdelacruz">
+            <label>Email <span class="required">*</span></label>
+            <input type="email" id="userEmail" placeholder="juan@um.edu.ph" autocomplete="off">
         </div>
     </div>
-    <label>Email <span class="required">*</span></label>
-    <input type="email" id="userEmail" placeholder="juan.delacruz@um.edu.ph">
-    <label>Contact Number <span class="required">*</span></label>
-    <input type="tel" id="userContactNumber" placeholder="+639171234567">
     <div class="form-grid">
         <div>
-            <label>Password <span class="required">*</span></label>
-            <input type="password" id="userPassword">
+            <label>Contact Number <span class="required">*</span></label>
+            <input type="tel" id="userContactNumber" placeholder="+639171234567" autocomplete="off">
         </div>
         <div>
             <label>Role <span class="required">*</span></label>
+            <!-- Role is a SELECT — it can never accidentally receive a typed username -->
             <select id="userRole">
-                <option value="">Select Role</option>
+                <option value="">— Select Role —</option>
                 <option value="admin">Admin</option>
                 <option value="teacher">Teacher</option>
                 <option value="student">Student</option>
@@ -795,9 +749,24 @@ input[type="checkbox"] { width: auto; margin-right: 5px; accent-color: var(--for
                 <option value="cashier">Cashier</option>
                 <option value="records">Records</option>
                 <option value="faculty">Faculty</option>
+                <option value="it_tech">IT Tech</option>
             </select>
         </div>
     </div>
+    <!-- Username and Password are in their own dedicated row, completely separate from Role -->
+    <div class="form-grid">
+        <div>
+            <label>Username <span class="required">*</span></label>
+            <!-- name="new-username" + autocomplete="off" prevents browser from filling role value here -->
+            <input type="text" id="userUsername" name="new-username" placeholder="jdelacruz"
+                   autocomplete="off" spellcheck="false">
+        </div>
+        <div>
+            <label>Password <span class="required">*</span></label>
+            <input type="password" id="userPassword" name="new-password" autocomplete="new-password">
+        </div>
+    </div>
+    <div id="createUserError" style="display:none; color:var(--red-light); font-size:13px; margin-bottom:10px; padding:10px 12px; background:#fee2e2; border-radius:8px; border-left:3px solid var(--red-light);"></div>
     <div style="margin-top: 18px;">
         <button class="submit-btn" id="submitCreateUser">Create User</button>
         <button class="close-btn" onclick="closeForm('formCreateUser')">Cancel</button>
@@ -817,6 +786,7 @@ input[type="checkbox"] { width: auto; margin-right: 5px; accent-color: var(--for
             <option value="cashier">Cashier</option>
             <option value="records">Records</option>
             <option value="faculty">Faculty</option>
+            <option value="it_tech">IT Tech</option>
         </select>
         <select id="filterStatus" onchange="loadUsers()">
             <option value="">All Status</option>
@@ -830,14 +800,8 @@ input[type="checkbox"] { width: auto; margin-right: 5px; accent-color: var(--for
             <table id="usersTable">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Contact</th>
-                        <th>Username</th>
-                        <th>Role</th>
-                        <th>Status</th>
-                        <th>Actions</th>
+                        <th>ID</th><th>Name</th><th>Email</th><th>Contact</th>
+                        <th>Username</th><th>Role</th><th>Status</th><th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="userTableBody"></tbody>
@@ -864,14 +828,8 @@ input[type="checkbox"] { width: auto; margin-right: 5px; accent-color: var(--for
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Student ID</th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Contact</th>
-                        <th>Age</th>
-                        <th>Status</th>
-                        <th>Actions</th>
+                        <th>ID</th><th>Student ID</th><th>Name</th><th>Email</th>
+                        <th>Contact</th><th>Age</th><th>Status</th><th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="studentTableBody"></tbody>
@@ -924,31 +882,31 @@ input[type="checkbox"] { width: auto; margin-right: 5px; accent-color: var(--for
     <div class="form-grid">
         <div>
             <label>First Name <span class="required">*</span></label>
-            <input type="text" id="editFirstName">
+            <input type="text" id="editFirstName" autocomplete="off">
         </div>
         <div>
             <label>Middle Name</label>
-            <input type="text" id="editMiddleName">
+            <input type="text" id="editMiddleName" autocomplete="off">
         </div>
     </div>
     <div class="form-grid">
         <div>
             <label>Surname <span class="required">*</span></label>
-            <input type="text" id="editSurname">
+            <input type="text" id="editSurname" autocomplete="off">
         </div>
         <div>
             <label>Username <span class="required">*</span></label>
-            <input type="text" id="editUsername">
+            <input type="text" id="editUsername" name="edit-username" autocomplete="off" spellcheck="false">
         </div>
     </div>
     <label>Email <span class="required">*</span></label>
-    <input type="email" id="editEmail">
+    <input type="email" id="editEmail" autocomplete="off">
     <label>Contact Number <span class="required">*</span></label>
-    <input type="tel" id="editContactNumber">
+    <input type="tel" id="editContactNumber" autocomplete="off">
     <div class="form-grid">
         <div>
             <label>Password</label>
-            <input type="password" id="editPassword">
+            <input type="password" id="editPassword" name="edit-password" autocomplete="new-password">
             <p class="help-text">Leave blank to keep current password</p>
         </div>
         <div>
@@ -961,9 +919,11 @@ input[type="checkbox"] { width: auto; margin-right: 5px; accent-color: var(--for
                 <option value="cashier">Cashier</option>
                 <option value="records">Records</option>
                 <option value="faculty">Faculty</option>
+                <option value="it_tech">IT Tech</option>
             </select>
         </div>
     </div>
+    <div id="editUserError" style="display:none; color:var(--red-light); font-size:13px; margin-bottom:10px; padding:10px 12px; background:#fee2e2; border-radius:8px; border-left:3px solid var(--red-light);"></div>
     <div style="margin-top: 18px;">
         <button class="submit-btn" onclick="submitEditUser()">Update User</button>
         <button class="close-btn" onclick="closeForm('formEditUser')">Cancel</button>
@@ -977,7 +937,7 @@ input[type="checkbox"] { width: auto; margin-right: 5px; accent-color: var(--for
     <input type="hidden" id="resetUserType">
     <p id="resetUsername" style="margin-bottom: 16px; font-weight: 600; color: var(--forest-800);"></p>
     <label>New Password <span class="required">*</span></label>
-    <input type="password" id="newPassword">
+    <input type="password" id="newPassword" autocomplete="new-password">
     <div style="margin-top: 16px;">
         <button class="submit-btn" onclick="submitResetPassword()">Reset Password</button>
         <button class="close-btn" onclick="closeForm('formResetPassword')">Cancel</button>
@@ -998,10 +958,7 @@ input[type="checkbox"] { width: auto; margin-right: 5px; accent-color: var(--for
                 <thead>
                     <tr>
                         <th><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()"></th>
-                        <th>Name</th>
-                        <th>Username</th>
-                        <th>Role</th>
-                        <th>Status</th>
+                        <th>Name</th><th>Username</th><th>Role</th><th>Status</th>
                     </tr>
                 </thead>
                 <tbody id="bulkUsersTableBody"></tbody>
@@ -1028,10 +985,21 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
+/* ===== Toast Notifications (replaces alert()) ===== */
+let toastTimer = null;
+function showToast(message, type = 'error') {
+    const toast = document.getElementById('toast');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    toast.style.display = 'block';
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toast.style.display = 'none'; }, 4000);
+}
+
 /* ===== Utils ===== */
 function getToken() {
     const token = localStorage.getItem("jwt");
-    if(!token){ alert("Login required"); window.location.href="/login.html"; throw new Error("No token"); }
+    if (!token) { showToast("Login required"); window.location.href = "/login.html"; throw new Error("No token"); }
     return token;
 }
 async function apiFetch(url, options = {}) {
@@ -1039,7 +1007,7 @@ async function apiFetch(url, options = {}) {
     const res = await fetch(API + url, options);
     let data = {};
     try { data = await res.json(); } catch {}
-    if(!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
     return data;
 }
 function logout() { localStorage.removeItem("jwt"); window.location.href = "/login.html"; }
@@ -1048,34 +1016,81 @@ function getFullName(user) {
     return parts.length > 0 ? parts.join(' ') : user.username || user.student_id;
 }
 
+/* ===== Inline error helpers ===== */
+function showFormError(elId, message) {
+    const el = document.getElementById(elId);
+    if (el) { el.textContent = message; el.style.display = 'block'; }
+}
+function hideFormError(elId) {
+    const el = document.getElementById(elId);
+    if (el) { el.style.display = 'none'; el.textContent = ''; }
+}
+
+/* ===== Validation ===== */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const ALLOWED_ROLES = new Set(['admin','teacher','student','registrar','cashier','records','faculty','it_tech']);
+
+function validateCreateUserForm() {
+    const firstName     = document.getElementById("userFirstName").value.trim();
+    const surname       = document.getElementById("userSurname").value.trim();
+    const username      = document.getElementById("userUsername").value.trim();
+    const email         = document.getElementById("userEmail").value.trim();
+    const contactNumber = document.getElementById("userContactNumber").value.trim();
+    const password      = document.getElementById("userPassword").value;
+    const role          = document.getElementById("userRole").value;
+
+    if (!firstName)      return "First name is required.";
+    if (!surname)        return "Surname is required.";
+    if (!username)       return "Username is required.";
+    if (!email)          return "Email is required.";
+    if (!EMAIL_RE.test(email)) return "Please enter a valid email address.";
+    if (!contactNumber)  return "Contact number is required.";
+    if (!password)       return "Password is required.";
+    if (password.length < 6) return "Password must be at least 6 characters.";
+    if (!role)           return "Please select a role.";
+
+    // Guard: make sure the username field didn't accidentally get the role value.
+    if (ALLOWED_ROLES.has(username.toLowerCase())) {
+        return `Username cannot be a role name ("${username}"). Please enter a proper username.`;
+    }
+
+    return null; // valid
+}
+
 /* ===== Popups ===== */
 function openForm(id) {
     closeAllForms();
     document.getElementById("overlay").style.display = "block";
     document.getElementById(id).style.display = "block";
-    if(id === "formViewUsers") loadUsers();
-    if(id === "formViewStudents") loadStudents();
-    if(id === "formBulkActions") loadBulkUsers();
+    if (id === "formViewUsers")    loadUsers();
+    if (id === "formViewStudents") loadStudents();
+    if (id === "formBulkActions")  loadBulkUsers();
     document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
 }
-function closeForm(id) { document.getElementById("overlay").style.display = "none"; document.getElementById(id).style.display = "none"; }
-function closeAllForms() { document.getElementById("overlay").style.display = "none"; document.querySelectorAll('.popup').forEach(p => p.style.display = 'none'); }
+function closeForm(id) {
+    document.getElementById("overlay").style.display = "none";
+    document.getElementById(id).style.display = "none";
+}
+function closeAllForms() {
+    document.getElementById("overlay").style.display = "none";
+    document.querySelectorAll('.popup').forEach(p => p.style.display = 'none');
+}
 
 /* ===== Dashboard ===== */
-function showDashboard() {
+function showDashboard(event) {
     closeAllForms();
     document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
-    event.currentTarget.classList.add('active');
+    if (event && event.currentTarget) event.currentTarget.classList.add('active');
     loadStats();
 }
 async function loadStats() {
     try {
         const stats = await apiFetch("/admin/stats");
-        document.getElementById("statTotalUsers").textContent = stats.total_users || 0;
-        document.getElementById("statActiveUsers").textContent = stats.active_users || 0;
-        document.getElementById("statTeachers").textContent = stats.teacher_count || 0;
-        document.getElementById("statAdmins").textContent = stats.admin_count || 0;
-        document.getElementById("statInactiveUsers").textContent = stats.inactive_users || 0;
+        document.getElementById("statTotalUsers").textContent        = stats.total_users    || 0;
+        document.getElementById("statActiveUsers").textContent       = stats.active_users   || 0;
+        document.getElementById("statTeachers").textContent          = stats.teacher_count  || 0;
+        document.getElementById("statAdmins").textContent            = stats.admin_count    || 0;
+        document.getElementById("statInactiveUsers").textContent     = stats.inactive_users || 0;
         document.getElementById("statTotalStudentsTable").textContent = stats.total_students || 0;
     } catch(e) { console.error("Failed loading stats:", e); }
 }
@@ -1083,20 +1098,22 @@ async function loadStats() {
 /* ===== Load Users ===== */
 async function loadUsers() {
     try {
-        const role = document.getElementById("filterRole").value;
+        const role   = document.getElementById("filterRole").value;
         const status = document.getElementById("filterStatus").value;
         let url = "/admin/users?";
-        if(role) url += `role=${role}&`;
-        if(status) url += `status=${status}&`;
+        if (role)   url += `role=${role}&`;
+        if (status) url += `status=${status}&`;
         const users = await apiFetch(url);
         const usersList = Array.isArray(users) ? users : [];
         const tbody = document.getElementById("userTableBody");
-        if(usersList.length === 0) {
+        if (usersList.length === 0) {
             tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-light);padding:20px;">No users found</td></tr>';
             return;
         }
         tbody.innerHTML = usersList.map(u => {
-            const statusBadge = u.status === 'active' ? `<span class="status-badge status-active">Active</span>` : `<span class="status-badge status-inactive">Inactive</span>`;
+            const statusBadge = u.status === 'active'
+                ? `<span class="status-badge status-active">Active</span>`
+                : `<span class="status-badge status-inactive">Inactive</span>`;
             const fullName = getFullName(u);
             return `<tr>
                 <td>${u.id}</td>
@@ -1107,15 +1124,17 @@ async function loadUsers() {
                 <td><span style="background:var(--cream);padding:3px 8px;border-radius:4px;font-size:12px;font-weight:600;color:var(--forest-800);">${u.role}</span></td>
                 <td>${statusBadge}</td>
                 <td>
-                    <button class="action-btn btn-details" onclick="viewUserDetails(${u.id})">Details</button>
-                    <button class="action-btn btn-edit" onclick="editUserById(${u.id})">Edit</button>
-                    <button class="action-btn btn-reset" onclick="resetPassword(${u.id},'${fullName.replace(/'/g,"\\'")}',' user')">Pwd</button>
-                    ${u.status === 'active' ? `<button class="action-btn btn-deactivate" onclick="toggleStatus(${u.id},'inactive')">Deactivate</button>` : `<button class="action-btn btn-activate" onclick="toggleStatus(${u.id},'active')">Activate</button>`}
+                    <button class="action-btn btn-details"    onclick="viewUserDetails(${u.id})">Details</button>
+                    <button class="action-btn btn-edit"       onclick="editUserById(${u.id})">Edit</button>
+                    <button class="action-btn btn-reset"      onclick="resetPassword(${u.id},'${fullName.replace(/'/g,"\\'")}','user')">Pwd</button>
+                    ${u.status === 'active'
+                        ? `<button class="action-btn btn-deactivate" onclick="toggleStatus(${u.id},'inactive')">Deactivate</button>`
+                        : `<button class="action-btn btn-activate"   onclick="toggleStatus(${u.id},'active')">Activate</button>`}
                     <button class="action-btn btn-delete" onclick="deleteUser(${u.id})">Delete</button>
                 </td>
             </tr>`;
         }).join('');
-    } catch(e) { alert("Failed loading users: " + e.message); }
+    } catch(e) { showToast("Failed loading users: " + e.message); }
 }
 
 /* ===== Load Students ===== */
@@ -1123,19 +1142,19 @@ async function loadStudents() {
     try {
         const status = document.getElementById("filterStudentStatus").value;
         let url = "/admin/students?";
-        if(status) url += `status=${status}`;
+        if (status) url += `status=${status}`;
         const students = await apiFetch(url);
         const studentsList = Array.isArray(students) ? students : [];
         const tbody = document.getElementById("studentTableBody");
-        if(studentsList.length === 0) {
+        if (studentsList.length === 0) {
             tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-light);padding:20px;">No students found</td></tr>';
             return;
         }
         tbody.innerHTML = studentsList.map(s => {
             let statusBadge;
-            if(s.status === 'approved') statusBadge = '<span class="status-badge status-approved">Approved</span>';
-            else if(s.status === 'pending') statusBadge = '<span class="status-badge status-pending">Pending</span>';
-            else statusBadge = '<span class="status-badge status-rejected">Rejected</span>';
+            if      (s.status === 'approved') statusBadge = '<span class="status-badge status-approved">Approved</span>';
+            else if (s.status === 'pending')  statusBadge = '<span class="status-badge status-pending">Pending</span>';
+            else                              statusBadge = '<span class="status-badge status-rejected">Rejected</span>';
             const fullName = getFullName(s);
             return `<tr>
                 <td>${s.id}</td>
@@ -1147,15 +1166,15 @@ async function loadStudents() {
                 <td>${statusBadge}</td>
                 <td>
                     <button class="action-btn btn-details" onclick="viewStudentDetails(${s.id})">Details</button>
-                    <button class="action-btn btn-reset" onclick="resetPassword(${s.id},'${fullName.replace(/'/g,"\\'")}','student')">Pwd</button>
-                    ${s.status !== 'approved' ? `<button class="action-btn btn-approve" onclick="toggleStudentStatus(${s.id},'approved')">Approve</button>` : ''}
-                    ${s.status !== 'pending' ? `<button class="action-btn btn-pending" onclick="toggleStudentStatus(${s.id},'pending')">Pending</button>` : ''}
-                    ${s.status !== 'rejected' ? `<button class="action-btn btn-reject" onclick="toggleStudentStatus(${s.id},'rejected')">Reject</button>` : ''}
+                    <button class="action-btn btn-reset"   onclick="resetPassword(${s.id},'${fullName.replace(/'/g,"\\'")}','student')">Pwd</button>
+                    ${s.status !== 'approved'  ? `<button class="action-btn btn-approve" onclick="toggleStudentStatus(${s.id},'approved')">Approve</button>` : ''}
+                    ${s.status !== 'pending'   ? `<button class="action-btn btn-pending" onclick="toggleStudentStatus(${s.id},'pending')">Pending</button>`  : ''}
+                    ${s.status !== 'rejected'  ? `<button class="action-btn btn-reject"  onclick="toggleStudentStatus(${s.id},'rejected')">Reject</button>`   : ''}
                     <button class="action-btn btn-delete" onclick="deleteStudent(${s.id})">Delete</button>
                 </td>
             </tr>`;
         }).join('');
-    } catch(e) { alert("Failed loading students: " + e.message); }
+    } catch(e) { showToast("Failed loading students: " + e.message); }
 }
 
 async function loadBulkUsers() {
@@ -1164,7 +1183,9 @@ async function loadBulkUsers() {
         allUsers = users;
         const tbody = document.getElementById("bulkUsersTableBody");
         tbody.innerHTML = users.map(u => {
-            const statusBadge = u.status === 'active' ? `<span class="status-badge status-active">Active</span>` : `<span class="status-badge status-inactive">Inactive</span>`;
+            const statusBadge = u.status === 'active'
+                ? `<span class="status-badge status-active">Active</span>`
+                : `<span class="status-badge status-inactive">Inactive</span>`;
             return `<tr>
                 <td><input type="checkbox" class="user-checkbox" value="${u.id}"></td>
                 <td>${getFullName(u)}</td>
@@ -1173,7 +1194,7 @@ async function loadBulkUsers() {
                 <td>${statusBadge}</td>
             </tr>`;
         }).join('');
-    } catch(e) { alert("Failed loading users: " + e.message); }
+    } catch(e) { showToast("Failed loading users: " + e.message); }
 }
 
 /* ===== User Actions ===== */
@@ -1183,7 +1204,9 @@ async function viewUserDetails(userId) {
         const content = document.getElementById("userDetailsContent");
         const createdDate = new Date(user.created_at).toLocaleString();
         const fullName = getFullName(user);
-        const statusBadge = user.status === 'active' ? '<span class="status-badge status-active">Active</span>' : '<span class="status-badge status-inactive">Inactive</span>';
+        const statusBadge = user.status === 'active'
+            ? '<span class="status-badge status-active">Active</span>'
+            : '<span class="status-badge status-inactive">Inactive</span>';
         content.innerHTML = `<div class="user-details">
             <p><strong>ID:</strong> ${user.id}</p>
             <p><strong>Full Name:</strong> ${fullName}</p>
@@ -1198,7 +1221,7 @@ async function viewUserDetails(userId) {
             <p><strong>Created:</strong> ${createdDate}</p>
         </div>`;
         openForm('formUserDetails');
-    } catch(e) { alert("Failed to load user details: " + e.message); }
+    } catch(e) { showToast("Failed to load user details: " + e.message); }
 }
 
 async function viewStudentDetails(studentId) {
@@ -1208,9 +1231,9 @@ async function viewStudentDetails(studentId) {
         const createdDate = new Date(student.created_at).toLocaleString();
         const fullName = getFullName(student);
         let statusBadge;
-        if(student.status === 'approved') statusBadge = '<span class="status-badge status-approved">Approved</span>';
-        else if(student.status === 'pending') statusBadge = '<span class="status-badge status-pending">Pending</span>';
-        else statusBadge = '<span class="status-badge status-rejected">Rejected</span>';
+        if      (student.status === 'approved') statusBadge = '<span class="status-badge status-approved">Approved</span>';
+        else if (student.status === 'pending')  statusBadge = '<span class="status-badge status-pending">Pending</span>';
+        else                                    statusBadge = '<span class="status-badge status-rejected">Rejected</span>';
         content.innerHTML = `<div class="user-details">
             ${student.profile_picture ? `<img src="${student.profile_picture}" class="profile-pic" style="display:block;margin:0 auto 16px;">` : ''}
             <p><strong>ID:</strong> ${student.id}</p>
@@ -1227,117 +1250,141 @@ async function viewStudentDetails(studentId) {
             <p><strong>Created:</strong> ${createdDate}</p>
         </div>`;
         openForm('formStudentDetails');
-    } catch(e) { alert("Failed to load student details: " + e.message); }
+    } catch(e) { showToast("Failed to load student details: " + e.message); }
 }
 
 async function editUserById(userId) {
     try {
         const user = await apiFetch(`/admin/users/${userId}/details`);
-        document.getElementById("editUserId").value = user.id;
-        document.getElementById("editFirstName").value = user.first_name || '';
-        document.getElementById("editMiddleName").value = user.middle_name || '';
-        document.getElementById("editSurname").value = user.surname || '';
-        document.getElementById("editUsername").value = user.username;
-        document.getElementById("editEmail").value = user.email || '';
+        document.getElementById("editUserId").value       = user.id;
+        document.getElementById("editFirstName").value   = user.first_name    || '';
+        document.getElementById("editMiddleName").value  = user.middle_name   || '';
+        document.getElementById("editSurname").value     = user.surname       || '';
+        document.getElementById("editUsername").value    = user.username;
+        document.getElementById("editEmail").value       = user.email         || '';
         document.getElementById("editContactNumber").value = user.contact_number || '';
-        document.getElementById("editRole").value = user.role;
-        document.getElementById("editPassword").value = "";
+        document.getElementById("editRole").value        = user.role;
+        document.getElementById("editPassword").value   = "";
+        hideFormError("editUserError");
         openForm('formEditUser');
-    } catch(e) { alert("Failed to load user: " + e.message); }
+    } catch(e) { showToast("Failed to load user: " + e.message); }
 }
 
 async function submitEditUser() {
-    const id = document.getElementById("editUserId").value;
-    const firstName = document.getElementById("editFirstName").value.trim();
-    const middleName = document.getElementById("editMiddleName").value.trim();
-    const surname = document.getElementById("editSurname").value.trim();
-    const username = document.getElementById("editUsername").value.trim();
-    const email = document.getElementById("editEmail").value.trim();
+    const id            = document.getElementById("editUserId").value;
+    const firstName     = document.getElementById("editFirstName").value.trim();
+    const middleName    = document.getElementById("editMiddleName").value.trim();
+    const surname       = document.getElementById("editSurname").value.trim();
+    const username      = document.getElementById("editUsername").value.trim();
+    const email         = document.getElementById("editEmail").value.trim();
     const contactNumber = document.getElementById("editContactNumber").value.trim();
-    const password = document.getElementById("editPassword").value.trim();
-    const role = document.getElementById("editRole").value;
-    if(!firstName || !surname || !username || !email || !contactNumber || !role) { alert("Please fill all required fields"); return; }
-    const body = { first_name: firstName, middle_name: middleName, surname: surname, username: username, email: email, contact_number: contactNumber, role: role };
-    if(password) body.password = password;
+    const password      = document.getElementById("editPassword").value.trim();
+    const role          = document.getElementById("editRole").value;
+
+    hideFormError("editUserError");
+
+    if (!firstName || !surname || !username || !email || !contactNumber || !role) {
+        showFormError("editUserError", "Please fill all required fields.");
+        return;
+    }
+    if (!EMAIL_RE.test(email)) {
+        showFormError("editUserError", "Please enter a valid email address.");
+        return;
+    }
+
+    const body = { first_name: firstName, middle_name: middleName, surname: surname,
+                   username: username, email: email, contact_number: contactNumber, role: role };
+    if (password) body.password = password;
+
     try {
-        await apiFetch(`/admin/users/${id}`, {method: "PUT", body: JSON.stringify(body)});
-        alert("User updated successfully");
+        await apiFetch(`/admin/users/${id}`, { method: "PUT", body: JSON.stringify(body) });
+        showToast("User updated successfully", "success");
         closeForm('formEditUser');
         loadUsers();
-    } catch(e) { alert("Failed to update user: " + e.message); }
+    } catch(e) {
+        showFormError("editUserError", e.message);
+    }
 }
 
 function resetPassword(id, fullName, userType) {
-    document.getElementById("resetUserId").value = id;
+    document.getElementById("resetUserId").value   = id;
     document.getElementById("resetUserType").value = userType;
     document.getElementById("resetUsername").textContent = `Reset password for: ${fullName}`;
-    document.getElementById("newPassword").value = "";
+    document.getElementById("newPassword").value   = "";
     openForm('formResetPassword');
 }
 
 async function submitResetPassword() {
-    const id = document.getElementById("resetUserId").value;
-    const userType = document.getElementById("resetUserType").value;
+    const id          = document.getElementById("resetUserId").value;
+    const userType    = document.getElementById("resetUserType").value;
     const newPassword = document.getElementById("newPassword").value.trim();
-    if(!newPassword) { alert("Please enter a new password"); return; }
+    if (!newPassword) { showToast("Please enter a new password"); return; }
+    if (newPassword.length < 6) { showToast("Password must be at least 6 characters"); return; }
     try {
-        const endpoint = userType === 'student' ? `/admin/students/${id}/reset-password` : `/admin/users/${id}/reset-password`;
+        const endpoint = userType === 'student'
+            ? `/admin/students/${id}/reset-password`
+            : `/admin/users/${id}/reset-password`;
         await apiFetch(endpoint, { method: "POST", body: JSON.stringify({ new_password: newPassword }) });
-        alert("Password reset successfully");
+        showToast("Password reset successfully", "success");
         closeForm('formResetPassword');
-    } catch(e) { alert("Failed to reset password: " + e.message); }
+    } catch(e) { showToast("Failed to reset password: " + e.message); }
 }
 
 async function toggleStatus(userId, newStatus) {
-    if(!confirm(`Are you sure you want to ${newStatus === 'active' ? 'activate' : 'deactivate'} this user?`)) return;
+    if (!confirm(`Are you sure you want to ${newStatus === 'active' ? 'activate' : 'deactivate'} this user?`)) return;
     try {
         await apiFetch(`/admin/users/${userId}/status`, { method: "PUT", body: JSON.stringify({ status: newStatus }) });
-        alert("User status updated");
+        showToast("User status updated", "success");
         loadUsers();
         loadStats();
-    } catch(e) { alert("Failed to update status: " + e.message); }
+    } catch(e) { showToast("Failed to update status: " + e.message); }
 }
 
 async function toggleStudentStatus(studentId, newStatus) {
-    if(!confirm(`Change this student's status to "${newStatus}"?`)) return;
+    if (!confirm(`Change this student's status to "${newStatus}"?`)) return;
     try {
         await apiFetch(`/admin/students/${studentId}/status`, { method: "PUT", body: JSON.stringify({ status: newStatus }) });
-        alert("Student status updated");
+        showToast("Student status updated", "success");
         loadStudents();
-    } catch(e) { alert("Failed to update student status: " + e.message); }
+    } catch(e) { showToast("Failed to update student status: " + e.message); }
 }
 
 async function deleteUser(id) {
-    if(!confirm("Delete this user? This action cannot be undone.")) return;
+    if (!confirm("Delete this user? This action cannot be undone.")) return;
     try {
-        await apiFetch(`/admin/users/${id}`, {method: "DELETE"});
-        alert("User deleted successfully");
+        await apiFetch(`/admin/users/${id}`, { method: "DELETE" });
+        showToast("User deleted successfully", "success");
         loadUsers();
         loadStats();
-    } catch(e) { alert("Failed to delete user: " + e.message); }
+    } catch(e) { showToast("Failed to delete user: " + e.message); }
 }
 
 async function deleteStudent(id) {
-    if(!confirm("Delete this student? This action cannot be undone.")) return;
+    if (!confirm("Delete this student? This action cannot be undone.")) return;
     try {
-        await apiFetch(`/admin/students/${id}`, {method: "DELETE"});
-        alert("Student deleted successfully");
+        await apiFetch(`/admin/students/${id}`, { method: "DELETE" });
+        showToast("Student deleted successfully", "success");
         loadStudents();
-    } catch(e) { alert("Failed to delete student: " + e.message); }
+    } catch(e) { showToast("Failed to delete student: " + e.message); }
 }
 
 /* ===== Search ===== */
 async function searchUsers() {
     const query = document.getElementById("searchQuery").value.trim();
-    if(!query) { alert("Please enter a search term"); return; }
+    if (!query) { showToast("Please enter a search term"); return; }
     try {
         const users = await apiFetch(`/admin/search?q=${encodeURIComponent(query)}`);
         const resultsDiv = document.getElementById("searchResults");
-        if(!users || users.length === 0) { resultsDiv.innerHTML = '<p style="margin-top:14px;color:var(--text-light);">No users found.</p>'; return; }
+        if (!users || users.length === 0) {
+            resultsDiv.innerHTML = '<p style="margin-top:14px;color:var(--text-light);">No users found.</p>';
+            return;
+        }
         resultsDiv.innerHTML = `<div class="table-wrapper" style="margin-top:14px;"><table>
             <thead><tr><th>Name</th><th>Email</th><th>Username</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody>${users.map(u => {
-                const statusBadge = u.status === 'active' ? `<span class="status-badge status-active">Active</span>` : `<span class="status-badge status-inactive">Inactive</span>`;
+                const statusBadge = u.status === 'active'
+                    ? `<span class="status-badge status-active">Active</span>`
+                    : `<span class="status-badge status-inactive">Inactive</span>`;
                 return `<tr>
                     <td>${getFullName(u)}</td>
                     <td>${u.email || '–'}</td>
@@ -1346,28 +1393,31 @@ async function searchUsers() {
                     <td>${statusBadge}</td>
                     <td>
                         <button class="action-btn btn-details" onclick="viewUserDetails(${u.id})">Details</button>
-                        <button class="action-btn btn-edit" onclick="editUserById(${u.id})">Edit</button>
+                        <button class="action-btn btn-edit"    onclick="editUserById(${u.id})">Edit</button>
                     </td>
                 </tr>`;
             }).join('')}</tbody>
         </table></div>`;
-    } catch(e) { alert("Search failed: " + e.message); }
+    } catch(e) { showToast("Search failed: " + e.message); }
 }
 
 async function searchStudents() {
     const query = document.getElementById("searchStudentQuery").value.trim();
-    if(!query) { alert("Please enter a search term"); return; }
+    if (!query) { showToast("Please enter a search term"); return; }
     try {
         const students = await apiFetch(`/admin/students/search?q=${encodeURIComponent(query)}`);
         const resultsDiv = document.getElementById("searchStudentResults");
-        if(!students || students.length === 0) { resultsDiv.innerHTML = '<p style="margin-top:14px;color:var(--text-light);">No students found.</p>'; return; }
+        if (!students || students.length === 0) {
+            resultsDiv.innerHTML = '<p style="margin-top:14px;color:var(--text-light);">No students found.</p>';
+            return;
+        }
         resultsDiv.innerHTML = `<div class="table-wrapper" style="margin-top:14px;"><table>
             <thead><tr><th>Student ID</th><th>Name</th><th>Email</th><th>Contact</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody>${students.map(s => {
                 let statusBadge;
-                if(s.status === 'approved') statusBadge = '<span class="status-badge status-approved">Approved</span>';
-                else if(s.status === 'pending') statusBadge = '<span class="status-badge status-pending">Pending</span>';
-                else statusBadge = '<span class="status-badge status-rejected">Rejected</span>';
+                if      (s.status === 'approved') statusBadge = '<span class="status-badge status-approved">Approved</span>';
+                else if (s.status === 'pending')  statusBadge = '<span class="status-badge status-pending">Pending</span>';
+                else                              statusBadge = '<span class="status-badge status-rejected">Rejected</span>';
                 return `<tr>
                     <td style="font-family:monospace;font-size:12.5px;">${s.student_id}</td>
                     <td>${getFullName(s)}</td>
@@ -1378,15 +1428,15 @@ async function searchStudents() {
                 </tr>`;
             }).join('')}</tbody>
         </table></div>`;
-    } catch(e) { alert("Search failed: " + e.message); }
+    } catch(e) { showToast("Search failed: " + e.message); }
 }
 
 /* ===== Bulk Actions ===== */
 function toggleSelectAll() {
-    const selectAll = document.getElementById("selectAllCheckbox").checked;
-    document.querySelectorAll(".user-checkbox").forEach(cb => cb.checked = selectAll);
+    const checked = document.getElementById("selectAllCheckbox").checked;
+    document.querySelectorAll(".user-checkbox").forEach(cb => cb.checked = checked);
 }
-function selectAllUsers() { document.getElementById("selectAllCheckbox").checked = true; toggleSelectAll(); }
+function selectAllUsers()   { document.getElementById("selectAllCheckbox").checked = true;  toggleSelectAll(); }
 function deselectAllUsers() { document.getElementById("selectAllCheckbox").checked = false; toggleSelectAll(); }
 function getSelectedUserIds() {
     return Array.from(document.querySelectorAll(".user-checkbox:checked")).map(cb => parseInt(cb.value));
@@ -1394,49 +1444,70 @@ function getSelectedUserIds() {
 
 async function bulkActivate() {
     const userIds = getSelectedUserIds();
-    if(userIds.length === 0) { alert("Please select at least one user"); return; }
-    if(!confirm(`Activate ${userIds.length} user(s)?`)) return;
+    if (userIds.length === 0) { showToast("Please select at least one user"); return; }
+    if (!confirm(`Activate ${userIds.length} user(s)?`)) return;
     try {
         await apiFetch("/admin/users/bulk-status", { method: "POST", body: JSON.stringify({ user_ids: userIds, status: "active" }) });
-        alert(`Successfully activated ${userIds.length} user(s)`);
+        showToast(`Successfully activated ${userIds.length} user(s)`, "success");
         loadBulkUsers();
         loadStats();
-    } catch(e) { alert("Bulk activation failed: " + e.message); }
+    } catch(e) { showToast("Bulk activation failed: " + e.message); }
 }
 
 async function bulkDeactivate() {
     const userIds = getSelectedUserIds();
-    if(userIds.length === 0) { alert("Please select at least one user"); return; }
-    if(!confirm(`Deactivate ${userIds.length} user(s)?`)) return;
+    if (userIds.length === 0) { showToast("Please select at least one user"); return; }
+    if (!confirm(`Deactivate ${userIds.length} user(s)?`)) return;
     try {
         await apiFetch("/admin/users/bulk-status", { method: "POST", body: JSON.stringify({ user_ids: userIds, status: "inactive" }) });
-        alert(`Successfully deactivated ${userIds.length} user(s)`);
+        showToast(`Successfully deactivated ${userIds.length} user(s)`, "success");
         loadBulkUsers();
         loadStats();
-    } catch(e) { alert("Bulk deactivation failed: " + e.message); }
+    } catch(e) { showToast("Bulk deactivation failed: " + e.message); }
 }
 
 /* ===== Create User ===== */
 document.getElementById("submitCreateUser").onclick = async () => {
-    const firstName = document.getElementById("userFirstName").value.trim();
-    const middleName = document.getElementById("userMiddleName").value.trim();
-    const surname = document.getElementById("userSurname").value.trim();
-    const username = document.getElementById("userUsername").value.trim();
-    const email = document.getElementById("userEmail").value.trim();
+    hideFormError("createUserError");
+
+    // Client-side validation (catches role-as-username BEFORE hitting the server)
+    const validationError = validateCreateUserForm();
+    if (validationError) {
+        showFormError("createUserError", validationError);
+        return;
+    }
+
+    const firstName     = document.getElementById("userFirstName").value.trim();
+    const middleName    = document.getElementById("userMiddleName").value.trim();
+    const surname       = document.getElementById("userSurname").value.trim();
+    const username      = document.getElementById("userUsername").value.trim();
+    const email         = document.getElementById("userEmail").value.trim();
     const contactNumber = document.getElementById("userContactNumber").value.trim();
-    const password = document.getElementById("userPassword").value.trim();
-    const role = document.getElementById("userRole").value;
-    if(!firstName || !surname || !username || !email || !contactNumber || !password || !role) { alert("Please fill all required fields"); return; }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if(!emailRegex.test(email)) { alert("Please enter a valid email address"); return; }
+    const password      = document.getElementById("userPassword").value;
+    const role          = document.getElementById("userRole").value;
+
     try {
-        await apiFetch("/admin/users", { method: "POST", body: JSON.stringify({ first_name: firstName, middle_name: middleName, surname: surname, username: username, email: email, contact_number: contactNumber, password: password, role: role }) });
-        alert("User created successfully");
+        await apiFetch("/admin/users", {
+            method: "POST",
+            body: JSON.stringify({
+                first_name: firstName, middle_name: middleName, surname: surname,
+                username: username, email: email, contact_number: contactNumber,
+                password: password, role: role
+            })
+        });
+        showToast("User created successfully", "success");
         closeForm("formCreateUser");
-        ["userFirstName","userMiddleName","userSurname","userUsername","userEmail","userContactNumber","userPassword"].forEach(id => document.getElementById(id).value = "");
+        // Clear the form
+        ["userFirstName","userMiddleName","userSurname","userUsername",
+         "userEmail","userContactNumber","userPassword"].forEach(id => {
+            document.getElementById(id).value = "";
+        });
         document.getElementById("userRole").value = "";
         loadStats();
-    } catch(e) { alert("Failed to create user: " + e.message); }
+    } catch(e) {
+        // Server-side duplicate / validation error shown inline (not alert)
+        showFormError("createUserError", e.message);
+    }
 };
 
 /* ===== Init ===== */

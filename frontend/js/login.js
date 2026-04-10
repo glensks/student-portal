@@ -5,7 +5,7 @@
 const API = "";
 
 /* ============================================================
-   RATE LIMIT CONFIG (mirrors backend: 3 per 15 min)
+   RATE LIMIT CONFIG
    ============================================================ */
 const FP_RL = {
     maxAttempts:    3,
@@ -67,11 +67,17 @@ function clearFieldError(inputEl) {
 }
 function setFieldValid(inputEl) { clearFieldError(inputEl); inputEl.classList.add('input-valid'); }
 
+function isInsideDeceasedWrap(el) {
+    const wrap = el.closest('.parent-fields-wrap');
+    return wrap ? wrap.classList.contains('is-deceased') : false;
+}
+
 function attachFilter(id, ruleKey, extraValidation) {
     const el = document.getElementById(id);
     if (!el) return;
     const [regex, maxLen] = RULES[ruleKey];
     el.addEventListener('input', function () {
+        if (this.disabled || isInsideDeceasedWrap(this)) return;
         const cursor   = this.selectionStart;
         const filtered = this.value.split('').filter(c => regex.test(c)).join('');
         this.value = filtered.length > maxLen ? filtered.slice(0, maxLen) : filtered;
@@ -82,6 +88,7 @@ function attachFilter(id, ruleKey, extraValidation) {
         updateProgress();
     });
     el.addEventListener('blur', function () {
+        if (this.disabled || isInsideDeceasedWrap(this)) return;
         if (this.value.length === 0) return;
         if (extraValidation) { const msg = extraValidation(this.value); msg ? setFieldError(this, msg) : setFieldValid(this); }
     });
@@ -99,44 +106,34 @@ function computeAgeFromBirthday() {
     const ageDisplay  = document.getElementById('age_display');
     const birthdayErr = document.getElementById('birthdayErr');
     const val         = birthdayEl.value;
-
     if (!val) {
         ageDisplay.value = '';
         birthdayEl.classList.remove('input-valid', 'input-error');
         if (birthdayErr) { birthdayErr.textContent = ''; birthdayErr.classList.remove('show'); }
         return;
     }
-
     const dob = new Date(val);
     const now = new Date();
-
     if (dob >= now) {
         ageDisplay.value = '';
-        birthdayEl.classList.add('input-error');
-        birthdayEl.classList.remove('input-valid');
+        birthdayEl.classList.add('input-error'); birthdayEl.classList.remove('input-valid');
         if (birthdayErr) { birthdayErr.textContent = '⚠ Date of birth cannot be in the future.'; birthdayErr.classList.add('show'); }
         return;
     }
-
     let age = now.getFullYear() - dob.getFullYear();
     const m = now.getMonth() - dob.getMonth();
     if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) age--;
-
     if (age < 15 || age > 100) {
         ageDisplay.value = age + ' years old';
-        birthdayEl.classList.add('input-error');
-        birthdayEl.classList.remove('input-valid');
+        birthdayEl.classList.add('input-error'); birthdayEl.classList.remove('input-valid');
         if (birthdayErr) { birthdayErr.textContent = '⚠ Age must be between 15 and 100.'; birthdayErr.classList.add('show'); }
         return;
     }
-
     ageDisplay.value = age + ' years old';
-    birthdayEl.classList.add('input-valid');
-    birthdayEl.classList.remove('input-error');
+    birthdayEl.classList.add('input-valid'); birthdayEl.classList.remove('input-error');
     if (birthdayErr) { birthdayErr.textContent = ''; birthdayErr.classList.remove('show'); }
 }
 
-// Helper: get computed age as integer from birthday field (returns null if invalid)
 function getComputedAge() {
     const val = document.getElementById('birthday').value;
     if (!val) return null;
@@ -150,9 +147,82 @@ function getComputedAge() {
 }
 
 /* ============================================================
+   DECEASED TOGGLE — bulletproof, triple-locked
+   Called only from DOMContentLoaded event listeners (NOT from HTML onchange)
+   ============================================================ */
+function toggleDeceased(parent) {
+    const checkbox   = document.getElementById(parent + 'Deceased');
+    const fieldsWrap = document.getElementById(parent + 'FieldsWrap');
+    const badge      = document.getElementById(parent + 'DeceasedBadge');
+    const toggleRow  = document.getElementById(parent + 'DeceasedRow');
+
+    if (!checkbox || !fieldsWrap) return;
+
+    const isDeceased = checkbox.checked;
+
+    /* 1 — CSS visual state */
+    fieldsWrap.classList.toggle('is-deceased', isDeceased);
+    if (toggleRow) toggleRow.classList.toggle('active', isDeceased);
+    if (badge)     badge.classList.toggle('show', isDeceased);
+
+    /* 2 — Lock / unlock every field inside the wrap */
+    fieldsWrap.querySelectorAll('input, textarea, select').forEach(function(el) {
+        if (isDeceased) {
+            el.dataset.prevValue    = el.value;
+            el.dataset.prevTabIndex = el.tabIndex;
+            el.value    = '';
+            el.disabled = true;
+            el.readOnly = true;
+            el.setAttribute('disabled', 'disabled');
+            el.setAttribute('readonly', 'readonly');
+            el.tabIndex = -1;
+            el.classList.remove('input-valid', 'input-error');
+
+            /* Capture-phase blocker — intercepts ALL input events before any other handler */
+            const blocker = function(e) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+            };
+            el._deceasedBlocker = blocker;
+            ['keydown','keypress','keyup','input','paste','drop','cut','compositionstart'].forEach(function(evt) {
+                el.addEventListener(evt, blocker, true);
+            });
+        } else {
+            el.disabled = false;
+            el.readOnly = false;
+            el.removeAttribute('disabled');
+            el.removeAttribute('readonly');
+            el.tabIndex = el.dataset.prevTabIndex !== undefined ? Number(el.dataset.prevTabIndex) : 0;
+            if (el.dataset.prevValue !== undefined) el.value = el.dataset.prevValue;
+
+            if (el._deceasedBlocker) {
+                ['keydown','keypress','keyup','input','paste','drop','cut','compositionstart'].forEach(function(evt) {
+                    el.removeEventListener(evt, el._deceasedBlocker, true);
+                });
+                delete el._deceasedBlocker;
+            }
+        }
+    });
+
+    /* 3 — Clear field errors */
+    fieldsWrap.querySelectorAll('.field-error').forEach(function(e) {
+        e.textContent = '';
+        e.classList.remove('show');
+    });
+}
+
+/* ============================================================
    DOM READY
    ============================================================ */
 document.addEventListener('DOMContentLoaded', function () {
+
+    /* ── Deceased checkboxes: attach here, NOT via HTML onchange ── */
+    var fatherCb = document.getElementById('fatherDeceased');
+    var motherCb = document.getElementById('motherDeceased');
+    if (fatherCb) fatherCb.addEventListener('change', function() { toggleDeceased('father'); });
+    if (motherCb) motherCb.addEventListener('change', function() { toggleDeceased('mother'); });
+
+    /* ── Login ID filter ── */
     const loginId = document.getElementById('login_id');
     if (loginId) {
         loginId.addEventListener('input', function () {
@@ -184,16 +254,28 @@ document.addEventListener('DOMContentLoaded', function () {
     attachFilter('father_last_name',      'name',        null);
     attachFilter('father_occupation',     'text_gen',    null);
     attachFilter('father_contact_number', 'contact',     validateContact);
+
     const fAddr = document.getElementById('father_address');
-    if (fAddr) fAddr.addEventListener('input', function () { const [regex,maxLen]=RULES.text_gen; const filtered=this.value.split('').filter(c=>regex.test(c)||c==='\n').join(''); this.value=filtered.length>maxLen?filtered.slice(0,maxLen):filtered; });
+    if (fAddr) fAddr.addEventListener('input', function () {
+        if (this.disabled || isInsideDeceasedWrap(this)) return;
+        const [regex,maxLen] = RULES.text_gen;
+        const filtered = this.value.split('').filter(c => regex.test(c) || c === '\n').join('');
+        this.value = filtered.length > maxLen ? filtered.slice(0, maxLen) : filtered;
+    });
 
     attachFilter('mother_first_name',     'name',        null);
     attachFilter('mother_middle_name',    'name',        null);
     attachFilter('mother_last_name',      'name',        null);
     attachFilter('mother_occupation',     'text_gen',    null);
     attachFilter('mother_contact_number', 'contact',     validateContact);
+
     const mAddr = document.getElementById('mother_address');
-    if (mAddr) mAddr.addEventListener('input', function () { const [regex,maxLen]=RULES.text_gen; const filtered=this.value.split('').filter(c=>regex.test(c)||c==='\n').join(''); this.value=filtered.length>maxLen?filtered.slice(0,maxLen):filtered; });
+    if (mAddr) mAddr.addEventListener('input', function () {
+        if (this.disabled || isInsideDeceasedWrap(this)) return;
+        const [regex,maxLen] = RULES.text_gen;
+        const filtered = this.value.split('').filter(c => regex.test(c) || c === '\n').join('');
+        this.value = filtered.length > maxLen ? filtered.slice(0, maxLen) : filtered;
+    });
 
     attachFilter('last_school_attended', 'school_name', v => v.trim().length < 3 ? 'Please enter the school name.' : null);
     attachFilter('last_school_year',     'school_year',  validateSchoolYear);
@@ -211,7 +293,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (yearEl)   yearEl.addEventListener('change',   loadSubjects);
     if (semEl)    semEl.addEventListener('change',    loadSubjects);
 
-    // Prevent picking future dates
     const birthdayEl = document.getElementById('birthday');
     if (birthdayEl) birthdayEl.setAttribute('max', new Date().toISOString().split('T')[0]);
 
@@ -222,8 +303,8 @@ document.addEventListener('DOMContentLoaded', function () {
    DATE
    ============================================================ */
 function displayDate() {
-    document.getElementById('currentDate').textContent =
-        new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+    const el = document.getElementById('currentDate');
+    if (el) el.textContent = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
 }
 
 /* ============================================================
@@ -300,86 +381,42 @@ function updateAttemptsHint() {
 
 /* ============================================================
    SUBMIT FORGOT PASSWORD
-   FIX: Added 404 email_not_found handling — shows error message
-        without counting as a rate-limit attempt.
-        Only fpRlRecord() after a confirmed successful submission.
    ============================================================ */
 async function submitForgotPassword() {
     const btn   = document.getElementById('forgotBtn');
     const msgEl = document.getElementById('forgotMsg');
     const email = document.getElementById('forgot_email').value.trim().toLowerCase();
-
     msgEl.className = 'message-box';
     msgEl.innerHTML = '';
-
-    // 1. Client-side block check
     const blockedUntil = fpRlBlockedUntil();
     if (blockedUntil) { showModalStep(3); startModalBlockTimer(blockedUntil); return; }
-
-    // 2. Empty check
-    if (!email) {
-        msgEl.className = 'message-box error';
-        msgEl.innerHTML = '⚠️ Please enter your email address.';
-        return;
-    }
-
-    // 3. Format check — validateEmail returns an error string or null
-    if (validateEmail(email)) {
-        msgEl.className = 'message-box error';
-        msgEl.innerHTML = '⚠️ Please enter a valid email address.';
-        return;
-    }
-
-    // 4. Loading state
+    if (!email) { msgEl.className = 'message-box error'; msgEl.innerHTML = '⚠️ Please enter your email address.'; return; }
+    if (validateEmail(email)) { msgEl.className = 'message-box error'; msgEl.innerHTML = '⚠️ Please enter a valid email address.'; return; }
     const original = btn.innerHTML;
     btn.innerHTML = '<span class="spinner"></span> Sending...';
     btn.disabled  = true;
-
     try {
-        const res  = await fetch(API + '/forgot-password', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ email })
-        });
+        const res  = await fetch(API + '/forgot-password', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ email }) });
         const data = await res.json();
-
-        // 5. Server-side rate limit — sync client block state
         if (res.status === 429) {
-            const until = data.retry_after_seconds
-                ? Date.now() + data.retry_after_seconds * 1000
-                : Date.now() + FP_RL.blockMs;
-            const d = fpRlLoad();
-            d.blockedUntil = until;
-            fpRlSave(d);
-            showModalStep(3);
-            startModalBlockTimer(until);
-            return;
+            const until = data.retry_after_seconds ? Date.now() + data.retry_after_seconds * 1000 : Date.now() + FP_RL.blockMs;
+            const d = fpRlLoad(); d.blockedUntil = until; fpRlSave(d);
+            showModalStep(3); startModalBlockTimer(until); return;
         }
-
-        // 6. Email not registered — show error, do NOT count as an attempt
-        //    so users can correct a typo without burning their 3 attempts.
         if (res.status === 404 && data.error === 'email_not_found') {
             msgEl.className = 'message-box error';
             msgEl.innerHTML = '⚠️ No account found with that email address. Please check and try again.';
-            document.getElementById('forgot_email').focus();
-            updateAttemptsHint();
-            return;
+            document.getElementById('forgot_email').focus(); updateAttemptsHint(); return;
         }
-
-        // 7. Success — email was found and reset link was sent
-        fpRlRecord();
-        updateAttemptsHint();
+        fpRlRecord(); updateAttemptsHint();
         document.getElementById('sentToEmail').textContent   = email;
         document.getElementById('modalSubtitle').textContent = 'Reset email sent!';
-        showModalStep(2);
-        startResendCountdown();
-
+        showModalStep(2); startResendCountdown();
     } catch (_) {
         msgEl.className = 'message-box error';
         msgEl.innerHTML = '⚠️ Unable to connect. Please check your connection.';
     } finally {
-        btn.innerHTML = original;
-        btn.disabled  = false;
+        btn.innerHTML = original; btn.disabled = false;
     }
 }
 
@@ -391,73 +428,38 @@ function startResendCountdown() {
     const cdEl      = document.getElementById('resendCountdown');
     if (!resendBtn || !cdEl) return;
     let secs = FP_RL.resendCooldown;
-    resendBtn.disabled = true;
-    cdEl.textContent   = secs;
+    resendBtn.disabled = true; cdEl.textContent = secs;
     clearInterval(fpResendTimer);
     fpResendTimer = setInterval(() => {
-        secs--;
-        cdEl.textContent = secs;
-        if (secs <= 0) {
-            clearInterval(fpResendTimer);
-            resendBtn.disabled = false;
-            resendBtn.innerHTML = 'Resend email';
-        }
+        secs--; cdEl.textContent = secs;
+        if (secs <= 0) { clearInterval(fpResendTimer); resendBtn.disabled = false; resendBtn.innerHTML = 'Resend email'; }
     }, 1000);
 }
 
 /* ============================================================
    RESEND RESET EMAIL
-   FIX: Added proper status checks — only fpRlRecord() on success,
-        handles 429 block sync, ignores 404 (email already verified
-        at this point but guard kept for safety).
    ============================================================ */
 async function resendReset() {
     const email = document.getElementById('sentToEmail').textContent;
-
-    // Re-check block before resend
     const blockedUntil = fpRlBlockedUntil();
     if (blockedUntil) { showModalStep(3); startModalBlockTimer(blockedUntil); return; }
-
     const btn = document.getElementById('resendBtn');
-    btn.disabled = true;
-    btn.innerHTML = 'Sending...';
-
+    btn.disabled = true; btn.innerHTML = 'Sending...';
     try {
-        const res  = await fetch(API + '/forgot-password', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ email })
-        });
+        const res  = await fetch(API + '/forgot-password', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ email }) });
         const data = await res.json();
-
-        // Server-side rate limit hit during resend
         if (res.status === 429) {
-            const until = data.retry_after_seconds
-                ? Date.now() + data.retry_after_seconds * 1000
-                : Date.now() + FP_RL.blockMs;
-            const d = fpRlLoad();
-            d.blockedUntil = until;
-            fpRlSave(d);
-            showModalStep(3);
-            startModalBlockTimer(until);
-            return;
+            const until = data.retry_after_seconds ? Date.now() + data.retry_after_seconds * 1000 : Date.now() + FP_RL.blockMs;
+            const d = fpRlLoad(); d.blockedUntil = until; fpRlSave(d);
+            showModalStep(3); startModalBlockTimer(until); return;
         }
-
-        // Only count the attempt when the server actually processed it
-        if (res.ok) {
-            fpRlRecord();
-            updateAttemptsHint();
-        }
-
-    } catch (_) {
-        // Network error — still restart the countdown so the button re-enables
-    }
-
+        if (res.ok) { fpRlRecord(); updateAttemptsHint(); }
+    } catch (_) {}
     startResendCountdown();
 }
 
 /* ============================================================
-   BLOCKED STATE — live MM:SS countdown
+   BLOCKED STATE TIMER
    ============================================================ */
 let fpBlockTimer = null;
 
@@ -471,15 +473,13 @@ function startModalBlockTimer(blockedUntil) {
         const secs = Math.floor((ms % 60000) / 1000);
         el.textContent = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
         if (ms <= 0) {
-            clearInterval(fpBlockTimer);
-            showModalStep(1);
+            clearInterval(fpBlockTimer); showModalStep(1);
             document.getElementById('forgot_email').value = '';
             const hint = document.getElementById('fpAttemptsHint');
             if (hint) hint.textContent = '';
         }
     }
-    tick();
-    fpBlockTimer = setInterval(tick, 1000);
+    tick(); fpBlockTimer = setInterval(tick, 1000);
 }
 
 /* ============================================================
@@ -491,7 +491,7 @@ async function verifyToken(token) {
         const data = await res.json();
         if (!data.valid) {
             document.getElementById('resetFormArea').style.display = 'none';
-            document.getElementById('invalidToken').style.display = 'block';
+            document.getElementById('invalidToken').style.display  = 'block';
         }
     } catch (_) {}
 }
@@ -517,10 +517,8 @@ function checkPasswordStrength() {
         { width:'100%', color:'#16a34a', text:'Very Strong' },
     ];
     const cfg = configs[Math.min(score - 1, 4)] || configs[0];
-    fill.style.width      = cfg.width;
-    fill.style.background = cfg.color;
-    label.textContent     = cfg.text;
-    label.style.color     = cfg.color;
+    fill.style.width = cfg.width; fill.style.background = cfg.color;
+    label.textContent = cfg.text; label.style.color = cfg.color;
 }
 
 function checkPasswordMatch() {
@@ -539,31 +537,13 @@ async function submitResetPassword() {
     const token           = new URLSearchParams(window.location.search).get('token');
     const newPassword     = document.getElementById('new_password').value;
     const confirmPassword = document.getElementById('confirm_password').value;
-
-    msgEl.className = 'message-box';
-    msgEl.innerHTML = '';
-
-    if (!newPassword || newPassword.length < 8) {
-        msgEl.className = 'message-box error';
-        msgEl.innerHTML = '⚠️ Password must be at least 8 characters.';
-        return;
-    }
-    if (newPassword !== confirmPassword) {
-        msgEl.className = 'message-box error';
-        msgEl.innerHTML = '⚠️ Passwords do not match.';
-        return;
-    }
-
+    msgEl.className = 'message-box'; msgEl.innerHTML = '';
+    if (!newPassword || newPassword.length < 8) { msgEl.className = 'message-box error'; msgEl.innerHTML = '⚠️ Password must be at least 8 characters.'; return; }
+    if (newPassword !== confirmPassword) { msgEl.className = 'message-box error'; msgEl.innerHTML = '⚠️ Passwords do not match.'; return; }
     const original = btn.innerHTML;
-    btn.innerHTML = '<span class="spinner"></span> Resetting...';
-    btn.disabled  = true;
-
+    btn.innerHTML = '<span class="spinner"></span> Resetting...'; btn.disabled = true;
     try {
-        const res  = await fetch(API + '/reset-password', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ token, new_password: newPassword })
-        });
+        const res  = await fetch(API + '/reset-password', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ token, new_password: newPassword }) });
         const data = await res.json();
         if (res.ok) {
             document.getElementById('resetFormArea').style.display = 'none';
@@ -572,13 +552,8 @@ async function submitResetPassword() {
             msgEl.className = 'message-box error';
             msgEl.innerHTML = '✗ ' + (data.error || 'Reset failed. The link may have expired.');
         }
-    } catch (_) {
-        msgEl.className = 'message-box error';
-        msgEl.innerHTML = '⚠️ Unable to connect. Please try again.';
-    } finally {
-        btn.innerHTML = original;
-        btn.disabled  = false;
-    }
+    } catch (_) { msgEl.className = 'message-box error'; msgEl.innerHTML = '⚠️ Unable to connect. Please try again.'; }
+    finally { btn.innerHTML = original; btn.disabled = false; }
 }
 
 /* ============================================================
@@ -588,44 +563,23 @@ async function login() {
     const btn          = event.target;
     const originalHTML = btn.innerHTML;
     const msgEl        = document.getElementById('loginMsg');
-
-    msgEl.className = 'message-box';
-    msgEl.innerHTML = '';
-
+    msgEl.className = 'message-box'; msgEl.innerHTML = '';
     const loginId  = document.getElementById('login_id').value.trim();
     const password = document.getElementById('login_password').value;
-
     if (!loginId)  { setFieldError(document.getElementById('login_id'), 'Please enter your Student ID or Username.'); return; }
     if (!password) { msgEl.className = 'message-box error'; msgEl.innerHTML = '⚠️ Please enter your password.'; return; }
-
-    btn.innerHTML = '<span class="spinner"></span> Authenticating...';
-    btn.disabled  = true;
-
+    btn.innerHTML = '<span class="spinner"></span> Authenticating...'; btn.disabled = true;
     try {
-        const res  = await fetch(API + '/login', {
-            method:      'POST',
-            credentials: 'include',
-            headers:     { 'Content-Type': 'application/json' },
-            body:        JSON.stringify({ login_id: loginId, password })
-        });
+        const res  = await fetch(API + '/login', { method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ login_id: loginId, password }) });
         const data = await res.json();
         if (res.ok) {
             localStorage.setItem('jwt', data.token);
             if (data.role === 'student' && data.student_id) localStorage.setItem('student_id', data.student_id);
-            msgEl.className = 'message-box success';
-            msgEl.innerHTML = '✓ Login successful. Redirecting...';
+            msgEl.className = 'message-box success'; msgEl.innerHTML = '✓ Login successful. Redirecting...';
             setTimeout(() => { window.location.href = data.redirect; }, 1200);
-        } else {
-            msgEl.className = 'message-box error';
-            msgEl.innerHTML = '✗ ' + (data.error || 'Invalid credentials.');
-        }
-    } catch (_) {
-        msgEl.className = 'message-box error';
-        msgEl.innerHTML = '⚠️ Unable to connect to the server.';
-    } finally {
-        btn.innerHTML = originalHTML;
-        btn.disabled  = false;
-    }
+        } else { msgEl.className = 'message-box error'; msgEl.innerHTML = '✗ ' + (data.error || 'Invalid credentials.'); }
+    } catch (_) { msgEl.className = 'message-box error'; msgEl.innerHTML = '⚠️ Unable to connect to the server.'; }
+    finally { btn.innerHTML = originalHTML; btn.disabled = false; }
 }
 
 /* ============================================================
@@ -640,18 +594,14 @@ function updateSelectedSubjects() {
     const list     = document.getElementById('selectedSubjectsList');
     const count    = document.getElementById('selectedCount');
     if (selected.length > 0) {
-        display.classList.add('show');
-        count.textContent = selected.length;
-        list.innerHTML    = '';
+        display.classList.add('show'); count.textContent = selected.length; list.innerHTML = '';
         selected.forEach(opt => {
             const tag = document.createElement('span');
             tag.className = 'subject-tag';
             tag.innerHTML = `${opt.textContent}<span class="subject-tag-remove" onclick="removeSubject('${opt.value}')">✕</span>`;
             list.appendChild(tag);
         });
-    } else {
-        display.classList.remove('show');
-    }
+    } else { display.classList.remove('show'); }
     updateProgress();
 }
 
@@ -665,8 +615,8 @@ function updateProgress() {
     let filled = fields.filter(f => { const el = document.getElementById(f); return el && el.value.trim(); }).length;
     const subjectsEl = document.getElementById('subjects');
     if (subjectsEl && Array.from(subjectsEl.selectedOptions).length > 0) filled++;
-    const total     = fields.length + 1;
-    const pct       = Math.round((filled / total) * 100);
+    const total = fields.length + 1;
+    const pct   = Math.round((filled / total) * 100);
     const indicator = document.getElementById('progressIndicator');
     if (indicator && filled > 0) {
         indicator.style.display = 'block';
@@ -685,9 +635,7 @@ async function loadCourses() {
         sel.innerHTML = "<option value=''>Select a course</option>";
         courses.forEach(c => {
             const opt = document.createElement('option');
-            opt.value       = c.id;
-            opt.textContent = c.course_name;
-            sel.appendChild(opt);
+            opt.value = c.id; opt.textContent = c.course_name; sel.appendChild(opt);
         });
     } catch (err) { console.error('Error loading courses:', err); }
 }
@@ -698,40 +646,29 @@ async function loadSubjects() {
     const semester  = document.getElementById('semester').value;
     const prompt    = document.getElementById('subjectsPrompt');
     const sel       = document.getElementById('subjects');
-
     if (!course || !yearLevel || !semester) {
         prompt.style.display = 'block';
         prompt.innerHTML     = '<div class="prompt-icon">📚</div><div>Please select your <strong>Course</strong>, <strong>Year Level</strong>, and <strong>Semester</strong> first to load available subjects.</div>';
-        sel.style.display    = 'none';
-        sel.innerHTML        = '';
-        document.getElementById('selectedSubjectsDisplay').classList.remove('show');
-        return;
+        sel.style.display = 'none'; sel.innerHTML = '';
+        document.getElementById('selectedSubjectsDisplay').classList.remove('show'); return;
     }
-
-    prompt.style.display = 'block';
-    prompt.innerHTML     = '<div class="subjects-loading">⏳ Loading subjects...</div>';
-    sel.style.display    = 'none';
-
+    prompt.style.display = 'block'; prompt.innerHTML = '<div class="subjects-loading">⏳ Loading subjects...</div>';
+    sel.style.display = 'none';
     try {
         const res         = await fetch(`${API}/public/subjects?course_id=${course}&year_level=${yearLevel}&semester=${encodeURIComponent(semester)}`);
         const contentType = res.headers.get('content-type') || '';
         if (!res.ok || !contentType.includes('application/json')) throw new Error(`Server returned ${res.status}`);
         const subjects = await res.json();
         subjectsData   = subjects;
-
-        prompt.style.display = 'none';
-        sel.style.display    = 'block';
-        sel.innerHTML        = '';
-
+        prompt.style.display = 'none'; sel.style.display = 'block'; sel.innerHTML = '';
         if (subjects.length === 0) {
             prompt.style.display = 'block';
             prompt.innerHTML     = `<div class="prompt-icon">😕</div><div>No subjects found for <strong>${semester} Semester</strong> of your selected course and year level.</div>`;
             sel.style.display    = 'none';
         } else {
             subjects.forEach(s => {
-                const opt       = document.createElement('option');
-                opt.value       = s.id;
-                opt.textContent = `${s.code ? s.code + ' — ' : ''}${s.subject_name || s.name || ''}`;
+                const opt = document.createElement('option');
+                opt.value = s.id; opt.textContent = `${s.code ? s.code + ' — ' : ''}${s.subject_name || s.name || ''}`;
                 sel.appendChild(opt);
             });
         }
@@ -740,8 +677,7 @@ async function loadSubjects() {
     } catch (err) {
         prompt.style.display = 'block';
         prompt.innerHTML     = '<div class="prompt-icon">⚠️</div><div>Error loading subjects. Please try again.</div>';
-        sel.style.display    = 'none';
-        console.error(err);
+        sel.style.display    = 'none'; console.error(err);
     }
 }
 
@@ -749,11 +685,8 @@ function validateRegisterForm(fields, age) {
     const errors = [];
     if (!fields.first_name || fields.first_name.trim().length < 2) errors.push('First name is required (min 2 characters).');
     if (!fields.last_name  || fields.last_name.trim().length < 2)  errors.push('Last name is required (min 2 characters).');
-    if (!fields.birthday) {
-        errors.push('Date of birth is required.');
-    } else if (age === null || age < 15 || age > 100) {
-        errors.push('Please enter a valid date of birth (age must be 15–100).');
-    }
+    if (!fields.birthday) { errors.push('Date of birth is required.'); }
+    else if (age === null || age < 15 || age > 100) { errors.push('Please enter a valid date of birth (age must be 15–100).'); }
     if (!fields.contact_number) errors.push('Contact number is required.');
     else if (validateContact(fields.contact_number)) errors.push(validateContact(fields.contact_number));
     if (!fields.email) errors.push('Email is required.');
@@ -773,9 +706,7 @@ async function register() {
     const btn          = event.target;
     const originalHTML = btn.innerHTML;
     const msgEl        = document.getElementById('registerMsg');
-
-    msgEl.className = 'message-box';
-    msgEl.innerHTML = '';
+    msgEl.className = 'message-box'; msgEl.innerHTML = '';
 
     const fields = {
         first_name:           document.getElementById('first_name').value.trim(),
@@ -785,6 +716,7 @@ async function register() {
         contact_number:       document.getElementById('contact_number').value.trim(),
         email:                document.getElementById('email').value.trim(),
         address:              document.getElementById('address').value.trim(),
+        provincial_address:   document.getElementById('provincial_address').value.trim(),
         last_school_attended: document.getElementById('last_school_attended').value.trim(),
         last_school_year:     document.getElementById('last_school_year').value.trim(),
         course:               document.getElementById('course').value,
@@ -796,50 +728,42 @@ async function register() {
     const age    = getComputedAge();
     const errors = validateRegisterForm(fields, age);
     if (errors.length > 0) {
-        msgEl.className = 'message-box error';
-        msgEl.innerHTML = '⚠️ ' + errors[0];
-        msgEl.scrollIntoView({ behavior:'smooth', block:'center' });
-        return;
+        msgEl.className = 'message-box error'; msgEl.innerHTML = '⚠️ ' + errors[0];
+        msgEl.scrollIntoView({ behavior:'smooth', block:'center' }); return;
     }
 
     const selectedSubjects = Array.from(document.getElementById('subjects').selectedOptions).map(o => o.value);
     if (selectedSubjects.length === 0) {
-        msgEl.className = 'message-box error';
-        msgEl.innerHTML = '⚠️ Please select at least one subject.';
-        msgEl.scrollIntoView({ behavior:'smooth', block:'center' });
-        return;
+        msgEl.className = 'message-box error'; msgEl.innerHTML = '⚠️ Please select at least one subject.';
+        msgEl.scrollIntoView({ behavior:'smooth', block:'center' }); return;
     }
 
+    const fatherDeceased = document.getElementById('fatherDeceased').checked;
+    const motherDeceased = document.getElementById('motherDeceased').checked;
+
     const payload = {
-        ...fields,
-        age,
-        father_first_name:     document.getElementById('father_first_name').value.trim(),
-        father_middle_name:    document.getElementById('father_middle_name').value.trim(),
-        father_last_name:      document.getElementById('father_last_name').value.trim(),
-        father_occupation:     document.getElementById('father_occupation').value.trim(),
-        father_contact_number: document.getElementById('father_contact_number').value.trim(),
-        father_address:        document.getElementById('father_address').value.trim(),
-        mother_first_name:     document.getElementById('mother_first_name').value.trim(),
-        mother_middle_name:    document.getElementById('mother_middle_name').value.trim(),
-        mother_last_name:      document.getElementById('mother_last_name').value.trim(),
-        mother_occupation:     document.getElementById('mother_occupation').value.trim(),
-        mother_contact_number: document.getElementById('mother_contact_number').value.trim(),
-        mother_address:        document.getElementById('mother_address').value.trim(),
+        ...fields, age,
+        father_deceased:       fatherDeceased,
+        father_first_name:     fatherDeceased ? '' : document.getElementById('father_first_name').value.trim(),
+        father_middle_name:    fatherDeceased ? '' : document.getElementById('father_middle_name').value.trim(),
+        father_last_name:      fatherDeceased ? '' : document.getElementById('father_last_name').value.trim(),
+        father_occupation:     fatherDeceased ? '' : document.getElementById('father_occupation').value.trim(),
+        father_contact_number: fatherDeceased ? '' : document.getElementById('father_contact_number').value.trim(),
+        father_address:        fatherDeceased ? '' : document.getElementById('father_address').value.trim(),
+        mother_deceased:       motherDeceased,
+        mother_first_name:     motherDeceased ? '' : document.getElementById('mother_first_name').value.trim(),
+        mother_middle_name:    motherDeceased ? '' : document.getElementById('mother_middle_name').value.trim(),
+        mother_last_name:      motherDeceased ? '' : document.getElementById('mother_last_name').value.trim(),
+        mother_occupation:     motherDeceased ? '' : document.getElementById('mother_occupation').value.trim(),
+        mother_contact_number: motherDeceased ? '' : document.getElementById('mother_contact_number').value.trim(),
+        mother_address:        motherDeceased ? '' : document.getElementById('mother_address').value.trim(),
         subjects:              selectedSubjects,
     };
-
-    // birthday is only used for frontend UX — not sent to backend
     delete payload.birthday;
 
-    btn.innerHTML = '<span class="spinner"></span> Submitting Application...';
-    btn.disabled  = true;
-
+    btn.innerHTML = '<span class="spinner"></span> Submitting Application...'; btn.disabled = true;
     try {
-        const res  = await fetch(API + '/register-student', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify(payload)
-        });
+        const res  = await fetch(API + '/register-student', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
         const data = await res.json();
         if (res.ok) {
             msgEl.className = 'message-box success';
@@ -848,11 +772,15 @@ async function register() {
             setTimeout(() => {
                 document.querySelectorAll('.form-control').forEach(el => { el.value=''; el.classList.remove('input-valid','input-error'); });
                 document.querySelectorAll('.field-error').forEach(el => el.classList.remove('show'));
+                ['father', 'mother'].forEach(p => {
+                    const cb = document.getElementById(p + 'Deceased');
+                    if (cb && cb.checked) { cb.checked = false; toggleDeceased(p); }
+                });
                 document.getElementById('progressIndicator').style.display = 'none';
                 document.getElementById('selectedSubjectsDisplay').classList.remove('show');
-                document.getElementById('subjects').style.display  = 'none';
+                document.getElementById('subjects').style.display       = 'none';
                 document.getElementById('subjectsPrompt').style.display = 'block';
-                document.getElementById('subjectsPrompt').innerHTML = '<div class="prompt-icon">📚</div><div>Please select your <strong>Course</strong>, <strong>Year Level</strong>, and <strong>Semester</strong> first to load available subjects.</div>';
+                document.getElementById('subjectsPrompt').innerHTML     = '<div class="prompt-icon">📚</div><div>Please select your <strong>Course</strong>, <strong>Year Level</strong>, and <strong>Semester</strong> first to load available subjects.</div>';
             }, 3000);
         } else {
             msgEl.className = 'message-box error';
@@ -863,10 +791,7 @@ async function register() {
         msgEl.className = 'message-box error';
         msgEl.innerHTML = '⚠️ Unable to submit application. Please check your connection.';
         msgEl.scrollIntoView({ behavior:'smooth', block:'center' });
-    } finally {
-        btn.innerHTML = originalHTML;
-        btn.disabled  = false;
-    }
+    } finally { btn.innerHTML = originalHTML; btn.disabled = false; }
 }
 
 /* ============================================================
